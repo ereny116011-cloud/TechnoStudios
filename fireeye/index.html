@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FireEye // TechnoStudios</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff3300'%3E%3Cpath d='M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.29 1.14-3.168.45-.558 1.36-.33 1.36.368 0 .842.27 1.704.76 2.298z'/%3E%3C/svg%3E">
+    <style>
+        :root {
+            --bg: #030305;
+            --surface: #0a0a0f;
+            --surface-border: #1a1a24;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent: #ff3300;
+            --accent-glow: rgba(255, 51, 0, 0.15);
+            --success: #10b981;
+            --success-bg: rgba(16, 185, 129, 0.1);
+            --success-border: rgba(16, 185, 129, 0.3);
+            --danger: #ef4444;
+            --danger-bg: rgba(239, 68, 68, 0.1);
+            --danger-border: rgba(239, 68, 68, 0.3);
+            --warning-bg: rgba(245, 158, 11, 0.1);
+            --warning-border: rgba(245, 158, 11, 0.3);
+            --warning-text: #fbbf24;
+            --star-color: #fbbf24;
+        }
+
+        body.light {
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --surface-border: #e2e8f0;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --accent: #ea580c;
+            --accent-glow: rgba(234, 88, 12, 0.1);
+            --success-bg: rgba(16, 185, 129, 0.08);
+            --success-border: rgba(16, 185, 129, 0.25);
+            --danger: #dc2626;
+            --danger-bg: rgba(220, 38, 38, 0.08);
+            --danger-border: rgba(220, 38, 38, 0.25);
+            --warning-bg: rgba(217, 119, 6, 0.08);
+            --warning-border: rgba(217, 119, 6, 0.25);
+            --warning-text: #b45309;
+            --star-color: #d97706;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px;
+        }
+
+        header {
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--surface-border);
+            padding-bottom: 20px;
+        }
+
+        .back-home {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .back-home:hover { color: var(--accent); }
+
+        .header-actions { display: flex; gap: 12px; align-items: center; }
+
+        .util-btn {
+            background: var(--surface);
+            border: 1px solid var(--surface-border);
+            color: var(--text-primary);
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .util-btn:hover { border-color: var(--accent); }
+
+        .theme-toggle-btn {
+            background: var(--surface);
+            border: 1px solid var(--surface-border);
+            color: var(--text-primary);
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+
+        .theme-toggle-btn:hover { border-color: var(--accent); }
+
+        main {
+            max-width: 900px;
+            width: 100%;
+            margin: 40px auto;
+        }
+
+        .project-hero { margin-bottom: 30px; }
+
+        .status-pill {
+            display: inline-block;
+            background: var(--accent-glow);
+            color: var(--accent);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 12px;
+            border: 1px solid var(--accent);
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            max-width: 600px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 24px;
+            border-bottom: 1px solid var(--surface-border);
+            margin-bottom: 30px;
+            overflow-x: auto;
+        }
+
+        .tab-trigger {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 600;
+            padding-bottom: 12px;
+            cursor: pointer;
+            position: relative;
+            white-space: nowrap;
+        }
+
+        .tab-trigger:hover { color: var(--text-primary); }
+        .tab-trigger.active { color: var(--accent); }
+        .tab-trigger.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: var(--accent);
+        }
+
+        .tab-pane { display: none; }
+        .tab-pane.active {
+            display: block;
+            animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .download-box {
+            background: var(--surface);
+            border: 1px solid var(--surface-border);
+            border-radius: 14px;
+            padding: 36px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .download-info h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 6px; }
+        .download-info p { color: var(--text-secondary); font-size: 0.9rem; }
+
+        .main-cta {
+            background: var(--accent);
+            color: #ffffff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 14px var(--accent-glow);
+            cursor: pointer;
+            border: none;
+            display: inline-block;
+            text-align: center;
+        }
+        .main-cta:hover { filter: brightness(1.08); transform: translateY(-1px); }
+        .main-cta:active { transform: translateY(0); }
+
+        .ios-warning-banner {
+            margin-top: 15px;
+            background: var(--warning-bg);
+            border: 1px solid var(--warning-border);
+            border-radius: 10px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.85rem;
+            color: var(--warning-text);
+        }
+        .ios-warning-banner svg {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            fill: currentColor;
+        }
+
+        #downloadProgressContainer {
+            display: none;
+            width: 100%;
+            margin-top: 15px;
+        }
+        .progress-bar-bg {
+            width: 100%;
+            height: 6px;
+            background: var(--surface-border);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .progress-bar-fill {
+            width: 0%;
+            height: 100%;
+            background: var(--accent);
+            transition: width 0.1s linear;
+        }
+
+        #postDownloadFeedbackArea {
+            display: none;
+            margin-top: 20px;
+            background: var(--surface);
+            border: 1px solid var(--success-border);
+            border-radius: 14px;
+            padding: 24px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .success-banner-msg {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--success);
+            font-weight: 700;
+            font-size: 1.05rem;
+            margin-bottom: 15px;
+        }
+
+        .success-banner-msg svg {
+            width: 22px;
+            height: 22px;
+            fill: currentColor;
+            flex-shrink: 0;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .feature-card {
+            background: var(--surface);
+            border: 1px solid var(--surface-border);
+            border-radius: 12px;
+            padding: 24px;
+        }
+        .feature-card:hover { border-color: var(--text-secondary); }
+        .feature-card h4 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+        .feature-card p { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; }
+
+        .security-container {
+            background: var(--surface);
+            border: 1px solid var(--surface-border);
+            border-radius: 14px;
+            padding: 24px;
+        }
+
+        .security-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .clean-badge { color: var(--success); font-weight: 700; font-size: 0.9rem; }
+        .vt-link { color: var(--text-secondary); text-decoration: none; font-size: 0.85rem; }
+        .vt-link:hover { color: var(--text-primary); }
+
+        .preview-img-wrap { 
+            border-radius: 8px; 
+            overflow: hidden; 
+            border: 1px solid var(--surface-border); 
+            cursor: pointer; /* Tıklanabilir olduğunu hissettirir */
+        }
+        .preview-img-wrap img { width: 100%; display: block; pointer-events: none; } /* Resmin kendi bağlantısını pasif edip tıklamayı sese/sayaca bağlıyoruz */
+
+        /* --- YORUMLAR SEKMESİ --- */
+        .reviews-section, .changelog-section {
+            background: var(--surface);
+            border: 1px solid var(--surface-border);
+            border-radius: 14px;
+            padding: 30px;
+        }
+
+        .reviews-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--surface-border);
+            padding-bottom: 20px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .rating-overview {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .avg-score {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--text-primary);
+        }
+
+        .stars-display {
+            color: var(--star-color);
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+        }
+
+        .total-reviews-count {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .form-group { margin-bottom: 14px; }
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            background: var(--surface);
+            border: 1px solid var(--surface-border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+        .form-control:focus { outline: none; border-color: var(--accent); }
+
+        .star-rating-picker {
+            display: flex;
+            flex-direction: row-reverse;
+            justify-content: flex-end;
+            gap: 5px;
+        }
+        .star-rating-picker input { display: none; }
+        .star-rating-picker label {
+            font-size: 1.5rem;
+            color: var(--surface-border);
+            cursor: pointer;
+            margin: 0;
+        }
+        .star-rating-picker input:checked ~ label,
+        .star-rating-picker label:hover,
+        .star-rating-picker label:hover ~ label {
+            color: var(--star-color);
+        }
+
+        .comments-list, .changelog-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .comment-card, .changelog-card {
+            background: var(--bg);
+            border: 1px solid var(--surface-border);
+            border-radius: 10px;
+            padding: 16px;
+            position: relative;
+        }
+
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .comment-author { font-weight: 700; font-size: 0.95rem; }
+        .comment-date { font-size: 0.75rem; color: var(--text-secondary); }
+        .comment-stars { color: var(--star-color); font-size: 0.9rem; margin-bottom: 6px; }
+        .comment-text { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; }
+
+        /* Admin Sil Butonu */
+        .admin-delete-btn {
+            display: none;
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--danger-bg);
+            color: var(--danger);
+            border: 1px solid var(--danger-border);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .admin-delete-btn:hover { background: var(--danger); color: #fff; }
+        body.admin-mode .admin-delete-btn { display: inline-block; }
+
+        /* Admin Panel Kutusu */
+        #adminPanelBox {
+            display: none;
+            background: var(--surface);
+            border: 2px dashed var(--accent);
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 30px;
+            animation: fadeIn 0.3s ease;
+        }
+        #adminPanelBox h3 { color: var(--accent); margin-bottom: 15px; font-size: 1.1rem; }
+
+        /* Sürüm Notları Stili */
+        .changelog-version-badge {
+            display: inline-block;
+            background: var(--accent-glow);
+            color: var(--accent);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .changelog-date { font-size: 0.75rem; color: var(--text-secondary); float: right; }
+        .changelog-desc { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; white-space: pre-line; }
+
+        /* Şifre Modal Tasarımı */
+        #loginModal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background: var(--surface);
+            border: 1px solid var(--surface-border);
+            border-radius: 14px;
+            padding: 30px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .modal-content h3 { margin-bottom: 15px; font-size: 1.2rem; font-weight: 700; }
+
+        footer {
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--surface-border);
+            padding-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 20px; }
+            .download-box { flex-direction: column; align-items: flex-start; }
+            .features-grid { grid-template-columns: 1fr; }
+            h1 { font-size: 2.2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Admin Giriş Modalı -->
+    <div id="loginModal">
+        <div class="modal-content">
+            <h3>🔒 Gizli Admin Girişi</h3>
+            <form onsubmit="handleAdminLogin(event)">
+                <div class="form-group">
+                    <label>Kullanıcı Adı</label>
+                    <input type="text" id="adminUser" class="form-control" placeholder="Kullanıcı Adı" required>
+                </div>
+                <div class="form-group">
+                    <label>Şifre</label>
+                    <input type="password" id="adminPass" class="form-control" placeholder="Şifre" required>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="main-cta" style="flex: 1;">Giriş Yap</button>
+                    <button type="button" class="util-btn" onclick="closeModal()" style="flex: 1; justify-content: center;">İptal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <header>
+        <a href="../" class="back-home">&larr; Geri Dön</a>
+        <div class="header-actions">
+            <button id="adminStatusIndicator" class="util-btn" style="display:none; border-color: var(--accent); color: var(--accent);" onclick="logoutAdmin()">Admin Modu (Çıkış)</button>
+            <a href="https://github.com/ereny116011-cloud/TechnoStudios" target="_blank" class="util-btn">GitHub</a>
+            <button class="theme-toggle-btn" onclick="toggleTheme()" id="themeBtn" title="Tema Değiştir">🌙</button>
+        </div>
+    </header>
+
+    <main>
+        <div class="project-hero">
+            <div class="status-pill">v1.0 Kararlı Sürüm</div>
+            <h1>FireEye</h1>
+            <p class="subtitle">Akıllı yangın algılama ve erken uyarı sistemi. Alanında özelleştirilmiş güvenlik katmanı.</p>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="tab-trigger active" onclick="switchTab(event, 'download')">İndir</button>
+            <button class="tab-trigger" onclick="switchTab(event, 'features')">Özellikler</button>
+            <button class="tab-trigger" onclick="switchTab(event, 'security')">Güvenlik Raporu</button>
+            <button class="tab-trigger" onclick="switchTab(event, 'reviews')">Değerlendirmeler</button>
+            <button class="tab-trigger" onclick="switchTab(event, 'changelog')">Sürüm Notları</button>
+        </div>
+
+        <!-- İndir Sekmesi -->
+        <div id="download" class="tab-pane active">
+            <div class="download-box">
+                <div class="download-info">
+                    <h3>FireEye Android Uygulaması</h3>
+                    <p>Android 8.0 ve üzeri kurumsal cihazlar için optimize edildi.</p>
+                </div>
+                <button class="main-cta" onclick="startDownloadSimulation()">APK İndir (v1.0)</button>
+            </div>
+
+            <div class="ios-warning-banner">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                <span><strong>Not:</strong> Bu uygulama Android tabanlı sistemler için geliştirilmiştir. iOS (iPhone / iPad) cihazlarda çalışmaz.</span>
+            </div>
+
+            <div id="downloadProgressContainer">
+                <p id="downloadStatusText" style="font-size: 0.85rem; color: var(--text-secondary);">APK paketi derleniyor...</p>
+                <div class="progress-bar-bg">
+                    <div id="progressBarFill" class="progress-bar-fill"></div>
+                </div>
+            </div>
+
+            <!-- APK İndirildikten Sonra Açılan Teşekkür ve Yorum Alanı -->
+            <div id="postDownloadFeedbackArea">
+                <div class="success-banner-msg">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                    <span>Uygulama Başarıyla İndirildi! Teşekkürler 🎉</span>
+                </div>
+                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 15px;">FireEye'ı denedikten sonra deneyimini diğer kullanıcılarla paylaşmak ister misin?</p>
+
+                <form id="postDownloadForm" onsubmit="handleNewComment(event)">
+                    <div class="form-group">
+                        <label>Puanınız</label>
+                        <div class="star-rating-picker">
+                            <input type="radio" id="pstar5" name="rating" value="5" checked /><label for="pstar5" title="5 Yıldız">&#9733;</label>
+                            <input type="radio" id="pstar4" name="rating" value="4" /><label for="pstar4" title="4 Yıldız">&#9733;</label>
+                            <input type="radio" id="pstar3" name="rating" value="3" /><label for="pstar3" title="3 Yıldız">&#9733;</label>
+                            <input type="radio" id="pstar2" name="rating" value="2" /><label for="pstar2" title="2 Yıldız">&#9733;</label>
+                            <input type="radio" id="pstar1" name="rating" value="1" /><label for="pstar1" title="1 Yıldız">&#9733;</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="postUserName">Adınız / Kurum</label>
+                        <input type="text" id="postUserName" class="form-control" placeholder="Örn: Ahmet Yılmaz" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="postUserComment">Görüşleriniz</label>
+                        <textarea id="postUserComment" class="form-control" rows="3" placeholder="FireEye hakkında ne düşünüyorsun?" required></textarea>
+                    </div>
+                    <button type="submit" class="main-cta" style="width: 100%;">Değerlendirmeyi Yayınla</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Özellikler Sekmesi -->
+        <div id="features" class="tab-pane">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h4>Anlık Sensör Takibi</h4>
+                    <p>Sıcaklık and duman verilerini milisaniyelik hassasiyetle işler.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Acil Durum SMS</h4>
+                    <p>Tehlike anında kayıtlı kişilere otomatik konum gönderir.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Bulut Altyapısı</h4>
+                    <p>Geçmiş raporlarınızı güvenli bulut depolamada saklar.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Hızlı Yapılandırma</h4>
+                    <p>Karmaşık ayarlar olmadan saniyeler içinde aktifleşir.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Güvenlik Sekmesi (10 tık VirusTotal görseline bağlandı) -->
+        <div id="security" class="tab-pane">
+            <div class="security-container">
+                <div class="security-info">
+                    <span class="clean-badge">&#10003; VirusTotal: 0/67 Temiz Raporu</span>
+                    <a href="https://github.com/ereny116011-cloud/TechnoStudios/blob/main/testsonuc.png" target="_blank" class="vt-link">Detaylar &rarr;</a>
+                </div>
+                <div class="preview-img-wrap" onclick="triggerSecretLogin()" title="Admin girişi için buraya 10 kez tıkla">
+                    <img src="https://raw.githubusercontent.com/ereny116011-cloud/TechnoStudios/main/testsonuc.png" alt="VirusTotal Raporu">
+                </div>
+            </div>
+        </div>
+
+        <!-- Değerlendirmeler Sekmesi -->
+        <div id="reviews" class="tab-pane">
+            <div class="reviews-section">
+                <div class="reviews-header">
+                    <div class="rating-overview">
+                        <div class="avg-score" id="avgScoreText">0.0</div>
+                        <div>
+                            <div class="stars-display" id="avgStarsText">&#9734;&#9734;&#9734;&#9734;&#9734;</div>
+                            <div class="total-reviews-count" id="totalCountText">Henüz değerlendirme yok</div>
+                        </div>
+                    </div>
+                    <button class="util-btn" onclick="switchTabToDownload()">Uygulamayı İndir</button>
+                </div>
+
+                <div class="comments-list" id="commentsListContainer"></div>
+            </div>
+        </div>
+
+        <!-- Sürüm Notları Sekmesi -->
+        <div id="changelog" class="tab-pane">
+            <!-- Admin Sürüm Ekleme Paneli -->
+            <div id="adminPanelBox">
+                <h3>🛠️ Admin Paneli: Yeni Sürüm Ekle</h3>
+                <form onsubmit="handleNewChangelog(event)">
+                    <div class="form-group">
+                        <label>Sürüm Numarası (Örn: v1.1)</label>
+                        <input type="text" id="adminVersionInput" class="form-control" placeholder="v1.1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Değişiklikler ve Özellikler</label>
+                        <textarea id="adminChangelogDesc" class="form-control" rows="4" placeholder="- Yeni sensör entegrasyonu eklendi.&#10;- Arayüz optimizasyonları yapıldı." required></textarea>
+                    </div>
+                    <button type="submit" class="main-cta">Yeni Sürümü Yayınla</button>
+                </form>
+            </div>
+
+            <div class="changelog-section">
+                <h3 style="margin-bottom: 20px; font-size: 1.2rem;">Sürüm Geçmişi and Yenilikler</h3>
+                <div class="changelog-list" id="changelogListContainer"></div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 TechnoStudios &bull; Tüm Hakları Saklıdır.</p>
+    </footer>
+
+    <script>
+        let comments = JSON.parse(localStorage.getItem('fireeye_comments')) || [];
+        let changelogs = JSON.parse(localStorage.getItem('fireeye_changelogs')) || [
+            {
+                version: "v1.0",
+                date: "26 Mart 2026",
+                text: "- FireEye kararlı sürümü yayınlandı.\n- Anlık duman/sıcaklık takibi aktif edildi."
+            }
+        ];
+
+        let clickCount = 0;
+        let clickTimer = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'light') {
+                document.body.classList.add('light');
+                document.getElementById('themeBtn').textContent = '☀️';
+            } else {
+                document.body.classList.remove('light');
+                document.getElementById('themeBtn').textContent = '🌙';
+                localStorage.setItem('theme', 'dark');
+            }
+
+            if(localStorage.getItem('fireeye_admin') === 'true') {
+                enableAdminMode();
+            }
+
+            renderComments();
+            renderChangelogs();
+        });
+
+        function switchTab(evt, tabId) {
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-trigger').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            evt.currentTarget.classList.add('active');
+        }
+
+        function switchTabToDownload() {
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-trigger').forEach(t => t.classList.remove('active'));
+            document.getElementById('download').classList.add('active');
+            document.querySelectorAll('.tab-trigger')[0].classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light');
+            const isLight = document.body.classList.contains('light');
+            document.getElementById('themeBtn').textContent = isLight ? '☀️' : '🌙';
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        }
+
+        /* --- VirusTotal Resmine 10 Tık Gizli Giriş --- */
+        function triggerSecretLogin() {
+            clickCount++;
+            clearTimeout(clickTimer);
+            
+            if (clickCount >= 10) {
+                clickCount = 0;
+                document.getElementById('loginModal').style.display = 'flex';
+            } else {
+                clickTimer = setTimeout(() => { clickCount = 0; }, 1500);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('loginModal').style.display = 'none';
+        }
+
+        function handleAdminLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('adminUser').value.trim();
+            const p = document.getElementById('adminPass').value.trim();
+
+            if (u === 'TechnoStudios11' && p === 'giradmine') {
+                localStorage.setItem('fireeye_admin', 'true');
+                enableAdminMode();
+                closeModal();
+                alert('Admin modu başarıyla açıldı!');
+            } else {
+                alert('Hatalı kullanıcı adı veya şifre!');
+            }
+        }
+
+        function enableAdminMode() {
+            document.body.classList.add('admin-mode');
+            document.getElementById('adminStatusIndicator').style.display = 'inline-flex';
+            document.getElementById('adminPanelBox').style.display = 'block';
+            renderComments();
+        }
+
+        function logoutAdmin() {
+            localStorage.removeItem('fireeye_admin');
+            document.body.classList.remove('admin-mode');
+            document.getElementById('adminStatusIndicator').style.display = 'none';
+            document.getElementById('adminPanelBox').style.display = 'none';
+            renderComments();
+            alert('Admin modundan çıkıldı.');
+        }
+
+        /* --- Yorum İşlemleri --- */
+        function renderComments() {
+            const container = document.getElementById('commentsListContainer');
+            container.innerHTML = '';
+
+            if (comments.length === 0) {
+                container.innerHTML = `<p style="text-align: center; color: var(--text-secondary); font-size: 0.9rem; padding: 20px;">Henüz hiç değerlendirme yapılmamış.</p>`;
+                document.getElementById('avgScoreText').textContent = "0.0";
+                document.getElementById('totalCountText').textContent = "Henüz değerlendirme yok";
+                document.getElementById('avgStarsText').innerHTML = '&#9734;&#9734;&#9734;&#9734;&#9734;';
+                return;
+            }
+
+            let totalScore = 0;
+
+            comments.forEach((c, index) => {
+                totalScore += Number(c.rating);
+
+                let starsHtml = '';
+                for(let i = 1; i <= 5; i++) {
+                    starsHtml += i <= c.rating ? '&#9733;' : '&#9734;';
+                }
+
+                const card = document.createElement('div');
+                card.className = 'comment-card';
+                card.innerHTML = `
+                    <button class="admin-delete-btn" onclick="deleteComment(${index})">Sil</button>
+                    <div class="comment-header">
+                        <span class="comment-author">${escapeHtml(c.name)}</span>
+                        <span class="comment-date">${c.date}</span>
+                    </div>
+                    <div class="comment-stars">${starsHtml}</div>
+                    <div class="comment-text">${escapeHtml(c.text)}</div>
+                `;
+                container.appendChild(card);
+            });
+
+            const avg = (totalScore / comments.length).toFixed(1);
+            document.getElementById('avgScoreText').textContent = avg;
+            document.getElementById('totalCountText').textContent = `${comments.length} değerlendirme`;
+
+            let avgStarsHtml = '';
+            const roundedAvg = Math.round(avg);
+            for(let i = 1; i <= 5; i++) {
+                avgStarsHtml += i <= roundedAvg ? '&#9733;' : '&#9734;';
+            }
+            document.getElementById('avgStarsText').innerHTML = avgStarsHtml;
+        }
+
+        function deleteComment(index) {
+            if(confirm('Bu yorumu silmek istediğine emin misin?')) {
+                comments.splice(index, 1);
+                localStorage.setItem('fireeye_comments', JSON.stringify(comments));
+                renderComments();
+            }
+        }
+
+        function handleNewComment(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('postUserName').value.trim();
+            const commentInput = document.getElementById('postUserComment').value.trim();
+            const ratingInput = document.querySelector('input[name="rating"]:checked').value;
+
+            const now = new Date();
+            const options = { day: 'numeric', month: 'long', year: 'numeric' };
+            const formattedDate = now.toLocaleDateString('tr-TR', options);
+
+            comments.unshift({
+                name: nameInput,
+                rating: Number(ratingInput),
+                date: formattedDate,
+                text: commentInput
+            });
+
+            localStorage.setItem('fireeye_comments', JSON.stringify(comments));
+            renderComments();
+
+            document.getElementById('postDownloadFeedbackArea').innerHTML = `
+                <div class="success-banner-msg">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                    <span>Görüşün için teşekkürler! Değerlendirmen yayınlandı. ⭐</span>
+                </div>
+            `;
+        }
+
+        /* --- Sürüm Notları Yönetimi --- */
+        function renderChangelogs() {
+            const container = document.getElementById('changelogListContainer');
+            container.innerHTML = '';
+
+            changelogs.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = 'changelog-card';
+                card.innerHTML = `
+                    <button class="admin-delete-btn" onclick="deleteChangelog(${index})">Sürümü Sil</button>
+                    <div>
+                        <span class="changelog-version-badge">${escapeHtml(item.version)}</span>
+                        <span class="changelog-date">${item.date}</span>
+                    </div>
+                    <div class="changelog-desc">${escapeHtml(item.text)}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function handleNewChangelog(e) {
+            e.preventDefault();
+            const ver = document.getElementById('adminVersionInput').value.trim();
+            const desc = document.getElementById('adminChangelogDesc').value.trim();
+
+            const now = new Date();
+            const formattedDate = now.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+            changelogs.unshift({
+                version: ver,
+                date: formattedDate,
+                text: desc
+            });
+
+            localStorage.setItem('fireeye_changelogs', JSON.stringify(changelogs));
+            renderChangelogs();
+
+            document.getElementById('adminVersionInput').value = '';
+            document.getElementById('adminChangelogDesc').value = '';
+            alert('Yeni sürüm başarıyla eklendi and yayınlandı!');
+        }
+
+        function deleteChangelog(index) {
+            if(confirm('Bu sürüm notunu kaldırmak istiyor musun?')) {
+                changelogs.splice(index, 1);
+                localStorage.setItem('fireeye_changelogs', JSON.stringify(changelogs));
+                renderChangelogs();
+            }
+        }
+
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        function startDownloadSimulation() {
+            const container = document.getElementById('downloadProgressContainer');
+            const fill = document.getElementById('progressBarFill');
+            const statusText = document.getElementById('downloadStatusText');
+            
+            container.style.display = 'block';
+            fill.style.width = '0%';
+            statusText.textContent = "Güvenli APK paketi derleniyor...";
+
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 5;
+                fill.style.width = progress + '%';
+                
+                if(progress === 40) statusText.textContent = "Güvenlik protokolleri doğrulanıyor...";
+                if(progress === 80) statusText.textContent = "İndirme tüneli başlatılıyor...";
+                
+                if(progress >= 100) {
+                    clearInterval(interval);
+                    statusText.textContent = "İşlem başarılı. Dosya aktarılıyor.";
+                    
+                    setTimeout(() => {
+                        window.location.href = "https://github.com/ereny116011-cloud/TechnoStudios/releases/download/APK/fireeye.apk";
+                        container.style.display = 'none';
+                        document.getElementById('postDownloadFeedbackArea').style.display = 'block';
+                        document.getElementById('postDownloadFeedbackArea').scrollIntoView({ behavior: 'smooth' });
+                    }, 500);
+                }
+            }, 60);
+        }
+    </script>
+</body>
+</html>
