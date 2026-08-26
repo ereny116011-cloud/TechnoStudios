@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechnoStudios | Kurumsal Yazılım ve Sistem Çözümleri</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/jpeg" href="/assets/technostudios_logo-C1AmytJe.jpg">
+    <style>
+        :root {
+            --bg-base: #090b10;
+            --bg-surface: #121620;
+            --bg-elevated: #1a202c;
+            --border-subtle: #273043;
+            --border-active: #94a3b8;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-main: #e2e8f0;
+            --accent-gold: #f59e0b;
+            --accent-red: #ef4444;
+            --gold-bg: rgba(245, 158, 11, 0.08);
+            --gold-border: rgba(245, 158, 11, 0.25);
+            --logo-bg: transparent;
+            --transition-smooth: all 0.2s ease;
+        }
+
+        body.light-mode {
+            --bg-base: #f4f5f7;
+            --bg-surface: #ffffff;
+            --bg-elevated: #f8fafc;
+            --border-subtle: #e2e8f0;
+            --border-active: #64748b;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --accent-main: #1e293b;
+            --accent-gold: #d97706;
+            --accent-red: #dc2626;
+            --gold-bg: rgba(217, 119, 6, 0.05);
+            --gold-border: rgba(217, 119, 6, 0.2);
+            --logo-bg: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 50px 20px;
+            position: relative;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Üst Araç Çubuğu */
+        .enterprise-toolbar {
+            position: absolute;
+            top: 25px;
+            right: 35px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .tool-btn, .lang-select {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            outline: none;
+        }
+
+        .lang-select option {
+            background: var(--bg-surface);
+            color: var(--text-primary);
+        }
+
+        .tool-btn:hover, .lang-select:hover {
+            border-color: var(--border-active);
+            background: var(--bg-elevated);
+        }
+
+        .tool-btn svg {
+            width: 14px;
+            height: 14px;
+            fill: currentColor;
+        }
+
+        /* Doğrudan Akış Alanı */
+        .main-wrapper {
+            width: 100%;
+            max-width: 960px;
+            margin-top: 10px;
+        }
+
+        /* Kurumsal Header */
+        .corp-header {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            margin-bottom: 35px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .corp-logo-container {
+            width: 80px;
+            height: 80px;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid var(--border-subtle);
+            flex-shrink: 0;
+            background: var(--logo-bg);
+            transition: var(--transition-smooth);
+        }
+
+        .corp-logo-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .corp-title-box h1 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+        }
+
+        /* Modüler Navigasyon (Sekmeler) */
+        .nav-modules {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 35px;
+            background: var(--bg-surface);
+            padding: 5px;
+            border-radius: 12px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .module-tab {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: var(--transition-smooth);
+        }
+
+        .module-tab.active {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .module-pane {
+            display: none;
+        }
+
+        .module-pane.active {
+            display: block;
+            animation: paneFade 0.2s ease-in-out;
+        }
+
+        @keyframes paneFade {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Ürün Kartı */
+        .enterprise-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            transition: var(--transition-smooth);
+        }
+
+        .enterprise-card:hover {
+            border-color: var(--border-active);
+        }
+
+        .card-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .product-identity {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        /* Dinamik Arka Planlı Logo Kutusu */
+        .product-icon-box {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            background: var(--logo-bg);
+            border: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px;
+            transition: var(--transition-smooth);
+        }
+
+        .product-icon-box svg.fire-icon {
+            width: 100%;
+            height: 100%;
+        }
+
+        .product-meta h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--accent-red);
+            margin-bottom: 2px;
+        }
+
+        .product-version {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .action-link-btn {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.88rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition-smooth);
+        }
+
+        .action-link-btn:hover {
+            border-color: var(--border-active);
+            background: var(--border-subtle);
+        }
+
+        .action-link-btn svg {
+            width: 14px;
+            height: 14px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* İstatistik Izgarası */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1px;
+            background: var(--border-subtle);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .metric-cell {
+            background: var(--bg-base);
+            padding: 12px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .metric-key {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .metric-val {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Vizyon Modülü */
+        .vision-container {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 30px;
+            color: var(--text-secondary);
+            line-height: 1.8;
+            font-size: 0.95rem;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .vision-section h3 {
+            color: var(--text-primary);
+            font-size: 1.15rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .vision-section p {
+            margin-bottom: 8px;
+        }
+
+        /* Hakkımızda & Ekip Modülü */
+        .about-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .corporate-info-box {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 30px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            font-size: 0.95rem;
+        }
+
+        .corporate-info-box h3 {
+            color: var(--text-primary);
+            font-size: 1.2rem;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .corporate-info-box p {
+            margin-bottom: 12px;
+        }
+
+        .personnel-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .personnel-card {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.88rem;
+            color: var(--text-primary);
+            text-align: center;
+        }
+
+        /* Başarımlar / Kurlar Paneli */
+        .achievements-panel {
+            background: var(--gold-bg);
+            border: 1px solid var(--gold-border);
+            border-radius: 16px;
+            padding: 28px;
+        }
+
+        .achievements-panel h4 {
+            color: var(--accent-gold);
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .courses-matrix {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .course-matrix-item {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            padding: 12px 14px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .course-matrix-item:hover {
+            border-color: var(--accent-gold);
+        }
+
+        .course-meta-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .cm-title {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .cm-rank {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--accent-gold);
+        }
+
+        .cm-action-tag {
+            font-size: 0.68rem;
+            padding: 3px 6px;
+            background: var(--gold-bg);
+            color: var(--accent-gold);
+            border-radius: 4px;
+            font-weight: 600;
+            border: 1px solid var(--gold-border);
+        }
+
+        /* Modal Pencere */
+        .modal-container-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .modal-container-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content-box {
+            background: var(--bg-surface);
+            border: 1px solid var(--gold-border);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 400px;
+            padding: 28px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        .modal-heading {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--accent-gold);
+            margin-bottom: 4px;
+        }
+
+        .modal-subtext {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+            text-transform: uppercase;
+        }
+
+        .modal-description-text {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .modal-dismiss-btn {
+            background: var(--accent-gold);
+            color: #090b10;
+            border: none;
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .modal-dismiss-btn:hover {
+            opacity: 0.9;
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            border-top: 1px solid var(--border-subtle);
+            padding-top: 20px;
+            width: 100%;
+            max-width: 960px;
+        }
+
+        footer a {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .corp-header { flex-direction: column; text-align: center; }
+            .enterprise-toolbar { top: 15px; right: 15px; flex-wrap: wrap; justify-content: flex-end; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Üst Araç Çubuğu -->
+    <div class="enterprise-toolbar">
+        <select class="lang-select" onchange="changeLanguage(this.value)">
+            <option value="tr">TR - Türkçe</option>
+            <option value="en">EN - English</option>
+            <option value="es">ES - Español</option>
+        </select>
+        <button class="tool-btn" onclick="toggleThemeSystem()">
+            <span id="txt-theme">Tema Modu</span>
+        </button>
+        <a href="https://github.com/ereny116011-cloud/TechnoStudios" target="_blank" class="tool-btn">
+            <svg viewBox="0 0 16 16">
+                <path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path>
+            </svg>
+            <span id="txt-source">Kaynak Kod</span>
+        </a>
+    </div>
+
+    <!-- Doğrudan Akış Alanı -->
+    <div class="main-wrapper">
+        <!-- Header -->
+        <div class="corp-header">
+            <div class="corp-logo-container">
+                <img src="/assets/technostudios_logo-C1AmytJe.jpg" alt="TechnoStudios Logo">
+            </div>
+            <div class="corp-title-box">
+                <h1>TechnoStudios</h1>
+            </div>
+        </div>
+
+        <!-- Modüler Sekmeler -->
+        <div class="nav-modules">
+            <button class="module-tab active" id="tab-projects" onclick="switchModule('projects', event)">Sistem Projeleri</button>
+            <button class="module-tab" id="tab-vision" onclick="switchModule('vision', event)">Kurumsal Vizyon</button>
+            <button class="module-tab" id="tab-about" onclick="switchModule('about', event)">Hakkımızda & Ekip</button>
+        </div>
+
+        <!-- BÖLÜM 1: Projeler -->
+        <div id="projects-pane" class="module-pane active">
+            <div class="enterprise-card">
+                <div class="card-top-row">
+                    <div class="product-identity">
+                        <div class="product-icon-box">
+                            <svg class="fire-icon" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M46.2 11.5 C46.2 11.5, 62.1 24.3, 67.2 38.6 C72.8 54.3, 65.1 65.5, 76.5 45.4 C76.5 45.4, 73.1 63.8, 64.9 74.2 C80.1 73.7, 86.8 62.5, 86.8 62.5 C86.8 62.5, 89.2 81.3, 75.3 95.8 C61.1 110.6, 38.7 110.1, 25.1 98.4 C10.9 86.2, 19.1 58.7, 30.8 44.8 C38.6 35.5, 46.2 11.5, 46.2 11.5 Z" fill="#d30000"/>
+                                <path d="M49.6 33.2 C49.6 33.2, 60.8 45.1, 61.2 56.4 C61.8 73.2, 49.3 75.2, 68.6 57.5 C68.6 57.5, 72.8 80.2, 62.1 90.9 C50.5 102.5, 33.8 98.6, 27.2 88.5 C20.3 77.9, 26.6 60.1, 35.8 49.2 C42.1 41.7, 49.6 33.2, 49.6 33.2 Z" fill="#ff4d00"/>
+                                <path d="M51.1 52.8 C51.1 52.8, 55.4 62.3, 52.9 71.5 C49.8 82.9, 39.2 78.4, 49.2 68.8 C49.2 68.8, 43.1 82.4, 38.2 87.1 C33.1 92.0, 29.5 86.2, 33.1 79.5 C36.8 72.6, 43.5 61.4, 51.1 52.8 Z" fill="#ffcc00"/>
+                            </svg>
+                        </div>
+                        <div class="product-meta">
+                            <h3 style="color: var(--accent-red);">FireEye</h3>
+                            <span class="product-version" id="lbl-version">Sürüm v 1.1 • Stabil</span>
+                        </div>
+                    </div>
+                    <a href="fireeye/" class="action-link-btn">
+                        <span id="btn-go-app">Uygulamaya Git</span>
+                        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </a>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric-cell">
+                        <span class="metric-key" id="key-cat">Kategori</span>
+                        <span class="metric-val" id="val-cat">IoT / Güvenlik</span>
+                    </div>
+                    <div class="metric-cell">
+                        <span class="metric-key" id="key-plat">Platform</span>
+                        <span class="metric-val" id="val-plat">Web & Mobil</span>
+                    </div>
+                    <div class="metric-cell">
+                        <span class="metric-key" id="key-dev">Geliştirici</span>
+                        <span class="metric-val">TechnoStudios</span>
+                    </div>
+                    <div class="metric-cell">
+                        <span class="metric-key" id="key-status">Durum</span>
+                        <span class="metric-val" id="val-status" style="color: #10b981;">Aktif</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BÖLÜM 2: Vizyon -->
+        <div id="vision-pane" class="module-pane">
+            <div class="vision-container">
+                <div class="vision-section">
+                    <h3 id="vis-title-1">Mühendislik Yaklaşımı</h3>
+                    <p id="vis-p1">TechnoStudios olarak amacımız; karmaşık yapılardan kaçınarak doğrudan işe yarayan, temiz ve anlaşılır projeler ortaya koymaktır. Geliştirdiğimiz yazılım ve sistemlerde gereksiz karmaşıklıklara yer vermiyoruz.</p>
+                    <p id="vis-p2">Sadece bugünü değil, uzun vadede sürdürülebilir ve güvenilir sistemler kurmayı amaçlıyoruz. Öğrendiğimiz her yeni bilgiyi pratik projelere dönüştürmek en temel motivasyon kaynağımızdır.</p>
+                </div>
+
+                <div class="vision-section">
+                    <h3 id="vis-title-2">Sade ve Reklamsız Kullanım Deneyimi</h3>
+                    <p id="vis-p3">Projelerimizde kullanıcıyı rahatsız eden pop-up'lar, reklam kalabalığı veya gereksiz yönlendirmeler kesinlikle yer almaz. Odak noktamız tamamen yüksek performans ve yalın bir arayüz sunmaktır.</p>
+                </div>
+
+                <div class="vision-section">
+                    <h3 id="vis-title-3">Güvenlik ve Gizlilik</h3>
+                    <p id="vis-p4">Kullanıcı verilerinin gizliliği ve sistem güvenliği mimarimizin merkezindedir. Gereksiz veri toplama süreçlerinden kaçınır, geliştirdiğimiz tüm sistemlerin güvenli ve kararlı çalışmasını ilke ediniriz.</p>
+                </div>
+
+                <div class="vision-section">
+                    <h3 id="vis-title-4">Açık Kaynak ve Paylaşım Kültürü</h3>
+                    <p id="vis-p5">Teknolojinin paylaşarak gelişeceğine inanıyoruz. Kod yapılarımızda şeffaflığa önem veriyor, topluluğa katkı sağlayacak çözümleri açık kaynak yaklaşımıyla destekliyoruz.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- BÖLÜM 3: Hakkımızda & Ekip -->
+        <div id="about-pane" class="module-pane">
+            <div class="about-layout">
+                <div class="corporate-info-box">
+                    <h3 id="abt-title">Biz Kimiz?</h3>
+                    <p id="abt-p1">Biz; teknolojiyi seven, sürekli araştıran ve yeni şeyler üreten bir girişimci ekibiyiz. Genç olsak bile fikirlerimizi somut projelere dönüştürerek ülkemize yararlı teknolojiler üretmeye çalışıyoruz. Disiplinli ve azimli çalışmalarımız sayesinde her gün kendimizi geliştirmeye çalışıyoruz.</p>
+                    <div class="personnel-grid">
+                        <div class="personnel-card">Kerem Gür</div>
+                        <div class="personnel-card">Eyüp Günaydın</div>
+                        <div class="personnel-card">Mustafa Kerem Ergün</div>
+                        <div class="personnel-card">Eren Yılmaz</div>
+                    </div>
+                </div>
+
+                <div class="achievements-panel">
+                    <h4 id="ach-title">Eğitim Kurlarımız ve Başarılarımız</h4>
+                    <p id="ach-sub" style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 4px;">Detaylar için ilgili başlığa tıklayınız:</p>
+                    
+                    <div class="courses-matrix">
+                        <div class="course-matrix-item" onclick="openSysModal('Tasarım', '3D CAD modelleme teknikleri, hızlı prototipleme ve dönem sonu şenliği birinciliği.')">
+                            <div class="course-meta-info">
+                                <span class="cm-title" id="c-tasarim">Tasarım</span>
+                                <span class="cm-rank" id="c-rank-1">Şenlik 1.liği 🥇</span>
+                            </div>
+                            <span class="cm-action-tag btn-inspect">İncele</span>
+                        </div>
+                        <div class="course-matrix-item" onclick="openSysModal('Robotik ve Kodlama', 'Mikrodenetleyici devreleri, sensör kalibrasyonu ve dönem sonu şenliği birinciliği.')">
+                            <div class="course-meta-info">
+                                <span class="cm-title" id="c-robotik">Robotik ve Kodlama</span>
+                                <span class="cm-rank" id="c-rank-2">Şenlik 1.liği 🥇</span>
+                            </div>
+                            <span class="cm-action-tag btn-inspect">İncele</span>
+                        </div>
+                        <div class="course-matrix-item" onclick="openSysModal('Elektronik Programlama ve Nesnelerin İnterneti', 'IoT ağ protokolleri, uzaktan veri işleme ve dönem sonu şenliği birinciliği.')">
+                            <div class="course-meta-info">
+                                <span class="cm-title" id="c-iot">Elektronik Prg. & IoT</span>
+                                <span class="cm-rank" id="c-rank-3">Şenlik 1.liği 🥇</span>
+                            </div>
+                            <span class="cm-action-tag btn-inspect">İncele</span>
+                        </div>
+                        <div class="course-matrix-item" onclick="openSysModal('İleri Robotik', 'Endüstriyel mekanizmalar, gelişmiş hareket kontrolü ve dönem sonu şenliği birinciliği.')">
+                            <div class="course-meta-info">
+                                <span class="cm-title" id="c-ileri">İleri Robotik</span>
+                                <span class="cm-rank" id="c-rank-4">Şenlik 1.liği 🥇</span>
+                            </div>
+                            <span class="cm-action-tag btn-inspect">İncele</span>
+                        </div>
+                        <div class="course-matrix-item" onclick="openSysModal('Mobil Uygulama', 'Mobil kullanıcı arayüzü tasarımı, platform entegrasyonu ve dönem sonu şenliği birinciliği.')">
+                            <div class="course-meta-info">
+                                <span class="cm-title" id="c-mobil">Mobil Uygulama</span>
+                                <span class="cm-rank" id="c-rank-5">Şenlik 1.liği 🥇</span>
+                            </div>
+                            <span class="cm-action-tag btn-inspect">İncele</span>
+                        </div>
+                        <div class="course-matrix-item" onclick="openSysModal('Siber Güvenlik', 'Ağ güvenliği ve şifreleme algoritmaları eğitimi.')">
+                            <div class="course-meta-info">
+                                <span class="cm-title" id="c-siber">Siber Güvenlik</span>
+                                <span class="cm-rank c-norank" style="color:var(--text-muted)">Şenlik yok</span>
+                            </div>
+                            <span class="cm-action-tag btn-inspect" style="background:transparent; border-color:var(--border-subtle); color:var(--text-muted)">İncele</span>
+                        </div>
+                        <div class="course-matrix-item" onclick="openSysModal('Malzeme Bilimi', 'Mühendislik projelerinde malzeme analizleri eğitimi.')">
+                            <div class="course-meta-info">
+                                <span class="cm-title" id="c-malzeme">Malzeme Bilimi</span>
+                                <span class="cm-rank c-norank" style="color:var(--text-muted)">Şenlik yok</span>
+                            </div>
+                            <span class="cm-action-tag btn-inspect" style="background:transparent; border-color:var(--border-subtle); color:var(--text-muted)">İncele</span>
+                        </div>
+                        <div class="course-matrix-item" onclick="openSysModal('Enerji Teknolojileri', 'Yenilenebilir enerji sistemleri entegrasyonu eğitimi.')">
+                            <div class="course-meta-info">
+                                <span class="cm-title" id="c-enerji">Enerji Teknolojileri</span>
+                                <span class="cm-rank c-norank" style="color:var(--text-muted)">Şenlik yok</span>
+                            </div>
+                            <span class="cm-action-tag btn-inspect" style="background:transparent; border-color:var(--border-subtle); color:var(--text-muted)">İncele</span>
+                        </div>
+                        <div class="course-matrix-item" onclick="openSysModal('Havacılık ve Uzay', 'Aerodinamik prensipler ve roket sistemleri eğitimi.')">
+                            <div class="course-meta-info">
+                                <span class="cm-title" id="c-havacilik">Havacılık & Uzay</span>
+                                <span class="cm-rank c-norank" style="color:var(--text-muted)">Şenlik yok</span>
+                            </div>
+                            <span class="cm-action-tag btn-inspect" style="background:transparent; border-color:var(--border-subtle); color:var(--text-muted)">İncele</span>
+                        </div>
+                        <div class="course-matrix-item" onclick="openSysModal('Yapay Zeka', 'Temel makine öğrenmesi modelleri eğitimi.')">
+                            <div class="course-meta-info">
+                                <span class="cm-title" id="c-yz">Yapay Zeka</span>
+                                <span class="cm-rank c-norank" style="color:var(--text-muted)">Şenlik yok</span>
+                            </div>
+                            <span class="cm-action-tag btn-inspect" style="background:transparent; border-color:var(--border-subtle); color:var(--text-muted)">İncele</span>
+                        </div>
+                        <div class="course-matrix-item" onclick="openSysModal('Yazılım Teknolojileri', 'Git/GitHub mimarisi ve temiz kod ilkeleri eğitimi.')">
+                            <div class="course-meta-info">
+                                <span class="cm-title" id="c-yazilim">Yazılım Teknolojileri</span>
+                                <span class="cm-rank c-norank" style="color:var(--text-muted)">Şenlik yok</span>
+                            </div>
+                            <span class="cm-action-tag btn-inspect" style="background:transparent; border-color:var(--border-subtle); color:var(--text-muted)">İncele</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <span id="ftr-text">&copy; 2026 TechnoStudios. Tüm hakları saklıdır.</span> | <a href="https://github.com/ereny116011-cloud/TechnoStudios" target="_blank" id="ftr-src">Kaynak Kod</a>
+        </footer>
+    </div>
+
+    <!-- Modal Pencere -->
+    <div class="modal-container-overlay" id="sysModal" onclick="closeSysModalOutside(event)">
+        <div class="modal-content-box">
+            <div class="modal-heading" id="modalTitle">Modül Adı</div>
+            <div class="modal-subtext" id="modalSubtext">Durum Bilgisi</div>
+            <div class="modal-description-text" id="modalDesc" style="white-space: pre-line;">Açıklama</div>
+            <button class="modal-dismiss-btn" id="modal-close-btn" onclick="closeSysModal()">Kapat</button>
+        </div>
+    </div>
+
+    <script>
+        const i18n = {
+            tr: {
+                theme: "Tema Modu", source: "Kaynak Kod",
+                tabProj: "Sistem Projeleri", tabVis: "Kurumsal Vizyon", tabAbt: "Hakkımızda & Ekip",
+                version: "Sürüm v 1.1 • Stabil", goApp: "Uygulamaya Git",
+                cat: "Kategori", plat: "Platform", dev: "Geliştirici", status: "Durum",
+                valPlat: "Web & Mobil", valStatus: "Aktif",
+                visT1: "Mühendislik Yaklaşımı",
+                visP1: "TechnoStudios olarak amacımız; karmaşık yapılardan kaçınarak doğrudan işe yarayan, temiz ve anlaşılır projeler ortaya koymaktır. Geliştirdiğimiz yazılım ve sistemlerde gereksiz karmaşıklıklara yer vermiyoruz.",
+                visP2: "Sadece bugünü değil, uzun vadede sürdürülebilir ve güvenilir sistemler kurmayı amaçlıyoruz. Öğrendiğimiz her yeni bilgiyi pratik projelere dönüştürmek en temel motivasyon kaynağımızdır.",
+                visT2: "Sade ve Reklamsız Kullanım Deneyimi",
+                visP3: "Projelerimizde kullanıcıyı rahatsız eden pop-up'lar, reklam kalabalığı veya gereksiz yönlendirmeler kesinlikle yer almaz. Odak noktamız tamamen yüksek performans ve yalın bir arayüz sunmaktır.",
+                visT3: "Güvenlik ve Gizlilik",
+                visP4: "Kullanıcı verilerinin gizliliği ve sistem güvenliği mimarimizin merkezindedir. Gereksiz veri toplama süreçlerinden kaçınır, geliştirdiğimiz tüm sistemlerin güvenli ve kararlı çalışmasını ilke ediniriz.",
+                visT4: "Açık Kaynak ve Paylaşım Kültürü",
+                visP5: "Teknolojinin paylaşarak gelişeceğine inanıyoruz. Kod yapılarımızda şeffaflığa önem veriyor, topluluğa katkı sağlayacak çözümleri açık kaynak yaklaşımıyla destekliyoruz.",
+                abtT: "Biz Kimiz?",
+                abtP1: "Biz; teknolojiyi seven, sürekli araştıran ve yeni şeyler üreten bir girişimci ekibiyiz. Genç olsak bile fikirlerimizi somut projelere dönüştürerek ülkemize yararlı teknolojiler üretmeye çalışıyoruz. Disiplinli ve azimli çalışmalarımız sayesinde her gün kendimizi geliştirmeye çalışıyoruz.",
+                achT: "Eğitim Kurlarımız ve Başarılarımız", achSub: "Detaylar için ilgili başlığa tıklayınız:",
+                rankWin: "Şenlik 1.liği 🥇", rankNone: "Şenlik yok", inspect: "İncele",
+                cTas: "Tasarım", cRob: "Robotik ve Kodlama", cIot: "Elektronik Prg. & IoT", cIleri: "İleri Robotik", cMob: "Mobil Uygulama",
+                cSib: "Siber Güvenlik", cMalz: "Malzeme Bilimi", cEnerji: "Enerji Teknolojileri", cHav: "Havacılık & Uzay", cYz: "Yapay Zeka", cYaz: "Yazılım Teknolojileri",
+                close: "Kapat", ftrText: "© 2026 TechnoStudios. Tüm hakları saklıdır.", ftrSrc: "Kaynak Kod"
+            },
+            en: {
+                theme: "Theme Mode", source: "Source Code",
+                tabProj: "System Projects", tabVis: "Corporate Vision", tabAbt: "About Us & Team",
+                version: "Version v 1.1 • Stable", goApp: "Go to App",
+                cat: "Category", plat: "Platform", dev: "Developer", status: "Status",
+                valPlat: "Web & Mobile", valStatus: "Active",
+                visT1: "Engineering Approach",
+                visP1: "At TechnoStudios, our goal is to create direct, functional, clean, and understandable projects without unnecessary complexity. We avoid clutter in our software and system architectures.",
+                visP2: "We aim to build reliable and sustainable systems for the long term. Converting every bit of knowledge we acquire into practical projects is our core motivation.",
+                visT2: "Clean & Ad-Free User Experience",
+                visP3: "Our projects strictly do not feature annoying pop-ups, ad clutter, or unnecessary redirects. Our sole focus is to deliver high performance with a sleek user interface.",
+                visT3: "Security and Privacy",
+                visP4: "User data privacy and system security lie at the heart of our architecture. We refrain from unnecessary data collection and commit to making all systems safe and stable.",
+                visT4: "Open Source & Sharing Culture",
+                visP5: "We believe technology thrives through sharing. We value transparency in our codebases and actively support community-enriching solutions through open source.",
+                abtT: "Who Are We?",
+                abtP1: "We are an entrepreneurial team driven by a passion for technology, continuous research, and innovation. Despite our youth, we focus on converting ideas into concrete projects to create valuable technology.",
+                achT: "Training Modules & Achievements", achSub: "Click on any topic for further details:",
+                rankWin: "1st Place Fest 🥇", rankNone: "No Festival", inspect: "Details",
+                cTas: "Design", cRob: "Robotics & Coding", cIot: "Electronic Prog. & IoT", cIleri: "Advanced Robotics", cMob: "Mobile App",
+                cSib: "Cyber Security", cMalz: "Materials Science", cEnerji: "Energy Technologies", cHav: "Aerospace", cYz: "Artificial Intelligence", cYaz: "Software Technologies",
+                close: "Close", ftrText: "© 2026 TechnoStudios. All rights reserved.", ftrSrc: "Source Code"
+            },
+            es: {
+                theme: "Modo Tema", source: "Código Fuente",
+                tabProj: "Proyectos de Sistema", tabVis: "Visión Empresarial", tabAbt: "Nosotros y Equipo",
+                version: "Versión v 1.1 • Estable", goApp: "Ir a la Aplicación",
+                cat: "Categoría", plat: "Plataforma", dev: "Desarrollador", status: "Estado",
+                valPlat: "Web y Móvil", valStatus: "Activo",
+                visT1: "Enfoque de Ingeniería",
+                visP1: "En TechnoStudios buscamos desarrollar proyectos directos, limpios y comprensibles, evitando complicaciones innecesarias.",
+                visP2: "Buscamos construir sistemas sostenibles y confiables a largo plazo.",
+                visT2: "Experiencia Limpia y Sin Anuncios",
+                visP3: "Nuestros proyectos no contienen anuncios ni ventanas emergentes molestas. Nos enfocamos en un alto rendimiento.",
+                visT3: "Seguridad y Privacidad",
+                visP4: "La privacidad de los datos y la seguridad están en el centro de nuestra arquitectura.",
+                visT4: "Código Abierto y Compartir",
+                visP5: "Creemos que la tecnología avanza compartiendo. Apoyamos soluciones de código abierto.",
+                abtT: "¿Quiénes somos?",
+                abtP1: "Somos un equipo emprendedor apasionado por la tecnología y la innovación, convirtiendo ideas en proyectos concretos.",
+                achT: "Cursos y Logros", achSub: "Haga clic en un tema para más detalles:",
+                rankWin: "1er Lugar 🥇", rankNone: "Sin festival", inspect: "Detalles",
+                cTas: "Diseño", cRob: "Robótica y Código", cIot: "Electrónica e IoT", cIleri: "Robótica Avanzada", cMob: "Aplicación Móvil",
+                cSib: "Ciberseguridad", cMalz: "Ciencia de Materiales", cEnerji: "Tecnologías Energéticas", cHav: "Aeroespacial", cYz: "Inteligencia Artificial", cYaz: "Tecnologías de Software",
+                close: "Cerrar", ftrText: "© 2026 TechnoStudios. Todos los derechos reservados.", ftrSrc: "Código Fuente"
+            }
+        };
+
+        function changeLanguage(lang) {
+            const data = i18n[lang] || i18n.tr;
+            document.getElementById('txt-theme').textContent = data.theme;
+            document.getElementById('txt-source').textContent = data.source;
+            document.getElementById('tab-projects').textContent = data.tabProj;
+            document.getElementById('tab-vision').textContent = data.tabVis;
+            document.getElementById('tab-about').textContent = data.tabAbt;
+            document.getElementById('lbl-version').textContent = data.version;
+            document.getElementById('btn-go-app').textContent = data.goApp;
+            document.getElementById('key-cat').textContent = data.cat;
+            document.getElementById('key-plat').textContent = data.plat;
+            document.getElementById('key-dev').textContent = data.dev;
+            document.getElementById('key-status').textContent = data.status;
+            document.getElementById('val-plat').textContent = data.valPlat;
+            document.getElementById('val-status').textContent = data.valStatus;
+            
+            document.getElementById('vis-title-1').textContent = data.visT1;
+            document.getElementById('vis-p1').textContent = data.visP1;
+            document.getElementById('vis-p2').textContent = data.visP2;
+            document.getElementById('vis-title-2').textContent = data.visT2;
+            document.getElementById('vis-p3').textContent = data.visP3;
+            document.getElementById('vis-title-3').textContent = data.visT3;
+            document.getElementById('vis-p4').textContent = data.visP4;
+            document.getElementById('vis-title-4').textContent = data.visT4;
+            document.getElementById('vis-p5').textContent = data.visP5;
+
+            document.getElementById('abt-title').textContent = data.abtT;
+            document.getElementById('abt-p1').textContent = data.abtP1;
+            document.getElementById('ach-title').textContent = data.achT;
+            document.getElementById('ach-sub').textContent = data.achSub;
+
+            document.getElementById('c-tasarim').textContent = data.cTas;
+            document.getElementById('c-robotik').textContent = data.cRob;
+            document.getElementById('c-iot').textContent = data.cIot;
+            document.getElementById('c-ileri').textContent = data.cIleri;
+            document.getElementById('c-mobil').textContent = data.cMob;
+            document.getElementById('c-siber').textContent = data.cSib;
+            document.getElementById('c-malzeme').textContent = data.cMalz;
+            document.getElementById('c-enerji').textContent = data.cEnerji;
+            document.getElementById('c-havacilik').textContent = data.cHav;
+            document.getElementById('c-yz').textContent = data.cYz;
+            document.getElementById('c-yazilim').textContent = data.cYaz;
+
+            for (let i = 1; i <= 5; i++) {
+                document.getElementById('c-rank-' + i).textContent = data.rankWin;
+            }
+            document.querySelectorAll('.c-norank').forEach(el => el.textContent = data.rankNone);
+            document.querySelectorAll('.btn-inspect').forEach(el => el.textContent = data.inspect);
+
+            document.getElementById('modal-close-btn').textContent = data.close;
+            document.getElementById('ftr-text').textContent = data.ftrText;
+            document.getElementById('ftr-src').textContent = data.ftrSrc;
+        }
+
+        function switchModule(moduleName, event) {
+            document.querySelectorAll('.module-pane').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.module-tab').forEach(t => t.classList.remove('active'));
+
+            if (moduleName === 'projects') {
+                document.getElementById('projects-pane').classList.add('active');
+            } else if (moduleName === 'vision') {
+                document.getElementById('vision-pane').classList.add('active');
+            } else if (moduleName === 'about') {
+                document.getElementById('about-pane').classList.add('active');
+            }
+            event.currentTarget.classList.add('active');
+        }
+
+        function toggleThemeSystem() {
+            document.body.classList.toggle('light-mode');
+        }
+
+        function openSysModal(title, desc) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalDesc').textContent = desc;
+            
+            if (title.includes('Tasarım') || title.includes('Robotik') || title.includes('İnterneti') || title.includes('Mobil') || title.includes('Design') || title.includes('App')) {
+                document.getElementById('modalSubtext').textContent = "Dönem Sonu Şenliği: 1.lik Derecesi 🥇";
+            } else {
+                document.getElementById('modalSubtext').textContent = "Durum: Tamamlanan Eğitim Kuru";
+            }
+            
+            document.getElementById('sysModal').classList.add('active');
+        }
+
+        function closeSysModal() {
+            document.getElementById('sysModal').classList.remove('active');
+        }
+
+        function closeSysModalOutside(event) {
+            if (event.target.id === 'sysModal') {
+                closeSysModal();
+            }
+        }
+    </script>
+</body>
+</html>
