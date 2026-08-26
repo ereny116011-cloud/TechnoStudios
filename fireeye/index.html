@@ -1150,7 +1150,7 @@
             alert('Yeni sürüm notu başarıyla yayınlandı!');
         }
 
-        /* --- İndirme İlerleme Barı Simülasyonu --- */
+        /* --- İndirme İşlemi --- */
         function startDownloadSimulation() {
             const container = document.getElementById('downloadProgressContainer');
             const fill = document.getElementById('progressBarFill');
@@ -1161,6 +1161,13 @@
             feedbackArea.style.display = 'none';
             fill.style.width = '0%';
             statusText.textContent = i18n[currentLang].dl_compiling;
+
+            const link = document.createElement('a');
+            link.href = '../fireeye.apk';
+            link.download = 'fireeye.apk';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
 
             let progress = 0;
             const interval = setInterval(() => {
