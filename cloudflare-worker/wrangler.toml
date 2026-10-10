@@ -1,0 +1,32 @@
+name = "fireeye-api"
+main = "src/index.js"
+compatibility_date = "2024-11-01"
+
+# "wrangler d1 create fireeye_db" komutunu çalıştırdıktan sonra
+# terminalde çıkan database_id'yi aşağıya yapıştır.
+[[d1_databases]]
+binding = "DB"
+database_name = "fireeye_db"
+database_id = "203a8f3c-ae0d-42e9-8f50-5c6b20261d00"
+
+# Kullanıcı oturum token'larını imzalamak için gizli bir anahtar gerekiyor.
+# Terminalde şunu çalıştır: wrangler secret put SESSION_SECRET
+# (İstediğin uzun, rastgele bir metin gir — örn. bir şifre üreticiden.)
+
+# Cihazların (ESP32/Arduino) veri gönderirken/komut çekerken kullandığı paylaşılan şifre.
+# Varsayılan: "fireeye-device-2026" — istersen değiştirmek için:
+# wrangler secret put DEVICE_SECRET
+# Değiştirirsen esp32_ornek_firmware.ino içindeki DEVICE_SECRET'ı da aynı yap.
+
+# APK dosyaları Cloudflare'e hiç uğramadan tarayıcıdan doğrudan GitHub Releases'e yüklenir
+# (Cloudflare Worker'a gelen isteklerin 100MB sınırını aşmak ve R2'nin istediği kredi kartını
+# gerektirmemek için). Bu yüzden Worker'ın GitHub token'a ihtiyacı yok — admin panelinde
+# sürüm yüklerken tarayıcıya bir kez GitHub Personal Access Token giriliyor (bkz. index.html).
+
+# Şifre sıfırlama / şifre değişikliği bildirim e-postaları Resend üzerinden gönderilir.
+# technoweb.win Resend'de doğrulandı, o yüzden herkese e-posta gidebilir.
+# API anahtarı (bir kez): wrangler secret put RESEND_API_KEY
+[vars]
+RESEND_FROM_EMAIL = "FireEye <no-reply@technoweb.win>"
+# E-postalardaki "bizimle iletişime geç" adresi (istersen değiştir):
+SUPPORT_EMAIL = "technostudios11@gmail.com"

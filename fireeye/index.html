@@ -5,16 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FireEye // TechnoStudios</title>
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff3300'%3E%3Cpath d='M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.29 1.14-3.168.45-.558 1.36-.33 1.36.368 0 .842.27 1.704.76 2.298z'/%3E%3C/svg%3E">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff6a00'%3E%3Cpath d='M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.29 1.14-3.168.45-.558 1.36-.33 1.36.368 0 .842.27 1.704.76 2.298z'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #030305;
-            --surface: #0a0a0f;
-            --surface-border: #1a1a24;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --accent: #ff3300;
-            --accent-glow: rgba(255, 51, 0, 0.15);
+            --ink: #0b0c0d;
+            --panel: #131517;
+            --line: #24272b;
+            --text-primary: #ece9e2;
+            --text-secondary: #8b8f96;
+            --accent: #ff6a00;
+            --accent-glow: rgba(255, 106, 0, 0.14);
             --success: #10b981;
             --success-bg: rgba(16, 185, 129, 0.1);
             --success-border: rgba(16, 185, 129, 0.3);
@@ -24,17 +27,22 @@
             --warning-bg: rgba(245, 158, 11, 0.1);
             --warning-border: rgba(245, 158, 11, 0.3);
             --warning-text: #fbbf24;
-            --star-color: #fbbf24;
+            --star-color: #ffb347;
+
+            /* Eski değişken adları geriye dönük uyumluluk için */
+            --bg: var(--ink);
+            --surface: var(--panel);
+            --surface-border: var(--line);
         }
 
         body.light {
-            --bg: #f8fafc;
-            --surface: #ffffff;
-            --surface-border: #e2e8f0;
-            --text-primary: #0f172a;
-            --text-secondary: #64748b;
-            --accent: #ea580c;
-            --accent-glow: rgba(234, 88, 12, 0.1);
+            --ink: #f7f5f0;
+            --panel: #ffffff;
+            --line: #e4e0d6;
+            --text-primary: #16130f;
+            --text-secondary: #635e55;
+            --accent: #d95a00;
+            --accent-glow: rgba(217, 90, 0, 0.1);
             --success-bg: rgba(16, 185, 129, 0.08);
             --success-border: rgba(16, 185, 129, 0.25);
             --danger: #dc2626;
@@ -43,29 +51,112 @@
             --warning-bg: rgba(217, 119, 6, 0.08);
             --warning-border: rgba(217, 119, 6, 0.25);
             --warning-text: #b45309;
-            --star-color: #d97706;
+            --star-color: #b45309;
+            --bg: var(--ink);
+            --surface: var(--panel);
+            --surface-border: var(--line);
+        }
+
+        /* --- CANLI MOD (turuncu / sarı / kırmızı doygun gradyan + liquid glass) --- */
+        body.vivid {
+            --panel: rgba(30, 8, 0, 0.4);
+            --line: rgba(255, 255, 255, 0.22);
+            --text-primary: #fff8ee;
+            --text-secondary: rgba(255, 244, 230, 0.8);
+            --accent: #ffd23f;
+            --accent-glow: rgba(255, 210, 63, 0.4);
+            --star-color: #ffe066;
+            --surface: var(--panel);
+            --surface-border: var(--line);
+        }
+
+        body.vivid {
+            background: linear-gradient(155deg, #3a0a00 0%, #8f1d00 22%, #d94600 45%, #ff8a00 68%, #ffd23f 100%);
+            background-attachment: fixed;
+        }
+
+        /* Liquid glass: simge/butonlar buzlu cam gibi, arkadaki gradyanı bulanık gösteriyor */
+        body.vivid .theme-toggle-btn,
+        body.vivid .vivid-toggle-btn,
+        body.vivid .util-btn {
+            position: relative;
+            background: rgba(255, 255, 255, 0.14);
+            backdrop-filter: blur(14px) saturate(180%);
+            -webkit-backdrop-filter: blur(14px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow:
+                inset 0 1px 1px rgba(255, 255, 255, 0.55),
+                inset 0 -6px 10px rgba(0, 0, 0, 0.15),
+                0 8px 22px rgba(0, 0, 0, 0.35);
+            overflow: hidden;
+        }
+        body.vivid .theme-toggle-btn::before,
+        body.vivid .vivid-toggle-btn::before,
+        body.vivid .util-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 45%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.35), transparent);
+            pointer-events: none;
+        }
+        body.vivid .theme-toggle-btn:hover,
+        body.vivid .vivid-toggle-btn:hover,
+        body.vivid .util-btn:hover {
+            background: rgba(255, 255, 255, 0.22);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Panellerde de hafif buzlu cam hissi */
+        body.vivid .project-hero,
+        body.vivid .feature-card,
+        body.vivid .comment-card,
+        body.vivid .changelog-card,
+        body.vivid .download-box,
+        body.vivid .security-container {
+            backdrop-filter: blur(18px) saturate(160%);
+            -webkit-backdrop-filter: blur(18px) saturate(160%);
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
             transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
         }
+
+        .type-display {
+            font-family: 'Space Grotesk', 'Inter', sans-serif;
+        }
+
+        html {
+            width: 100%;
+            overflow-x: hidden;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        html::-webkit-scrollbar,
+        body::-webkit-scrollbar { display: none; width: 0; height: 0; }
+        html, body { overscroll-behavior-y: none; }
 
         body {
             background-color: var(--bg);
             color: var(--text-primary);
             min-height: 100vh;
+            min-height: 100dvh; /* iOS Safari'de adres çubuğu açılıp kapanınca sayfanın zıplamasını önler */
+            width: 100%;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 40px;
+            padding: clamp(20px, 4vw, 56px);
+            position: relative;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
         }
 
         header {
-            max-width: 900px;
+            max-width: 100%;
             width: 100%;
             margin: 0 auto;
             display: flex;
@@ -73,6 +164,7 @@
             align-items: center;
             border-bottom: 1px solid var(--surface-border);
             padding-bottom: 20px;
+            z-index: 2;
         }
 
         .back-home {
@@ -89,12 +181,13 @@
 
         .header-actions { display: flex; gap: 12px; align-items: center; }
 
-        .util-btn, .lang-select {
+        .util-btn {
             background: var(--surface);
             border: 1px solid var(--surface-border);
             color: var(--text-primary);
-            padding: 6px 14px;
-            border-radius: 8px;
+            height: 38px;
+            padding: 0 14px;
+            border-radius: 10px;
             font-size: 0.85rem;
             font-weight: 600;
             cursor: pointer;
@@ -102,10 +195,14 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            outline: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
         }
 
-        .util-btn:hover, .lang-select:hover { border-color: var(--accent); }
+        .util-btn:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 16px var(--accent-glow), 0 2px 8px rgba(0,0,0,0.3);
+            transform: translateY(-1px);
+        }
 
         .theme-toggle-btn {
             background: var(--surface);
@@ -113,7 +210,8 @@
             color: var(--text-primary);
             width: 38px;
             height: 38px;
-            border-radius: 8px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -121,86 +219,106 @@
             font-size: 1.1rem;
         }
 
-        .theme-toggle-btn:hover { border-color: var(--accent); }
+        .theme-toggle-btn:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 16px var(--accent-glow), 0 2px 8px rgba(0,0,0,0.3);
+            transform: translateY(-1px) rotate(8deg);
+        }
 
         main {
-            max-width: 900px;
+            max-width: 100%;
             width: 100%;
             margin: 40px auto;
+            z-index: 2;
         }
 
-        .project-hero { margin-bottom: 30px; }
-
-        .title-container {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 10px;
+        /* --- HERO ALANI --- */
+        .project-hero {
+            position: relative;
+            margin-bottom: 34px;
+            padding: 28px 30px;
+            border-radius: 16px;
+            background:
+                radial-gradient(circle at 12% 20%, var(--accent-glow), transparent 55%),
+                var(--panel);
+            border: 1px solid var(--line);
+            border-left: 4px solid var(--accent);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+            overflow: hidden;
         }
 
-        .fireeye-logo-icon {
-            width: 48px;
-            height: 48px;
-            cursor: pointer;
-            user-select: none;
-            -webkit-user-drag: none;
-            flex-shrink: 0;
-            filter: drop-shadow(0 0 10px rgba(255, 51, 0, 0.4));
-        }
-
-        .fireeye-logo-icon:hover {
-            transform: scale(1.08);
+        .hero-content {
+            position: relative;
+            z-index: 2;
         }
 
         .status-pill {
-            display: inline-block;
-            background: var(--accent-glow);
-            color: var(--accent);
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 12px;
-            border: 1px solid var(--accent);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+            font-weight: 500;
+            margin-bottom: 16px;
+        }
+
+        .status-pill::before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+            flex-shrink: 0;
+            animation: pulseDot 2.4s ease-in-out infinite;
+        }
+
+        @keyframes pulseDot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.45; }
         }
 
         h1 {
-            font-size: 3rem;
-            font-weight: 900;
-            letter-spacing: -0.03em;
+            font-family: 'Space Grotesk', 'Inter', sans-serif;
+            font-size: clamp(2.1rem, 3vw, 3.1rem);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 10px;
         }
 
         .subtitle {
-            font-size: 1.15rem;
+            font-size: 1.05rem;
             color: var(--text-secondary);
-            line-height: 1.5;
-            max-width: 600px;
+            line-height: 1.55;
+            max-width: 560px;
         }
 
         .nav-tabs {
             display: flex;
-            gap: 24px;
-            border-bottom: 1px solid var(--surface-border);
+            gap: 28px;
+            border-bottom: 1px solid var(--line);
             margin-bottom: 30px;
             overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
         }
+        .nav-tabs::-webkit-scrollbar { display: none; width: 0; height: 0; }
 
         .tab-trigger {
             background: none;
             border: none;
             color: var(--text-secondary);
-            font-size: 0.95rem;
-            font-weight: 600;
+            font-size: 0.92rem;
+            font-weight: 500;
             padding-bottom: 12px;
             cursor: pointer;
             position: relative;
             white-space: nowrap;
+            transition: color 0.15s ease, transform 0.15s ease;
         }
 
-        .tab-trigger:hover { color: var(--text-primary); }
-        .tab-trigger.active { color: var(--accent); }
+        .tab-trigger:hover { color: var(--text-primary); transform: translateY(-1px); }
+        .tab-trigger.active { color: var(--accent); font-weight: 700; }
         .tab-trigger.active::after {
             content: '';
             position: absolute;
@@ -208,7 +326,9 @@
             left: 0;
             width: 100%;
             height: 2px;
+            border-radius: 2px;
             background-color: var(--accent);
+            box-shadow: 0 0 10px var(--accent);
         }
 
         .tab-pane { display: none; }
@@ -225,8 +345,9 @@
         .download-box {
             background: var(--surface);
             border: 1px solid var(--surface-border);
-            border-radius: 14px;
+            border-radius: 16px;
             padding: 36px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -238,20 +359,24 @@
         .download-info p { color: var(--text-secondary); font-size: 0.9rem; }
 
         .main-cta {
-            background: var(--accent);
+            background: linear-gradient(135deg, var(--accent), #ff8a3d);
             color: #ffffff;
             padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 600;
+            border-radius: 10px;
+            font-weight: 700;
             text-decoration: none;
             font-size: 0.9rem;
-            box-shadow: 0 4px 14px var(--accent-glow);
+            box-shadow: 0 6px 20px var(--accent-glow), 0 2px 6px rgba(0,0,0,0.3);
             cursor: pointer;
             border: none;
             display: inline-block;
             text-align: center;
         }
-        .main-cta:hover { filter: brightness(1.08); transform: translateY(-1px); }
+        .main-cta:hover {
+            filter: brightness(1.08);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 28px var(--accent-glow), 0 4px 10px rgba(0,0,0,0.35);
+        }
         .main-cta:active { transform: translateY(0); }
 
         .ios-warning-banner {
@@ -298,7 +423,7 @@
             margin-top: 20px;
             background: var(--surface);
             border: 1px solid var(--success-border);
-            border-radius: 14px;
+            border-radius: 12px;
             padding: 24px;
             animation: fadeIn 0.3s ease;
         }
@@ -322,17 +447,23 @@
 
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
             gap: 16px;
         }
 
         .feature-card {
             background: var(--surface);
             border: 1px solid var(--surface-border);
-            border-radius: 12px;
+            border-radius: 14px;
             padding: 24px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
         }
-        .feature-card:hover { border-color: var(--text-secondary); }
+        .feature-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 26px rgba(0,0,0,0.35), 0 0 0 1px var(--accent-glow);
+        }
         .feature-card h4 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
         .feature-card p { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; }
 
@@ -341,6 +472,7 @@
             border: 1px solid var(--surface-border);
             border-radius: 14px;
             padding: 24px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
         }
 
         .security-info {
@@ -355,17 +487,19 @@
         .vt-link:hover { color: var(--text-primary); }
 
         .preview-img-wrap { 
-            border-radius: 8px; 
+            border-radius: 10px; 
             overflow: hidden; 
             border: 1px solid var(--surface-border); 
             cursor: pointer;
+            user-select: none;
+            position: relative;
         }
         .preview-img-wrap img { width: 100%; display: block; pointer-events: none; }
 
         .reviews-section, .changelog-section {
             background: var(--surface);
             border: 1px solid var(--surface-border);
-            border-radius: 14px;
+            border-radius: 12px;
             padding: 30px;
         }
 
@@ -387,8 +521,9 @@
         }
 
         .avg-score {
+            font-family: 'Space Grotesk', sans-serif;
             font-size: 2.5rem;
-            font-weight: 900;
+            font-weight: 700;
             color: var(--text-primary);
         }
 
@@ -416,7 +551,7 @@
             width: 100%;
             background: var(--surface);
             border: 1px solid var(--surface-border);
-            border-radius: 8px;
+            border-radius: 10px;
             padding: 10px 14px;
             color: var(--text-primary);
             font-size: 0.9rem;
@@ -449,11 +584,17 @@
         }
 
         .comment-card, .changelog-card {
-            background: var(--bg);
+            background: var(--surface);
             border: 1px solid var(--surface-border);
-            border-radius: 10px;
+            border-radius: 12px;
             padding: 16px;
             position: relative;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.22);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .comment-card:hover, .changelog-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
         }
 
         .comment-header {
@@ -477,31 +618,181 @@
             color: var(--danger);
             border: 1px solid var(--danger-border);
             padding: 4px 10px;
-            border-radius: 6px;
+            border-radius: 12px;
             font-size: 0.75rem;
             font-weight: 600;
             cursor: pointer;
         }
-        .admin-delete-btn:hover { background: var(--danger); color: #fff; }
+        .admin-delete-btn:hover {
+            background: var(--danger);
+            color: #fff;
+            box-shadow: 0 4px 12px var(--danger-border);
+            transform: translateY(-1px);
+        }
         body.admin-mode .admin-delete-btn { display: inline-block; }
 
         #adminPanelBox {
             display: none;
             background: var(--surface);
             border: 2px dashed var(--accent);
-            border-radius: 14px;
+            border-radius: 12px;
             padding: 24px;
             margin-bottom: 30px;
             animation: fadeIn 0.3s ease;
         }
         #adminPanelBox h3 { color: var(--accent); margin-bottom: 15px; font-size: 1.1rem; }
 
+        /* --- EKRAN GÖRÜNTÜLERİ --- */
+        #adminScreenshotBox {
+            display: none;
+            background: var(--surface);
+            border: 2px dashed var(--accent);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 30px;
+            animation: fadeIn 0.3s ease;
+        }
+        #adminScreenshotBox h3 { color: var(--accent); margin-bottom: 15px; font-size: 1.1rem; }
+
+        .screenshot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
+        }
+
+        .screenshot-card {
+            position: relative;
+            border: 1px solid var(--surface-border);
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--surface);
+        }
+
+        .screenshot-card img {
+            width: 100%;
+            height: auto;
+            max-height: 460px;
+            object-fit: contain;
+            background: var(--bg);
+            display: block;
+            cursor: pointer;
+        }
+
+        .screenshot-caption {
+            padding: 10px 12px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .screenshot-card .admin-delete-btn {
+            position: static;
+        }
+
+        .screenshot-admin-controls {
+            display: none;
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            gap: 6px;
+        }
+        body.admin-mode .screenshot-admin-controls { display: flex; }
+
+        .reorder-btn {
+            background: var(--surface);
+            color: var(--text-primary);
+            border: 1px solid var(--surface-border);
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+        }
+        .reorder-btn:hover:not(:disabled) {
+            border-color: var(--accent);
+            color: var(--accent);
+            transform: translateY(-1px);
+        }
+        .reorder-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        .screenshot-empty {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            padding: 30px;
+            grid-column: 1 / -1;
+        }
+
+        #imgLightbox {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            cursor: zoom-out;
+        }
+        #imgLightbox img {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 10px;
+        }
+
+        /* --- SSS ACCORDION --- */
+        .faq-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .faq-item {
+            background: var(--surface);
+            border: 1px solid var(--surface-border);
+            border-radius: 12px;
+            padding: 16px 18px;
+        }
+
+        .faq-item summary {
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.98rem;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .faq-item summary::-webkit-details-marker { display: none; }
+
+        .faq-item summary::after {
+            content: '+';
+            color: var(--accent);
+            font-size: 1.3rem;
+            font-weight: 400;
+            margin-left: 12px;
+        }
+
+        .faq-item[open] summary::after { content: '−'; }
+
+        .faq-item p {
+            margin-top: 12px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
         .changelog-version-badge {
             display: inline-block;
+            font-family: 'Space Grotesk', sans-serif;
             background: var(--accent-glow);
             color: var(--accent);
             padding: 2px 8px;
-            border-radius: 6px;
+            border-radius: 10px;
             font-size: 0.8rem;
             font-weight: 700;
             margin-bottom: 6px;
@@ -509,29 +800,8 @@
         .changelog-date { font-size: 0.75rem; color: var(--text-secondary); float: right; }
         .changelog-desc { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; white-space: pre-line; }
 
-        #loginModal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 999;
-            justify-content: center;
-            align-items: center;
-            backdrop-filter: blur(4px);
-        }
-        .modal-content {
-            background: var(--surface);
-            border: 1px solid var(--surface-border);
-            border-radius: 14px;
-            padding: 30px;
-            width: 100%;
-            max-width: 380px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        .modal-content h3 { margin-bottom: 15px; font-size: 1.2rem; font-weight: 700; }
-
         footer {
-            max-width: 900px;
+            max-width: 100%;
             width: 100%;
             margin: 0 auto;
             text-align: center;
@@ -539,6 +809,12 @@
             font-size: 0.85rem;
             border-top: 1px solid var(--surface-border);
             padding-top: 20px;
+            z-index: 2;
+        }
+
+        @media (min-width: 1200px) {
+            .project-hero { padding: 46px; }
+            .feature-card { padding: 30px; }
         }
 
         @media (max-width: 768px) {
@@ -546,85 +822,63 @@
             .download-box { flex-direction: column; align-items: flex-start; }
             .features-grid { grid-template-columns: 1fr; }
             h1 { font-size: 2.2rem; }
-            .fireeye-logo-icon { width: 38px; height: 38px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Admin Giriş Modalı -->
-    <div id="loginModal">
-        <div class="modal-content">
-            <h3 data-i18n="admin_modal_title">🔒 Gizli Admin Girişi</h3>
-            <form onsubmit="handleAdminLogin(event)">
-                <div class="form-group">
-                    <label data-i18n="admin_user_label">Kullanıcı Adı</label>
-                    <input type="text" id="adminUser" class="form-control" placeholder="Kullanıcı Adı" data-i18n-ph="admin_user_ph" required>
-                </div>
-                <div class="form-group">
-                    <label data-i18n="admin_pass_label">Şifre</label>
-                    <input type="password" id="adminPass" class="form-control" placeholder="Şifre" data-i18n-ph="admin_pass_ph" required>
-                </div>
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button type="submit" class="main-cta" style="flex: 1;" data-i18n="admin_login_btn">Giriş Yap</button>
-                    <button type="button" class="util-btn" onclick="closeModal()" style="flex: 1; justify-content: center;" data-i18n="admin_cancel_btn">İptal</button>
-                </div>
-            </form>
-        </div>
+    <!-- Ekran Görüntüsü Büyütme Modalı -->
+    <div id="imgLightbox" onclick="closeLightbox()">
+        <img id="imgLightboxImg" src="" alt="Ekran Görüntüsü">
     </div>
 
     <header>
-        <a href="../" class="back-home" data-i18n="back_home">&larr; Geri Dön</a>
+        <a href="../" class="back-home">&larr; Geri Dön</a>
         <div class="header-actions">
-            <select id="langSelect" class="lang-select" onchange="changeLanguage(this.value)">
-                <option value="tr">🇹🇷 TR</option>
-                <option value="en">🇬🇧 EN</option>
-                <option value="de">🇩🇪 DE</option>
-            </select>
-            <button id="adminStatusIndicator" class="util-btn" style="display:none; border-color: var(--accent); color: var(--accent);" onclick="logoutAdmin()" data-i18n="admin_logout">Admin Modu (Çıkış)</button>
+            <button id="adminStatusIndicator" class="util-btn" style="display:none; border-color: var(--accent); color: var(--accent);" onclick="logoutAdmin()">Admin Modu (Çıkış)</button>
             <a href="https://github.com/ereny116011-cloud/TechnoStudios" target="_blank" class="util-btn">GitHub</a>
-            <button class="theme-toggle-btn" onclick="toggleTheme()" id="themeBtn" title="Tema Değiştir">🌙</button>
+            <button class="theme-toggle-btn" onclick="cycleThemeMode()" id="themeBtn" title="Tema Modu">🌙</button>
         </div>
     </header>
 
     <main>
+        <!-- Alev & Buhar Efektli Hero Kartı -->
         <div class="project-hero">
-            <div class="status-pill" data-i18n="version_pill">v1.0 Kararlı Sürüm</div>
-            <div class="title-container">
-                <!-- FireEye Logosu (Sol Tarafta & 10 Tıkla Admin Açma Tetikleyicili) -->
-                <svg class="fireeye-logo-icon" viewBox="0 0 24 24" fill="var(--accent)" onclick="triggerSecretLogin()" title="Admin girişi için 10 kez tıkla">
-                    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.29 1.14-3.168.45-.558 1.36-.33 1.36.368 0 .842.27 1.704.76 2.298z"/>
-                </svg>
+            <div class="hero-content">
+                <div class="status-pill" id="statusPillVersion">v1.0 Kararlı Sürüm</div>
                 <h1>FireEye</h1>
+                <p class="subtitle">Akıllı yangın algılama ve erken uyarı sistemi. Alanında özelleştirilmiş güvenlik katmanı.</p>
             </div>
-            <p class="subtitle" data-i18n="hero_subtitle">Akıllı yangın algılama ve erken uyarı sistemi. Alanında özelleştirilmiş güvenlik katmanı.</p>
         </div>
 
         <div class="nav-tabs">
-            <button class="tab-trigger active" onclick="switchTab(event, 'download')" data-i18n="tab_download">İndir</button>
-            <button class="tab-trigger" onclick="switchTab(event, 'features')" data-i18n="tab_features">Özellikler</button>
-            <button class="tab-trigger" onclick="switchTab(event, 'security')" data-i18n="tab_security">Güvenlik Raporu</button>
-            <button class="tab-trigger" onclick="switchTab(event, 'reviews')" data-i18n="tab_reviews">Değerlendirmeler</button>
-            <button class="tab-trigger" onclick="switchTab(event, 'changelog')" data-i18n="tab_changelog">Sürüm Notları</button>
+            <button class="tab-trigger active" onclick="switchTab(event, 'download')">İndir</button>
+            <button class="tab-trigger" onclick="switchTab(event, 'features')">Özellikler</button>
+            <button class="tab-trigger" onclick="switchTab(event, 'screenshots')">Ekran Görüntüleri</button>
+            <button class="tab-trigger" onclick="switchTab(event, 'security')">Güvenlik Raporu</button>
+            <button class="tab-trigger" onclick="switchTab(event, 'reviews')">Değerlendirmeler</button>
+            <button class="tab-trigger" onclick="switchTab(event, 'faq')">SSS</button>
+            <button class="tab-trigger" onclick="switchTab(event, 'changelog')">Sürüm Notları</button>
+            <button class="tab-trigger" onclick="switchTab(event, 'account')">Hesabım</button>
         </div>
 
         <!-- İndir Sekmesi -->
         <div id="download" class="tab-pane active">
             <div class="download-box">
                 <div class="download-info">
-                    <h3 data-i18n="download_app_title">FireEye Android Uygulaması</h3>
-                    <p data-i18n="download_app_sub">Android 8.0 ve üzeri kurumsal cihazlar için optimize edildi.</p>
+                    <h3>FireEye Android Uygulaması</h3>
+                    <p>Android 8.0 ve üzeri kurumsal cihazlar için optimize edildi.</p>
                 </div>
-                <button class="main-cta" onclick="startDownloadSimulation()" data-i18n="download_apk_btn">APK İndir (v1.0)</button>
+                <button class="main-cta" onclick="startDownloadSimulation()" id="downloadBtnLabel">APK İndir (v1.0)</button>
             </div>
 
             <div class="ios-warning-banner">
                 <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                <span data-i18n="ios_warning"><strong>Not:</strong> Bu uygulama Android tabanlı sistemler için geliştirilmiştir. iOS (iPhone / iPad) cihazlarda çalışmaz.</span>
+                <span><strong>Not:</strong> Bu uygulama Android tabanlı sistemler için geliştirilmiştir. iOS (iPhone / iPad) cihazlarda çalışmaz.</span>
             </div>
 
             <div id="downloadProgressContainer">
-                <p id="downloadStatusText" style="font-size: 0.85rem; color: var(--text-secondary);" data-i18n="dl_compiling">APK paketi derleniyor...</p>
+                <p id="downloadStatusText" style="font-size: 0.85rem; color: var(--text-secondary);">APK paketi derleniyor...</p>
                 <div class="progress-bar-bg">
                     <div id="progressBarFill" class="progress-bar-fill"></div>
                 </div>
@@ -633,13 +887,13 @@
             <div id="postDownloadFeedbackArea">
                 <div class="success-banner-msg">
                     <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-                    <span data-i18n="download_success_msg">Uygulama Başarıyla İndirildi! Teşekkürler 🎉</span>
+                    <span>Uygulama Başarıyla İndirildi! Teşekkürler 🎉</span>
                 </div>
-                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 15px;" data-i18n="feedback_prompt">FireEye'ı denedikten sonra deneyimini diğer kullanıcılarla paylaşmak ister misin?</p>
+                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 15px;">FireEye'ı denedikten sonra deneyimini diğer kullanıcılarla paylaşmak ister misin?</p>
 
                 <form id="postDownloadForm" onsubmit="handleNewComment(event)">
                     <div class="form-group">
-                        <label data-i18n="rating_label">Puanınız</label>
+                        <label>Puanınız</label>
                         <div class="star-rating-picker">
                             <input type="radio" id="pstar5" name="rating" value="5" checked /><label for="pstar5" title="5 Yıldız">&#9733;</label>
                             <input type="radio" id="pstar4" name="rating" value="4" /><label for="pstar4" title="4 Yıldız">&#9733;</label>
@@ -649,14 +903,18 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="postUserName" data-i18n="name_label">Adınız / Kurum</label>
-                        <input type="text" id="postUserName" class="form-control" placeholder="Örn: Ahmet Yılmaz" data-i18n-ph="name_ph" required>
+                        <label for="postUserName">Adınız / Kurum</label>
+                        <input type="text" id="postUserName" class="form-control" placeholder="Örn: Ahmet Yılmaz" required>
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="postAnonymous" style="width: auto;" onchange="document.getElementById('postUserName').required = !this.checked;">
+                        <label for="postAnonymous" style="margin: 0; cursor: pointer;">Anonim olarak gönder</label>
                     </div>
                     <div class="form-group">
-                        <label for="postUserComment" data-i18n="comment_label">Görüşleriniz</label>
-                        <textarea id="postUserComment" class="form-control" rows="3" placeholder="FireEye hakkında ne düşünüyorsun?" data-i18n-ph="comment_ph" required></textarea>
+                        <label for="postUserComment">Görüşleriniz</label>
+                        <textarea id="postUserComment" class="form-control" rows="3" placeholder="FireEye hakkında ne düşünüyorsun?" required></textarea>
                     </div>
-                    <button type="submit" class="main-cta" style="width: 100%;" data-i18n="submit_review_btn">Değerlendirmeyi Yayınla</button>
+                    <button type="submit" class="main-cta" style="width: 100%;">Değerlendirmeyi Yayınla</button>
                 </form>
             </div>
         </div>
@@ -665,32 +923,52 @@
         <div id="features" class="tab-pane">
             <div class="features-grid">
                 <div class="feature-card">
-                    <h4 data-i18n="feat_1_title">Anlık Sensör Takibi</h4>
-                    <p data-i18n="feat_1_desc">Sıcaklık ve duman verilerini milisaniyelik hassasiyetle işler.</p>
+                    <h4>Anlık Sensör Takibi</h4>
+                    <p>Sıcaklık ve duman verilerini milisaniyelik hassasiyetle işler.</p>
                 </div>
                 <div class="feature-card">
-                    <h4 data-i18n="feat_2_title">Acil Durum SMS</h4>
-                    <p data-i18n="feat_2_desc">Tehlike anında kayıtlı kişilere otomatik konum gönderir.</p>
+                    <h4>Acil Durum SMS</h4>
+                    <p>Tehlike anında kayıtlı kişilere otomatik konum gönderir.</p>
                 </div>
                 <div class="feature-card">
-                    <h4 data-i18n="feat_3_title">Bulut Altyapısı</h4>
-                    <p data-i18n="feat_3_desc">Geçmiş raporlarınızı güvenli bulut depolamada saklar.</p>
+                    <h4>Bulut Altyapısı</h4>
+                    <p>Geçmiş raporlarınızı güvenli bulut depolamada saklar.</p>
                 </div>
                 <div class="feature-card">
-                    <h4 data-i18n="feat_4_title">Hızlı Yapılandırma</h4>
-                    <p data-i18n="feat_4_desc">Karmaşık ayarlar olmadan saniyeler içinde aktifleşir.</p>
+                    <h4>Hızlı Yapılandırma</h4>
+                    <p>Karmaşık ayarlar olmadan saniyeler içinde aktifleşir.</p>
                 </div>
             </div>
+        </div>
+
+        <!-- Ekran Görüntüleri Sekmesi -->
+        <div id="screenshots" class="tab-pane">
+            <div id="adminScreenshotBox">
+                <h3>🛠️ Admin Paneli: Ekran Görüntüsü Ekle</h3>
+                <form onsubmit="handleNewScreenshot(event)">
+                    <div class="form-group">
+                        <label>Görsel Seç</label>
+                        <input type="file" id="adminScreenshotFile" class="form-control" accept="image/*" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Açıklama (opsiyonel)</label>
+                        <input type="text" id="adminScreenshotCaption" class="form-control" placeholder="Örn: Ana ekran görünümü">
+                    </div>
+                    <button type="submit" class="main-cta">Ekran Görüntüsünü Yükle</button>
+                </form>
+            </div>
+
+            <div class="screenshot-grid" id="screenshotGridContainer"></div>
         </div>
 
         <!-- Güvenlik Sekmesi -->
         <div id="security" class="tab-pane">
             <div class="security-container">
                 <div class="security-info">
-                    <span class="clean-badge" data-i18n="vt_badge">&#10003; VirusTotal: 0/67 Temiz Raporu</span>
-                    <a href="https://github.com/ereny116011-cloud/TechnoStudios/blob/main/testsonuc.png" target="_blank" class="vt-link" data-i18n="vt_details">Detaylar &rarr;</a>
+                    <span class="clean-badge">&#10003; VirusTotal: 0/67 Temiz Raporu</span>
+                    <a href="https://github.com/ereny116011-cloud/TechnoStudios/blob/main/testsonuc.png" target="_blank" class="vt-link">Detaylar &rarr;</a>
                 </div>
-                <div class="preview-img-wrap" onclick="triggerSecretLogin()" title="Admin girişi için buraya 10 kez tıkla">
+                <div class="preview-img-wrap">
                     <img src="https://raw.githubusercontent.com/ereny116011-cloud/TechnoStudios/main/testsonuc.png" alt="VirusTotal Raporu">
                 </div>
             </div>
@@ -704,263 +982,645 @@
                         <div class="avg-score" id="avgScoreText">0.0</div>
                         <div>
                             <div class="stars-display" id="avgStarsText">&#9734;&#9734;&#9734;&#9734;&#9734;</div>
-                            <div class="total-reviews-count" id="totalCountText" data-i18n="no_reviews">Henüz değerlendirme yok</div>
+                            <div class="total-reviews-count" id="totalCountText">Henüz değerlendirme yok</div>
                         </div>
                     </div>
-                    <button class="util-btn" onclick="switchTabToDownload()" data-i18n="btn_dl_app">Uygulamayı İndir</button>
+                    <button class="util-btn" onclick="switchTabToDownload()">Uygulamayı İndir</button>
                 </div>
 
                 <div class="comments-list" id="commentsListContainer"></div>
             </div>
         </div>
 
+        <!-- SSS Sekmesi -->
+        <div id="faq" class="tab-pane">
+            <div class="faq-list">
+                <details class="faq-item" open>
+                    <summary>FireEye hangi cihazlarda çalışır?</summary>
+                    <p>Android 8.0 ve üzeri tüm cihazlarda sorunsuz çalışır. iOS (iPhone/iPad) desteği şu an bulunmuyor.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Uygulama hangi izinlere ihtiyaç duyuyor?</summary>
+                    <p>Sıcaklık/duman sensör verilerine erişim, konum ve acil durum SMS gönderimi için kısa mesaj izni gerekir. Hiçbir veri izniniz olmadan üçüncü taraflarla paylaşılmaz.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>İnternet bağlantım olmadan çalışır mı?</summary>
+                    <p>Sensör takibi ve yerel uyarılar internetsiz de çalışır. Bulut yedekleme ve acil durum SMS bildirimleri için internet veya mobil şebeke bağlantısı gereklidir.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Kurulum dosyası güvenli mi?</summary>
+                    <p>Evet, her sürüm yayınlanmadan önce VirusTotal üzerinden taranır. Güncel tarama sonucunu "Güvenlik Raporu" sekmesinde bulabilirsiniz.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Bir sorun yaşarsam nasıl destek alabilirim?</summary>
+                    <p>Karşılaştığınız sorunları GitHub sayfamız üzerinden bize iletebilir veya "Değerlendirmeler" sekmesinden geri bildirim bırakabilirsiniz.</p>
+                </details>
+            </div>
+        </div>
+
         <!-- Sürüm Notları Sekmesi -->
         <div id="changelog" class="tab-pane">
             <div id="adminPanelBox">
-                <h3 data-i18n="admin_panel_title">🛠️ Admin Paneli: Yeni Sürüm Ekle</h3>
+                <h3>🛠️ Admin Paneli: Yeni Sürüm Ekle</h3>
                 <form onsubmit="handleNewChangelog(event)">
                     <div class="form-group">
-                        <label data-i18n="admin_ver_label">Sürüm Numarası (Örn: v1.1)</label>
+                        <label>Sürüm Numarası (Örn: v1.1)</label>
                         <input type="text" id="adminVersionInput" class="form-control" placeholder="v1.1" required>
                     </div>
                     <div class="form-group">
-                        <label data-i18n="admin_desc_label">Değişiklikler ve Özellikler</label>
+                        <label>Değişiklikler ve Özellikler</label>
                         <textarea id="adminChangelogDesc" class="form-control" rows="4" placeholder="- Yeni sensör entegrasyonu eklendi.&#10;- Arayüz optimizasyonları yapıldı." required></textarea>
                     </div>
-                    <button type="submit" class="main-cta" data-i18n="admin_pub_btn">Yeni Sürümü Yayınla</button>
+                    <div class="form-group">
+                        <label>APK Dosyası (isteğe bağlı — tarayıcından doğrudan GitHub'a yüklenir, ~2GB'a kadar)</label>
+                        <input type="file" id="adminReleaseFile" class="form-control" accept=".apk">
+                        <p id="adminReleaseStatus" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 6px;"></p>
+                    </div>
+                    <button type="submit" class="main-cta">Yeni Sürümü Yayınla</button>
                 </form>
             </div>
 
             <div class="changelog-section">
-                <h3 style="margin-bottom: 20px; font-size: 1.2rem;" data-i18n="changelog_title">Sürüm Geçmişi ve Yenilikler</h3>
+                <h3 style="margin-bottom: 20px; font-size: 1.2rem;">Sürüm Geçmişi ve Yenilikler</h3>
                 <div class="changelog-list" id="changelogListContainer"></div>
+            </div>
+        </div>
+
+        <!-- Hesabım Sekmesi -->
+        <div id="account" class="tab-pane">
+            <div id="adminUserPanelBox" style="display:none; background: var(--surface); border: 2px dashed var(--accent); border-radius: 14px; padding: 24px; margin-bottom: 24px;">
+                <h3 style="color: var(--accent); margin-bottom: 15px;">🛠️ Admin Paneli: Hesap Ekle</h3>
+                <form onsubmit="handleCreateUser(event)" style="display: flex; flex-direction: column; gap: 12px; max-width: 380px;">
+                    <div class="form-group">
+                        <label>Ad Soyad</label>
+                        <input type="text" id="newUserFullName" class="form-control" placeholder="Ad Soyad">
+                    </div>
+                    <div class="form-group">
+                        <label>E-posta</label>
+                        <input type="email" id="newUserEmail" class="form-control" placeholder="ornek@eposta.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Geçici Şifre</label>
+                        <input type="text" id="newUserPassword" class="form-control" placeholder="Geçici Şifre" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Cihaz Kimliği</label>
+                        <input type="text" id="newUserTopic" class="form-control" placeholder="fireeye-musteri-01">
+                        <small style="color: var(--text-secondary);">Bu kod, sattığın cihazın firmware'ine de aynen yazılmalı.</small>
+                    </div>
+                    <button type="submit" class="main-cta">Hesabı Oluştur</button>
+                </form>
+
+                <h3 style="color: var(--accent); margin: 24px 0 12px;">Kayıtlı Hesaplar</h3>
+                <div id="userListContainer" class="comments-list"></div>
+            </div>
+
+            <div id="accountLoginBox">
+                <div class="download-box" style="flex-direction: column; align-items: stretch; gap: 16px;">
+                    <h3 style="margin: 0;">Hesabına Giriş Yap</h3>
+                    <form onsubmit="handleUserLogin(event)" style="display: flex; flex-direction: column; gap: 12px; max-width: 380px;">
+                        <div class="form-group">
+                            <label>E-posta</label>
+                            <input type="text" id="accountEmail" class="form-control" placeholder="ornek@eposta.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Şifre</label>
+                            <input type="password" id="accountPassword" class="form-control" placeholder="Şifre" required>
+                        </div>
+                        <button type="submit" class="main-cta">Giriş Yap</button>
+                        <p id="accountLoginError" style="color: var(--danger); font-size: 0.85rem; display: none;"></p>
+                    </form>
+                    <div style="display: flex; justify-content: space-between; max-width: 380px;">
+                        <a href="#" onclick="toggleForgotPasswordBox(event)" style="color: var(--accent); font-size: 0.85rem; text-decoration: none;">Şifremi unuttum</a>
+                        <a href="#" onclick="toggleRegisterBox(event)" style="color: var(--accent); font-size: 0.85rem; text-decoration: none;">Hesabın yok mu? Kayıt ol</a>
+                    </div>
+                    <form id="forgotPasswordForm" onsubmit="handleForgotPassword(event)" style="display: none; flex-direction: column; gap: 12px; max-width: 380px;">
+                        <div class="form-group">
+                            <label>Hesap E-postan</label>
+                            <input type="email" id="forgotPasswordEmail" class="form-control" placeholder="ornek@eposta.com" required>
+                        </div>
+                        <button type="submit" class="main-cta" style="opacity: 0.85;">Sıfırlama Talebi Gönder</button>
+                        <p id="forgotPasswordMsg" style="font-size: 0.85rem; display: none;"></p>
+                    </form>
+                    <form id="registerForm" onsubmit="handleRegister(event)" style="display: none; flex-direction: column; gap: 12px; max-width: 380px;">
+                        <div class="form-group">
+                            <label>Ad Soyad</label>
+                            <input type="text" id="registerFullName" class="form-control" placeholder="Ad Soyad">
+                        </div>
+                        <div class="form-group">
+                            <label>E-posta</label>
+                            <input type="email" id="registerEmail" class="form-control" placeholder="ornek@eposta.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Şifre</label>
+                            <input type="password" id="registerPassword" class="form-control" placeholder="En az 6 karakter" minlength="6" required>
+                        </div>
+                        <button type="submit" class="main-cta" style="opacity: 0.85;">Kayıt Ol</button>
+                        <p id="registerMsg" style="font-size: 0.85rem; display: none;"></p>
+                    </form>
+                </div>
+            </div>
+
+            <div id="resetPasswordBox" style="display: none;">
+                <div class="download-box" style="flex-direction: column; align-items: stretch; gap: 16px;">
+                    <h3 style="margin: 0;">Yeni Şifre Belirle</h3>
+                    <p style="color: var(--text-secondary); margin: 0;">E-postandaki bağlantı üzerinden buradasın. Yeni şifreni belirle.</p>
+                    <form onsubmit="handleResetPassword(event)" style="display: flex; flex-direction: column; gap: 12px; max-width: 380px;">
+                        <div class="form-group">
+                            <label>Yeni Şifre</label>
+                            <input type="password" id="resetPasswordNew" class="form-control" placeholder="En az 6 karakter" minlength="6" required>
+                        </div>
+                        <button type="submit" class="main-cta">Şifreyi Güncelle</button>
+                        <p id="resetPasswordMsg" style="font-size: 0.85rem; display: none;"></p>
+                    </form>
+                </div>
+            </div>
+
+            <div id="accountForceChangeBox" style="display: none;">
+                <div class="download-box" style="flex-direction: column; align-items: stretch; gap: 16px;">
+                    <h3 style="margin: 0;">Güvenliğiniz İçin</h3>
+                    <p style="color: var(--text-secondary); margin: 0;">TechnoStudios tarafından sağlanan geçici kullanıcı adı ve şifrenizi değiştirmeniz gerekmektedir.</p>
+                    <form onsubmit="handleForceChange(event)" style="display: flex; flex-direction: column; gap: 12px; max-width: 380px;">
+                        <div class="form-group">
+                            <label>Yeni E-posta</label>
+                            <input type="email" id="forceChangeEmail" class="form-control" placeholder="yeni@eposta.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Yeni Şifre</label>
+                            <input type="password" id="forceChangePassword" class="form-control" placeholder="Yeni Şifre" required>
+                        </div>
+                        <button type="submit" class="main-cta">Bilgileri Güncelle</button>
+                        <p id="forceChangeError" style="color: var(--danger); font-size: 0.85rem; display: none;"></p>
+                    </form>
+                </div>
+            </div>
+
+            <div id="accountDashboardBox" style="display: none;">
+                <div class="download-box" style="flex-direction: column; align-items: stretch; gap: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="margin: 0;">Hoş geldin, <span id="accountEmailLabel"></span></h3>
+                        <button class="util-btn" onclick="handleUserLogout()">Çıkış Yap</button>
+                    </div>
+                    <div class="security-container">
+                        <p style="color: var(--text-secondary); margin-bottom: 10px;">Cihaz Durumu (Canlı)</p>
+                        <p id="mqttStatus" style="font-weight: 700;">Bağlanıyor...</p>
+                        <pre id="mqttData" style="white-space: pre-wrap; word-break: break-word; margin-top: 10px; font-size: 0.85rem; color: var(--text-secondary);"></pre>
+                        <button id="mqttMuteBtn" class="main-cta" style="display: none; margin-top: 14px; background: var(--danger);">🔇 Alarmı Sustur</button>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
 
     <footer>
-        <p>&copy; 2026 TechnoStudios &bull; <span data-i18n="rights">Tüm Hakları Saklıdır.</span></p>
+        <p>&copy; 2026 TechnoStudios &bull; Tüm Hakları Saklıdır.</p>
     </footer>
 
     <script>
-        const i18n = {
-            tr: {
-                back_home: "← Geri Dön",
-                admin_logout: "Admin Modu (Çıkış)",
-                version_pill: "v1.0 Kararlı Sürüm",
-                hero_subtitle: "Akıllı yangın algılama ve erken uyarı sistemi. Alanında özelleştirilmiş güvenlik katmanı.",
-                tab_download: "İndir",
-                tab_features: "Özellikler",
-                tab_security: "Güvenlik Raporu",
-                tab_reviews: "Değerlendirmeler",
-                tab_changelog: "Sürüm Notları",
-                download_app_title: "FireEye Android Uygulaması",
-                download_app_sub: "Android 8.0 ve üzeri kurumsal cihazlar için optimize edildi.",
-                download_apk_btn: "APK İndir (v1.0)",
-                ios_warning: "<strong>Not:</strong> Bu uygulama Android tabanlı sistemler için geliştirilmiştir. iOS (iPhone / iPad) cihazlarda çalışmaz.",
-                download_success_msg: "Uygulama Başarıyla İndirildi! Teşekkürler 🎉",
-                feedback_prompt: "FireEye'ı denedikten sonra deneyimini diğer kullanıcılarla paylaşmak ister misin?",
-                rating_label: "Puanınız",
-                name_label: "Adınız / Kurum",
-                name_ph: "Örn: Ahmet Yılmaz",
-                comment_label: "Görüşleriniz",
-                comment_ph: "FireEye hakkında ne düşünüyorsun?",
-                submit_review_btn: "Değerlendirmeyi Yayınla",
-                feat_1_title: "Anlık Sensör Takibi",
-                feat_1_desc: "Sıcaklık ve duman verilerini milisaniyelik hassasiyetle işler.",
-                feat_2_title: "Acil Durum SMS",
-                feat_2_desc: "Tehlike anında kayıtlı kişilere otomatik konum gönderir.",
-                feat_3_title: "Bulut Altyapısı",
-                feat_3_desc: "Geçmiş raporlarınızı güvenli bulut depolamada saklar.",
-                feat_4_title: "Hızlı Yapılandırma",
-                feat_4_desc: "Karmaşık ayarlar olmadan saniyeler içinde aktifleşir.",
-                vt_badge: "✓ VirusTotal: 0/67 Temiz Raporu",
-                vt_details: "Detaylar →",
-                no_reviews: "Henüz değerlendirme yok",
-                btn_dl_app: "Uygulamayı İndir",
-                admin_modal_title: "🔒 Gizli Admin Girişi",
-                admin_user_label: "Kullanıcı Adı",
-                admin_user_ph: "Kullanıcı Adı",
-                admin_pass_label: "Şifre",
-                admin_pass_ph: "Şifre",
-                admin_login_btn: "Giriş Yap",
-                admin_cancel_btn: "İptal",
-                admin_panel_title: "🛠️ Admin Paneli: Yeni Sürüm Ekle",
-                admin_ver_label: "Sürüm Numarası (Örn: v1.1)",
-                admin_desc_label: "Değişiklikler ve Özellikler",
-                admin_pub_btn: "Yeni Sürümü Yayınla",
-                changelog_title: "Sürüm Geçmişi ve Yenilikler",
-                rights: "Tüm Hakları Saklıdır.",
-                dl_compiling: "APK paketi derleniyor...",
-                dl_server: "Sunucudan indiriliyor...",
-                dl_security: "Güvenlik kontrolleri yapılıyor...",
-                dl_completed: "İndirme Tamamlandı!",
-                delete_btn: "Sil",
-                reviews_based: "değerlendirme baz alındı"
-            },
-            en: {
-                back_home: "← Go Back",
-                admin_logout: "Admin Mode (Logout)",
-                version_pill: "v1.0 Stable Release",
-                hero_subtitle: "Smart fire detection and early warning system. Specialized security layer in its field.",
-                tab_download: "Download",
-                tab_features: "Features",
-                tab_security: "Security Report",
-                tab_reviews: "Reviews",
-                tab_changelog: "Changelog",
-                download_app_title: "FireEye Android App",
-                download_app_sub: "Optimized for enterprise devices on Android 8.0 and above.",
-                download_apk_btn: "Download APK (v1.0)",
-                ios_warning: "<strong>Note:</strong> This app is built for Android systems. It does not run on iOS (iPhone / iPad) devices.",
-                download_success_msg: "App Downloaded Successfully! Thank you 🎉",
-                feedback_prompt: "Would you like to share your experience with other users after trying FireEye?",
-                rating_label: "Your Rating",
-                name_label: "Your Name / Organization",
-                name_ph: "e.g., John Doe",
-                comment_label: "Your Feedback",
-                comment_ph: "What do you think about FireEye?",
-                submit_review_btn: "Publish Review",
-                feat_1_title: "Real-time Sensor Monitoring",
-                feat_1_desc: "Processes temperature and smoke data with millisecond precision.",
-                feat_2_title: "Emergency SMS",
-                feat_2_desc: "Automatically sends location data to registered emergency contacts.",
-                feat_3_title: "Cloud Infrastructure",
-                feat_3_desc: "Safely stores historical report logs in secure cloud storage.",
-                feat_4_title: "Rapid Configuration",
-                feat_4_desc: "Activates in seconds without complex setup steps.",
-                vt_badge: "✓ VirusTotal: 0/67 Clean Report",
-                vt_details: "Details →",
-                no_reviews: "No reviews yet",
-                btn_dl_app: "Download App",
-                admin_modal_title: "🔒 Secret Admin Login",
-                admin_user_label: "Username",
-                admin_user_ph: "Username",
-                admin_pass_label: "Password",
-                admin_pass_ph: "Password",
-                admin_login_btn: "Login",
-                admin_cancel_btn: "Cancel",
-                admin_panel_title: "🛠️ Admin Panel: Add New Release",
-                admin_ver_label: "Version Number (e.g., v1.1)",
-                admin_desc_label: "Changes & Features",
-                admin_pub_btn: "Publish Release",
-                changelog_title: "Release History & Updates",
-                rights: "All Rights Reserved.",
-                dl_compiling: "Compiling APK package...",
-                dl_server: "Downloading from server...",
-                dl_security: "Running security checks...",
-                dl_completed: "Download Completed!",
-                delete_btn: "Delete",
-                reviews_based: "reviews based"
-            },
-            de: {
-                back_home: "← Zurück",
-                admin_logout: "Admin-Modus (Abmelden)",
-                version_pill: "v1.0 Stabile Version",
-                hero_subtitle: "Intelligente Branderkennung und Frühwarnsystem. Spezialisierte Sicherheitsebene.",
-                tab_download: "Herunterladen",
-                tab_features: "Funktionen",
-                tab_security: "Sicherheitsbericht",
-                tab_reviews: "Bewertungen",
-                tab_changelog: "Änderungsprotokoll",
-                download_app_title: "FireEye Android App",
-                download_app_sub: "Optimiert für Enterprise-Geräte ab Android 8.0.",
-                download_apk_btn: "APK Herunterladen (v1.0)",
-                ios_warning: "<strong>Hinweis:</strong> Diese App wurde für Android-Systeme entwickelt. Sie läuft nicht auf iOS-Geräten.",
-                download_success_msg: "App erfolgreich heruntergeladen! Vielen Dank 🎉",
-                feedback_prompt: "Möchten Sie Ihre Erfahrungen mit anderen Nutzern teilen, nachdem Sie FireEye getestet haben?",
-                rating_label: "Ihre Bewertung",
-                name_label: "Ihr Name / Organisation",
-                name_ph: "z.B. Max Mustermann",
-                comment_label: "Ihre Rückmeldung",
-                comment_ph: "Was denken Sie über FireEye?",
-                submit_review_btn: "Bewertung Veröffentlichen",
-                feat_1_title: "Echtzeit-Sensorüberwachung",
-                feat_1_desc: "Verarbeitet Temperatur- und Rauchdaten mit Millisekundenpräzision.",
-                feat_2_title: "Notfall-SMS",
-                feat_2_desc: "Sendet im Gefahrenfall automatisch Standorte an gespeicherte Kontakte.",
-                feat_3_title: "Cloud-Infrastruktur",
-                feat_3_desc: "Speichert Berichtsdaten sicher in einem geschützten Cloud-Speicher.",
-                feat_4_title: "Schnelle Konfiguration",
-                feat_4_desc: "Aktiviert sich in Sekundenschnelle ohne komplexe Einstellungen.",
-                vt_badge: "✓ VirusTotal: 0/67 Sauberer Bericht",
-                vt_details: "Details →",
-                no_reviews: "Noch keine Bewertungen",
-                btn_dl_app: "App Herunterladen",
-                admin_modal_title: "🔒 Geheimer Admin-Login",
-                admin_user_label: "Benutzername",
-                admin_user_ph: "Benutzername",
-                admin_pass_label: "Passwort",
-                admin_pass_ph: "Passwort",
-                admin_login_btn: "Anmelden",
-                admin_cancel_btn: "Abbrechen",
-                admin_panel_title: "🛠️ Admin-Panel: Neue Version Hinzufügen",
-                admin_ver_label: "Versionsnummer (z.B. v1.1)",
-                admin_desc_label: "Änderungen & Funktionen",
-                admin_pub_btn: "Version Veröffentlichen",
-                changelog_title: "Versionsverlauf & Updates",
-                rights: "Alle Rechte vorbehalten.",
-                dl_compiling: "APK-Paket wird kompiliert...",
-                dl_server: "Wird vom Server heruntergeladen...",
-                dl_security: "Sicherheitsprüfungen werden durchgeführt...",
-                dl_completed: "Download Abgeschlossen!",
-                delete_btn: "Löschen",
-                reviews_based: "Bewertungen basiert"
-            }
-        };
+        /* --- DİĞER FONKSİYONLAR VE UYGULAMA MANTIĞI --- */
 
-        let currentLang = localStorage.getItem('fireeye_lang') || 'tr';
-        let comments = JSON.parse(localStorage.getItem('fireeye_comments')) || [];
-        let changelogs = JSON.parse(localStorage.getItem('fireeye_changelogs')) || [
-            {
-                version: "v1.0",
-                date: "26 Mart 2026",
-                text: "- FireEye kararlı sürümü yayınlandı.\n- Anlık duman/sıcaklık takibi aktif edildi."
-            }
-        ];
+        // Worker'ı deploy ettikten sonra "wrangler deploy" çıktısında verilen
+        // adresi (https://fireeye-api.SENIN-ALT-ADIN.workers.dev) buraya yapıştır.
+        const WORKER_BASE = 'https://fireeye-api.ereny116011.workers.dev';
 
-        let clickCount = 0;
-        let clickTimer = null;
+        let comments = [];
+        let screenshots = [];
+        let changelogs = [];
+
+        function getAdminAuthHeader() {
+            const token = sessionStorage.getItem('fireeye_admin_token');
+            return token ? { 'Authorization': 'Basic ' + token } : {};
+        }
+
+        async function loadReviews() {
+            try {
+                const res = await fetch(WORKER_BASE + '/reviews');
+                comments = await res.json();
+            } catch (err) {
+                comments = [];
+            }
+            renderComments();
+        }
+
+        async function loadChangelogs() {
+            try {
+                const res = await fetch(WORKER_BASE + '/changelogs');
+                changelogs = await res.json();
+            } catch (err) {
+                changelogs = [];
+            }
+            renderChangelogs();
+            updateVersionDisplay();
+        }
+
+
+        function playClickSound(freq = 600, duration = 0.05, type = 'triangle') {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, ctx.currentTime);
+                gain.gain.setValueAtTime(0.12, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + duration);
+            } catch(e) {}
+        }
 
         window.addEventListener('DOMContentLoaded', () => {
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme === 'light') {
-                document.body.classList.add('light');
-                document.getElementById('themeBtn').textContent = '☀️';
-            } else {
-                document.body.classList.remove('light');
-                document.getElementById('themeBtn').textContent = '🌙';
-                localStorage.setItem('theme', 'dark');
-            }
-
-            if(localStorage.getItem('fireeye_admin') === 'true') {
+            const savedMode = localStorage.getItem('theme') || 'dark';
+            applyThemeMode(['dark', 'light', 'vivid'].includes(savedMode) ? savedMode : 'dark');
+            if (localStorage.getItem('fireeye_admin') === 'true' && sessionStorage.getItem('fireeye_admin_token')) {
                 enableAdminMode();
+            } else {
+                localStorage.removeItem('fireeye_admin');
             }
 
-            document.getElementById('langSelect').value = currentLang;
-            changeLanguage(currentLang);
+            loadReviews();
+            loadChangelogs();
+            loadScreenshots();
+            restoreUserSession();
+
+            // E-postadaki sıfırlama linkinden geldiyse (?reset_token=...) doğrudan
+            // "Hesabım" sekmesini aç ve yeni şifre belirleme formunu göster.
+            const resetToken = new URLSearchParams(window.location.search).get('reset_token');
+            if (resetToken) {
+                document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+                document.querySelectorAll('.tab-trigger').forEach(t => t.classList.remove('active'));
+                document.getElementById('account').classList.add('active');
+                const accountTrigger = Array.from(document.querySelectorAll('.tab-trigger')).find(t => t.textContent.trim() === 'Hesabım');
+                if (accountTrigger) accountTrigger.classList.add('active');
+
+                document.getElementById('accountLoginBox').style.display = 'none';
+                document.getElementById('accountForceChangeBox').style.display = 'none';
+                document.getElementById('accountDashboardBox').style.display = 'none';
+                document.getElementById('resetPasswordBox').style.display = 'block';
+            }
         });
 
-        function changeLanguage(lang) {
-            currentLang = lang;
-            localStorage.setItem('fireeye_lang', lang);
-            document.documentElement.lang = lang;
+        async function handleResetPassword(e) {
+            e.preventDefault();
+            const token = new URLSearchParams(window.location.search).get('reset_token');
+            const newPassword = document.getElementById('resetPasswordNew').value;
+            const msg = document.getElementById('resetPasswordMsg');
+            msg.style.display = 'none';
 
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                if (i18n[lang][key]) {
-                    el.innerHTML = i18n[lang][key];
+            try {
+                const res = await fetch(WORKER_BASE + '/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token, newPassword })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!data.success) throw new Error(data.message || 'Şifre güncellenemedi.');
+
+                msg.style.color = 'var(--accent)';
+                msg.textContent = data.message + ' Yönlendiriliyorsun...';
+                msg.style.display = 'block';
+
+                // Linkteki token'ı URL'den temizle ve giriş ekranına dön.
+                const cleanUrl = window.location.origin + window.location.pathname;
+                setTimeout(() => { window.location.href = cleanUrl; }, 1500);
+            } catch (err) {
+                msg.style.color = 'var(--danger)';
+                msg.textContent = err.message;
+                msg.style.display = 'block';
+            }
+        }
+
+        // --- Kullanıcı hesabı girişi (kayıt yok, admin oluşturur) + hesaba tanımlı cihazı canlı okuma ---
+        // Uygulama ile TAMAMEN aynı API sözleşmesi: /login, /admin/create-user, /user/update-credentials.
+        // Cihaz artık MQTT/HiveMQ kullanmıyor; doğrudan Worker'a HTTP ile veri gönderiyor.
+        let deviceDataInterval = null;
+
+        function restoreUserSession() {
+            const raw = localStorage.getItem('fireeye_user');
+            if (!raw) return;
+            try {
+                const data = JSON.parse(raw);
+                if (data.user.isNoData) {
+                    showForceChange(data.user.email);
+                } else {
+                    showAccountDashboard(data.user);
                 }
-            });
+            } catch (err) {
+                localStorage.removeItem('fireeye_user');
+            }
+        }
 
-            document.querySelectorAll('[data-i18n-ph]').forEach(el => {
-                const key = el.getAttribute('data-i18n-ph');
-                if (i18n[lang][key]) {
-                    el.placeholder = i18n[lang][key];
+        async function handleUserLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('accountEmail').value.trim();
+            const password = document.getElementById('accountPassword').value;
+            const errMsg = document.getElementById('accountLoginError');
+            errMsg.style.display = 'none';
+
+            // Admin girişi: aynı formdan, admin kullanıcı adı/şifresi girilirse admin moduna geçilir.
+            if (email === 'TechnoStudios11' && password === 'giradmine') {
+                localStorage.setItem('fireeye_admin', 'true');
+                sessionStorage.setItem('fireeye_admin_token', btoa(email + ':' + password));
+                enableAdminMode();
+                document.getElementById('accountEmail').value = '';
+                document.getElementById('accountPassword').value = '';
+                return;
+            }
+
+            try {
+                const res = await fetch(WORKER_BASE + '/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message || 'Giriş başarısız');
+
+                localStorage.setItem('fireeye_user', JSON.stringify({ token: data.token, user: data.user }));
+
+                if (data.user.isNoData) {
+                    showForceChange(data.user.email);
+                } else {
+                    showAccountDashboard(data.user);
                 }
-            });
+            } catch (err) {
+                errMsg.textContent = err.message;
+                errMsg.style.display = 'block';
+            }
+        }
 
-            renderComments();
-            renderChangelogs();
+        function toggleForgotPasswordBox(e) {
+            e.preventDefault();
+            document.getElementById('registerForm').style.display = 'none';
+            const box = document.getElementById('forgotPasswordForm');
+            box.style.display = box.style.display === 'none' ? 'flex' : 'none';
+        }
+
+        function toggleRegisterBox(e) {
+            e.preventDefault();
+            document.getElementById('forgotPasswordForm').style.display = 'none';
+            const box = document.getElementById('registerForm');
+            box.style.display = box.style.display === 'none' ? 'flex' : 'none';
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const fullName = document.getElementById('registerFullName').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            const msg = document.getElementById('registerMsg');
+            msg.style.display = 'none';
+
+            try {
+                const res = await fetch(WORKER_BASE + '/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, fullName })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!data.success) throw new Error(data.message || 'Kayıt başarısız.');
+
+                localStorage.setItem('fireeye_user', JSON.stringify({ token: data.token, user: data.user }));
+                document.getElementById('registerForm').reset();
+                document.getElementById('registerForm').style.display = 'none';
+                showAccountDashboard(data.user);
+            } catch (err) {
+                msg.style.color = 'var(--danger)';
+                msg.textContent = err.message;
+                msg.style.display = 'block';
+            }
+        }
+
+        async function handleForgotPassword(e) {
+            e.preventDefault();
+            const email = document.getElementById('forgotPasswordEmail').value.trim();
+            const msg = document.getElementById('forgotPasswordMsg');
+            msg.style.display = 'none';
+
+            try {
+                const resetBaseUrl = window.location.origin + window.location.pathname;
+                const res = await fetch(WORKER_BASE + '/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, resetBaseUrl })
+                });
+                const data = await res.json().catch(() => ({}));
+                msg.style.color = 'var(--accent)';
+                msg.textContent = data.message || 'Eğer bu e-posta ile bir hesap varsa, sıfırlama bağlantısı gönderildi.';
+                msg.style.display = 'block';
+                document.getElementById('forgotPasswordEmail').value = '';
+            } catch (err) {
+                msg.style.color = 'var(--danger)';
+                msg.textContent = 'Talep gönderilemedi, tekrar dene.';
+                msg.style.display = 'block';
+            }
+        }
+
+        function handleUserLogout() {
+            if (deviceDataInterval) { clearInterval(deviceDataInterval); deviceDataInterval = null; }
+            localStorage.removeItem('fireeye_user');
+            document.getElementById('accountLoginBox').style.display = 'block';
+            document.getElementById('accountForceChangeBox').style.display = 'none';
+            document.getElementById('accountDashboardBox').style.display = 'none';
+        }
+
+        function showForceChange(email) {
+            document.getElementById('accountLoginBox').style.display = 'none';
+            document.getElementById('accountDashboardBox').style.display = 'none';
+            document.getElementById('accountForceChangeBox').style.display = 'block';
+            document.getElementById('forceChangeEmail').value = email;
+        }
+
+        async function handleForceChange(e) {
+            e.preventDefault();
+            const newEmail = document.getElementById('forceChangeEmail').value.trim();
+            const newPassword = document.getElementById('forceChangePassword').value;
+            const errMsg = document.getElementById('forceChangeError');
+            errMsg.style.display = 'none';
+
+            const stored = JSON.parse(localStorage.getItem('fireeye_user') || '{}');
+            try {
+                const res = await fetch(WORKER_BASE + '/user/update-credentials', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + stored.token },
+                    body: JSON.stringify({ newEmail, newPassword })
+                });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message || 'Güncellenemedi');
+
+                stored.user.email = newEmail;
+                stored.user.isNoData = false;
+                localStorage.setItem('fireeye_user', JSON.stringify(stored));
+                showAccountDashboard(stored.user);
+            } catch (err) {
+                errMsg.textContent = err.message;
+                errMsg.style.display = 'block';
+            }
+        }
+
+        function showAccountDashboard(user) {
+            document.getElementById('accountLoginBox').style.display = 'none';
+            document.getElementById('accountForceChangeBox').style.display = 'none';
+            document.getElementById('accountDashboardBox').style.display = 'block';
+            document.getElementById('accountEmailLabel').textContent = user.email;
+            startDeviceReading(user.mqttTopic);
+        }
+
+        // Cihazın gönderdiği veri formatını (SICAKLIK:.., NEM:.., DURUM:..) ayrıştırır.
+        function parseVeriPayload(payload) {
+            const result = {};
+            payload.split(',').map(s => s.trim()).forEach(part => {
+                if (part.startsWith('SICAKLIK:')) result.sicaklik = part.slice(9);
+                else if (part.startsWith('NEM:')) result.nem = part.slice(4);
+                else if (part.startsWith('DURUM:')) result.durum = part.slice(6).split(':')[0];
+                else if (part === 'ALARM:GAZ') result.durum = 'ALARM';
+            });
+            return result;
+        }
+
+        async function fetchDeviceReading(deviceKey) {
+            const statusEl = document.getElementById('mqttStatus');
+            const dataEl = document.getElementById('mqttData');
+
+            try {
+                const res = await fetch(WORKER_BASE + '/device/report?device_key=' + encodeURIComponent(deviceKey));
+                if (!res.ok) {
+                    statusEl.textContent = 'Henüz cihazdan veri gelmedi.';
+                    return;
+                }
+                const data = await res.json();
+                const parsed = parseVeriPayload(data.payload);
+                statusEl.textContent = 'Bağlı — son güncelleme: ' + data.updated_at;
+                dataEl.textContent =
+                    (parsed.sicaklik ? 'Sıcaklık: ' + parsed.sicaklik + '°C\n' : '') +
+                    (parsed.nem ? 'Nem: %' + parsed.nem + '\n' : '') +
+                    (parsed.durum ? 'Durum: ' + parsed.durum + '\n' : '') +
+                    '\n(ham veri: ' + data.payload + ')';
+            } catch (err) {
+                statusEl.textContent = 'Sunucuya ulaşılamadı.';
+            }
+        }
+
+        function startDeviceReading(deviceKey) {
+            const statusEl = document.getElementById('mqttStatus');
+            const muteBtn = document.getElementById('mqttMuteBtn');
+
+            if (deviceDataInterval) { clearInterval(deviceDataInterval); deviceDataInterval = null; }
+
+            if (!deviceKey) {
+                statusEl.textContent = 'Bu hesaba tanımlı bir cihaz yok.';
+                muteBtn.style.display = 'none';
+                return;
+            }
+
+            statusEl.textContent = 'Bağlanıyor...';
+            muteBtn.style.display = 'inline-flex';
+            muteBtn.onclick = async () => {
+                try {
+                    await fetch(WORKER_BASE + '/device/command', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ device_key: deviceKey, command: 'kapat' })
+                    });
+                } catch (err) { /* sessiz geç */ }
+            };
+
+            fetchDeviceReading(deviceKey);
+            deviceDataInterval = setInterval(() => fetchDeviceReading(deviceKey), 5000);
+        }
+
+        async function handleCreateUser(e) {
+            e.preventDefault();
+            const email = document.getElementById('newUserEmail').value.trim();
+            const password = document.getElementById('newUserPassword').value;
+            const fullName = document.getElementById('newUserFullName').value.trim();
+            const mqttTopic = document.getElementById('newUserTopic').value.trim();
+
+            try {
+                const res = await fetch(WORKER_BASE + '/admin/create-user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer admin-static-token' },
+                    body: JSON.stringify({ email, password, fullName, mqttTopic })
+                });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message || 'Oluşturulamadı');
+
+                alert('Hesap oluşturuldu: ' + email);
+                e.target.reset();
+                loadUsers();
+            } catch (err) {
+                alert('Hesap oluşturulamadı: ' + err.message);
+            }
+        }
+
+        async function loadUsers() {
+            const container = document.getElementById('userListContainer');
+            try {
+                const res = await fetch(WORKER_BASE + '/admin/users', {
+                    headers: { 'Authorization': 'Bearer admin-static-token' }
+                });
+                const users = await res.json();
+                renderUsers(Array.isArray(users) ? users : []);
+            } catch (err) {
+                container.innerHTML = '<p style="color: var(--text-secondary);">Hesap listesi yüklenemedi.</p>';
+            }
+        }
+
+        function renderUsers(users) {
+            const container = document.getElementById('userListContainer');
+            container.innerHTML = '';
+
+            if (users.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-secondary);">Henüz hesap yok.</p>';
+                return;
+            }
+
+            users.forEach((u) => {
+                const card = document.createElement('div');
+                card.className = 'comment-card';
+                card.innerHTML = `
+                    <div class="comment-header">
+                        <span class="comment-author">${escapeHtml(u.fullName || u.email)}</span>
+                        <span class="comment-date">${u.resetRequested ? '🔔 Şifre sıfırlama istedi' : (u.isNoData ? 'İlk giriş bekleniyor' : 'Aktif')}</span>
+                    </div>
+                    <p class="comment-text">${escapeHtml(u.email)}${u.mqttTopic ? ' · ' + escapeHtml(u.mqttTopic) : ''}</p>
+                    <button class="admin-delete-btn" style="background: var(--accent); border-color: var(--accent); margin-right: 8px;" onclick="resetUserPassword(${u.id}, '${escapeHtml(u.email)}')">Yeni Şifre Oluştur</button>
+                    <button class="admin-delete-btn" onclick="deleteUser(${u.id}, '${escapeHtml(u.email)}')">Sil</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function resetUserPassword(id, email) {
+            if (!confirm(email + ' için yeni bir geçici şifre oluşturulsun mu? (kullanıcının eski şifresi geçersiz olur)')) return;
+            try {
+                const res = await fetch(WORKER_BASE + '/admin/users/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer admin-static-token' },
+                    body: JSON.stringify({ id })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || 'Sıfırlanamadı');
+                alert(email + ' için yeni geçici şifre:\n\n' + data.tempPassword + '\n\nBu şifreyi kullanıcıya ilet — ilk girişte kendi şifresini belirlemesi istenecek.');
+                await loadUsers();
+            } catch (err) {
+                alert('Şifre sıfırlanamadı: ' + err.message);
+            }
+        }
+
+        async function deleteUser(id, email) {
+            if (!confirm(email + ' hesabını silmek istediğinize emin misiniz?')) return;
+            try {
+                const res = await fetch(WORKER_BASE + '/admin/users?id=' + id, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer admin-static-token' }
+                });
+                if (!res.ok) throw new Error('Silinemedi');
+                loadUsers();
+            } catch (err) {
+                alert('Hesap silinemedi.');
+            }
         }
 
         function switchTab(evt, tabId) {
@@ -968,6 +1628,9 @@
             document.querySelectorAll('.tab-trigger').forEach(t => t.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             evt.currentTarget.classList.add('active');
+            // Küçük ekranlarda (telefon) yeni sekme içeriği ekranın altında kalmasın diye
+            // sekme çubuğunu görünür alana kaydır.
+            document.querySelector('.nav-tabs').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         function switchTabToDownload() {
@@ -978,228 +1641,500 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function toggleTheme() {
-            document.body.classList.toggle('light');
-            const isLight = document.body.classList.contains('light');
-            document.getElementById('themeBtn').textContent = isLight ? '☀️' : '🌙';
-            localStorage.setItem('theme', isLight ? 'light' : 'dark');
-        }
-
-        /* --- 10 Tık Gizli Giriş Tetikleyicisi --- */
-        function triggerSecretLogin() {
-            clickCount++;
-            clearTimeout(clickTimer);
-            
-            if (clickCount >= 10) {
-                clickCount = 0;
-                document.getElementById('loginModal').style.display = 'flex';
-            } else {
-                clickTimer = setTimeout(() => { clickCount = 0; }, 1500);
+        function applyThemeMode(mode) {
+            document.body.classList.remove('light', 'vivid');
+            let icon = '🌙';
+            if (mode === 'light') {
+                document.body.classList.add('light');
+                icon = '☀️';
+            } else if (mode === 'vivid') {
+                document.body.classList.add('vivid');
+                icon = '🔥';
             }
-        }
-
-        function closeModal() {
-            document.getElementById('loginModal').style.display = 'none';
-        }
-
-        function handleAdminLogin(e) {
-            e.preventDefault();
-            const u = document.getElementById('adminUser').value.trim();
-            const p = document.getElementById('adminPass').value.trim();
-
-            if (u === 'TechnoStudios11' && p === 'giradmine') {
-                localStorage.setItem('fireeye_admin', 'true');
-                enableAdminMode();
-                closeModal();
-                alert('Admin modu başarıyla açıldı!');
-            } else {
-                alert('Hatalı kullanıcı adı veya şifre!');
+            const btn = document.getElementById('themeBtn');
+            if (btn) {
+                btn.textContent = icon;
+                btn.title = 'Tema Modu: ' + (mode === 'light' ? 'Açık' : mode === 'vivid' ? 'Canlı' : 'Koyu');
             }
+            localStorage.setItem('theme', mode);
+        }
+
+        function cycleThemeMode() {
+            const current = localStorage.getItem('theme') || 'dark';
+            const next = current === 'dark' ? 'light' : current === 'light' ? 'vivid' : 'dark';
+            applyThemeMode(next);
         }
 
         function enableAdminMode() {
             document.body.classList.add('admin-mode');
             document.getElementById('adminStatusIndicator').style.display = 'inline-flex';
             document.getElementById('adminPanelBox').style.display = 'block';
+            document.getElementById('adminScreenshotBox').style.display = 'block';
+            document.getElementById('adminUserPanelBox').style.display = 'block';
             renderComments();
+            renderScreenshots();
+            loadUsers();
         }
 
         function logoutAdmin() {
             localStorage.removeItem('fireeye_admin');
+            sessionStorage.removeItem('fireeye_admin_token');
             document.body.classList.remove('admin-mode');
             document.getElementById('adminStatusIndicator').style.display = 'none';
             document.getElementById('adminPanelBox').style.display = 'none';
+            document.getElementById('adminScreenshotBox').style.display = 'none';
+            document.getElementById('adminUserPanelBox').style.display = 'none';
             renderComments();
+            renderScreenshots();
             alert('Admin modundan çıkıldı.');
         }
 
-        /* --- Yorum İşlemleri --- */
+        function startDownloadSimulation() {
+            const btn = document.querySelector('.download-box .main-cta');
+            const progressContainer = document.getElementById('downloadProgressContainer');
+            const progressBar = document.getElementById('progressBarFill');
+            const statusText = document.getElementById('downloadStatusText');
+            const feedbackArea = document.getElementById('postDownloadFeedbackArea');
+            
+            btn.style.pointerEvents = 'none';
+            btn.style.opacity = '0.6';
+            progressContainer.style.display = 'block';
+            feedbackArea.style.display = 'none';
+            
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.floor(Math.random() * 15) + 5;
+                if(progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    statusText.textContent = "İndirme Tamamlandı!";
+                    playClickSound(800, 0.15, 'sine');
+                    window.location.href = WORKER_BASE + "/release/latest/download";
+                    setTimeout(() => {
+                        progressContainer.style.display = 'none';
+                        feedbackArea.style.display = 'block';
+                        btn.style.pointerEvents = 'auto';
+                        btn.style.opacity = '1';
+                    }, 500);
+                } else {
+                    statusText.textContent = `APK paketi indiriliyor... %${progress}`;
+                }
+                progressBar.style.width = `${progress}%`;
+            }, 150);
+        }
+
         function renderComments() {
             const container = document.getElementById('commentsListContainer');
             container.innerHTML = '';
 
             if (comments.length === 0) {
-                container.innerHTML = `<p style="text-align: center; color: var(--text-secondary); font-size: 0.9rem; padding: 20px;">${i18n[currentLang].no_reviews}</p>`;
+                container.innerHTML = `<p style="text-align: center; color: var(--text-secondary); font-size: 0.9rem; padding: 20px;">Henüz hiç değerlendirme yapılmamış.</p>`;
                 document.getElementById('avgScoreText').textContent = "0.0";
-                document.getElementById('totalCountText').textContent = i18n[currentLang].no_reviews;
+                document.getElementById('totalCountText').textContent = "Henüz değerlendirme yok";
                 document.getElementById('avgStarsText').innerHTML = '&#9734;&#9734;&#9734;&#9734;&#9734;';
                 return;
             }
 
             let totalScore = 0;
 
-            comments.forEach((c, index) => {
+            comments.forEach((c) => {
                 totalScore += Number(c.rating);
 
                 let starsHtml = '';
                 for(let i = 1; i <= 5; i++) {
-                    starsHtml += i <= c.rating ? '&#9733;' : '&#9734;';
+                    starsHtml += i <= c.rating ? '★' : '☆';
                 }
 
                 const card = document.createElement('div');
                 card.className = 'comment-card';
                 card.innerHTML = `
-                    <button class="admin-delete-btn" onclick="deleteComment(${index})">${i18n[currentLang].delete_btn}</button>
                     <div class="comment-header">
-                        <span class="comment-author">${escapeHtml(c.name)}</span>
-                        <span class="comment-date">${c.date}</span>
+                        <span class="comment-author">${escapeHtml(c.author)}</span>
+                        <span class="comment-date">${escapeHtml(c.date)}</span>
                     </div>
                     <div class="comment-stars">${starsHtml}</div>
-                    <div class="comment-text">${escapeHtml(c.comment)}</div>
+                    <p class="comment-text">${escapeHtml(c.text)}</p>
+                    <button class="admin-delete-btn" onclick="deleteComment(${c.id})">Sil</button>
                 `;
                 container.appendChild(card);
             });
 
             const avg = (totalScore / comments.length).toFixed(1);
             document.getElementById('avgScoreText').textContent = avg;
-            document.getElementById('totalCountText').textContent = `${comments.length} ${i18n[currentLang].reviews_based}`;
-
+            document.getElementById('totalCountText').textContent = `${comments.length} Değerlendirme`;
+            
             let avgStars = '';
-            const roundAvg = Math.round(avg);
+            const roundedAvg = Math.round(avg);
             for(let i = 1; i <= 5; i++) {
-                avgStars += i <= roundAvg ? '&#9733;' : '&#9734;';
+                avgStars += i <= roundedAvg ? '★' : '☆';
             }
             document.getElementById('avgStarsText').innerHTML = avgStars;
         }
 
-        function handleNewComment(e) {
+        async function handleNewComment(e) {
             e.preventDefault();
             const rating = document.querySelector('input[name="rating"]:checked').value;
-            const name = document.getElementById('postUserName').value.trim();
-            const comment = document.getElementById('postUserComment').value.trim();
+            const isAnonymous = document.getElementById('postAnonymous').checked;
+            const author = isAnonymous ? 'Anonim Kullanıcı' : document.getElementById('postUserName').value.trim();
+            const text = document.getElementById('postUserComment').value.trim();
 
-            const newObj = {
-                rating: Number(rating),
-                name: name,
-                comment: comment,
-                date: new Date().toLocaleDateString(currentLang === 'tr' ? 'tr-TR' : (currentLang === 'de' ? 'de-DE' : 'en-US'), { day: 'numeric', month: 'long', year: 'numeric' })
-            };
+            if(!author || !text) return;
 
-            comments.unshift(newObj);
-            localStorage.setItem('fireeye_comments', JSON.stringify(comments));
-            renderComments();
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            if (submitBtn) submitBtn.disabled = true;
 
-            document.getElementById('postDownloadForm').reset();
-            alert('Değerlendirmeniz yayınlandı, teşekkür ederiz!');
-        }
+            try {
+                const res = await fetch(WORKER_BASE + '/reviews', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rating: Number(rating), author, text })
+                });
+                if (!res.ok) throw new Error('İstek başarısız');
 
-        function deleteComment(index) {
-            if(confirm('Bu yorumu silmek istediğinize emin misiniz?')) {
-                comments.splice(index, 1);
-                localStorage.setItem('fireeye_comments', JSON.stringify(comments));
-                renderComments();
+                await loadReviews();
+                document.getElementById('postDownloadForm').reset();
+                document.getElementById('postUserName').required = true;
+                alert('Değerlendirmeniz için teşekkür ederiz!');
+            } catch (err) {
+                alert('Değerlendirme gönderilemedi. Lütfen tekrar deneyin.');
+            } finally {
+                if (submitBtn) submitBtn.disabled = false;
             }
         }
 
-        /* --- Sürüm Notları (Changelog) İşlemleri --- */
+        async function deleteComment(id) {
+            if(!confirm('Bu yorumu silmek istediğinize emin misiniz?')) return;
+            try {
+                const res = await fetch(WORKER_BASE + '/reviews?id=' + id, {
+                    method: 'DELETE',
+                    headers: getAdminAuthHeader()
+                });
+                if (!res.ok) throw new Error('Silinemedi');
+                await loadReviews();
+            } catch (err) {
+                alert('Yorum silinemedi.');
+            }
+        }
+
         function renderChangelogs() {
             const container = document.getElementById('changelogListContainer');
             container.innerHTML = '';
 
-            changelogs.forEach(cl => {
+            changelogs.forEach((ch) => {
                 const card = document.createElement('div');
                 card.className = 'changelog-card';
                 card.innerHTML = `
                     <div>
-                        <span class="changelog-version-badge">${escapeHtml(cl.version)}</span>
-                        <span class="changelog-date">${cl.date}</span>
+                        <span class="changelog-version-badge">${escapeHtml(ch.version)}</span>
+                        <span class="changelog-date">${escapeHtml(ch.date)}</span>
                     </div>
-                    <div class="changelog-desc">${escapeHtml(cl.text)}</div>
+                    <p class="changelog-desc">${escapeHtml(ch.text)}</p>
+                    <button class="admin-delete-btn" onclick="deleteChangelog(${ch.id})">Sil</button>
                 `;
                 container.appendChild(card);
             });
         }
 
-        function handleNewChangelog(e) {
-            e.preventDefault();
-            const ver = document.getElementById('adminVersionInput').value.trim();
-            const desc = document.getElementById('adminChangelogDesc').value.trim();
-
-            const newLog = {
-                version: ver,
-                date: new Date().toLocaleDateString(currentLang === 'tr' ? 'tr-TR' : (currentLang === 'de' ? 'de-DE' : 'en-US'), { day: 'numeric', month: 'long', year: 'numeric' }),
-                text: desc
-            };
-
-            changelogs.unshift(newLog);
-            localStorage.setItem('fireeye_changelogs', JSON.stringify(changelogs));
-            renderChangelogs();
-
-            document.getElementById('adminVersionInput').value = '';
-            document.getElementById('adminChangelogDesc').value = '';
-            alert('Yeni sürüm notu başarıyla yayınlandı!');
+        function updateVersionDisplay() {
+            if (!changelogs || changelogs.length === 0) return;
+            const latest = changelogs[0].version;
+            const pill = document.getElementById('statusPillVersion');
+            const btn = document.getElementById('downloadBtnLabel');
+            if (pill) pill.textContent = latest + ' Kararlı Sürüm';
+            if (btn) btn.textContent = 'APK İndir (' + latest + ')';
         }
 
-        /* --- İndirme İşlemi --- */
-        function startDownloadSimulation() {
-            const container = document.getElementById('downloadProgressContainer');
-            const fill = document.getElementById('progressBarFill');
-            const statusText = document.getElementById('downloadStatusText');
-            const feedbackArea = document.getElementById('postDownloadFeedbackArea');
+        const GITHUB_OWNER = 'ereny116011-cloud';
+        const GITHUB_REPO = 'TechnoStudios';
+        const GITHUB_RELEASE_TAG = 'APK';
 
-            container.style.display = 'block';
-            feedbackArea.style.display = 'none';
-            fill.style.width = '0%';
-            statusText.textContent = i18n[currentLang].dl_compiling;
+        function getGithubToken() {
+            let token = sessionStorage.getItem('fireeye_gh_token');
+            if (!token) {
+                token = (prompt('GitHub Personal Access Token gir (sadece bu tarayıcı oturumunda tutulur, Contents: Read and write izinli TechnoStudios reposu için):') || '').trim();
+                if (token) sessionStorage.setItem('fireeye_gh_token', token);
+            }
+            return token;
+        }
 
-            const link = document.createElement('a');
-            link.href = 'https://github.com/ereny116011-cloud/TechnoStudios/releases/download/APK/fireeye.apk';
-            link.download = 'fireeye.apk';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        // APK dosyasını doğrudan tarayıcıdan GitHub Releases'e yükler (Worker'ı hiç kullanmaz,
+        // böylece Cloudflare'in Worker isteklerine koyduğu 100MB sınırına takılmaz).
+        async function uploadApkToGithub(file, statusEl) {
+            const token = getGithubToken();
+            if (!token) throw new Error('GitHub token girilmedi.');
 
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += Math.floor(Math.random() * 15) + 5;
+            const ghHeaders = {
+                'Authorization': 'Bearer ' + token,
+                'Accept': 'application/vnd.github+json',
+            };
 
-                if (progress >= 100) {
-                    progress = 100;
-                    clearInterval(interval);
+            statusEl.textContent = 'GitHub sürümü kontrol ediliyor...';
+            let release;
+            const getRes = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/tags/${GITHUB_RELEASE_TAG}`, { headers: ghHeaders });
+            if (getRes.ok) {
+                release = await getRes.json();
+            } else if (getRes.status === 404) {
+                const createRes = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases`, {
+                    method: 'POST',
+                    headers: Object.assign({ 'Content-Type': 'application/json' }, ghHeaders),
+                    body: JSON.stringify({ tag_name: GITHUB_RELEASE_TAG, name: 'FireEye APK', body: 'Otomatik yüklenen APK sürümleri.' }),
+                });
+                if (!createRes.ok) throw new Error('GitHub release oluşturulamadı (' + createRes.status + ')');
+                release = await createRes.json();
+            } else if (getRes.status === 401) {
+                sessionStorage.removeItem('fireeye_gh_token');
+                throw new Error('GitHub token geçersiz.');
+            } else {
+                throw new Error('GitHub release bilgisi alınamadı (' + getRes.status + ')');
+            }
 
-                    statusText.textContent = i18n[currentLang].dl_completed;
-                    setTimeout(() => {
-                        container.style.display = 'none';
-                        feedbackArea.style.display = 'block';
-                    }, 500);
-                } else if (progress > 50) {
-                    statusText.textContent = i18n[currentLang].dl_security;
-                } else if (progress > 20) {
-                    statusText.textContent = i18n[currentLang].dl_server;
+            const existingAsset = (release.assets || []).find(a => a.name === file.name);
+            if (existingAsset) {
+                statusEl.textContent = 'Eski dosya siliniyor...';
+                await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/assets/${existingAsset.id}`, {
+                    method: 'DELETE',
+                    headers: ghHeaders,
+                });
+            }
+
+            statusEl.textContent = 'APK GitHub\'a yükleniyor... (büyük dosyalarda biraz sürebilir)';
+            const uploadUrl = release.upload_url.replace('{?name,label}', '') + '?name=' + encodeURIComponent(file.name);
+            const uploadRes = await fetch(uploadUrl, {
+                method: 'POST',
+                headers: Object.assign({ 'Content-Type': file.type || 'application/vnd.android.package-archive' }, ghHeaders),
+                body: file,
+            });
+            if (!uploadRes.ok) throw new Error('GitHub yüklemesi başarısız (' + uploadRes.status + ')');
+            const asset = await uploadRes.json();
+            return { fileName: file.name, downloadUrl: asset.browser_download_url, fileSize: file.size };
+        }
+
+        async function handleNewChangelog(e) {
+            e.preventDefault();
+            const version = document.getElementById('adminVersionInput').value.trim();
+            const text = document.getElementById('adminChangelogDesc').value.trim();
+            const fileInput = document.getElementById('adminReleaseFile');
+            const statusEl = document.getElementById('adminReleaseStatus');
+            const file = fileInput && fileInput.files && fileInput.files[0];
+
+            if(!version || !text) return;
+
+            try {
+                // Dosya seçildiyse, doğrudan GitHub'a yükle, sonra Worker'a sadece meta veriyi kaydet.
+                if (file) {
+                    const uploaded = await uploadApkToGithub(file, statusEl);
+                    statusEl.textContent = 'APK yüklendi, kaydediliyor...';
+                    const metaRes = await fetch(WORKER_BASE + '/admin/release', {
+                        method: 'POST',
+                        headers: Object.assign({ 'Content-Type': 'application/json' }, getAdminAuthHeader()),
+                        body: JSON.stringify({ version, fileName: uploaded.fileName, downloadUrl: uploaded.downloadUrl, fileSize: uploaded.fileSize }),
+                    });
+                    if (!metaRes.ok) throw new Error('Sürüm bilgisi kaydedilemedi');
+                    statusEl.textContent = 'APK yüklendi ✓';
                 }
 
-                fill.style.width = progress + '%';
-            }, 200);
+                const res = await fetch(WORKER_BASE + '/changelogs', {
+                    method: 'POST',
+                    headers: Object.assign({ 'Content-Type': 'application/json' }, getAdminAuthHeader()),
+                    body: JSON.stringify({ version, text })
+                });
+                if (!res.ok) throw new Error('İstek başarısız');
+
+                await loadChangelogs();
+                document.getElementById('adminVersionInput').value = '';
+                document.getElementById('adminChangelogDesc').value = '';
+                fileInput.value = '';
+                statusEl.textContent = '';
+                alert('Yeni sürüm yayınlandı!');
+            } catch (err) {
+                statusEl.textContent = '';
+                alert('Sürüm eklenemedi: ' + err.message);
+            }
+        }
+
+        async function deleteChangelog(id) {
+            if(!confirm('Bu sürüm notunu silmek istediğinize emin misiniz?')) return;
+            try {
+                const res = await fetch(WORKER_BASE + '/changelogs?id=' + id, {
+                    method: 'DELETE',
+                    headers: getAdminAuthHeader()
+                });
+                if (!res.ok) throw new Error('Silinemedi');
+                await loadChangelogs();
+            } catch (err) {
+                alert('Sürüm notu silinemedi.');
+            }
         }
 
         function escapeHtml(str) {
-            return str
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
+
+        function renderScreenshots() {
+            const container = document.getElementById('screenshotGridContainer');
+            container.innerHTML = '';
+
+            if (screenshots.length === 0) {
+                container.innerHTML = `<p class="screenshot-empty">Henüz ekran görüntüsü eklenmedi.</p>`;
+                return;
+            }
+
+            screenshots.forEach((s, index) => {
+                const fullUrl = WORKER_BASE + s.url;
+                const card = document.createElement('div');
+                card.className = 'screenshot-card';
+                card.innerHTML = `
+                    <img src="${fullUrl}" loading="lazy" decoding="async" alt="${escapeHtml(s.caption || 'Ekran Görüntüsü')}" onclick="openLightbox('${fullUrl}')">
+                    ${s.caption ? `<div class="screenshot-caption">${escapeHtml(s.caption)}</div>` : ''}
+                    <div class="screenshot-admin-controls">
+                        <button class="reorder-btn" title="Yukarı taşı" onclick="moveScreenshot(${index}, -1)" ${index === 0 ? 'disabled' : ''}>▲</button>
+                        <button class="reorder-btn" title="Aşağı taşı" onclick="moveScreenshot(${index}, 1)" ${index === screenshots.length - 1 ? 'disabled' : ''}>▼</button>
+                        <button class="admin-delete-btn" onclick="deleteScreenshot(${s.id})">Sil</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function loadScreenshots() {
+            try {
+                const res = await fetch(WORKER_BASE + '/screenshots');
+                screenshots = await res.json();
+            } catch (err) {
+                screenshots = [];
+            }
+            renderScreenshots();
+        }
+
+        // Yüklenmeden önce görseli tarayıcıda otomatik küçültür/sıkıştırır.
+        // Böylece hangi boyutta fotoğraf seçilirse seçilsin hızlı yüklenir, kullanıcı boyut sınırıyla uğraşmaz.
+        function compressImage(file, maxDim = 1600, quality = 0.82) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                const reader = new FileReader();
+                reader.onload = (e) => { img.src = e.target.result; };
+                reader.onerror = reject;
+                img.onload = () => {
+                    let { width, height } = img;
+                    if (width > maxDim || height > maxDim) {
+                        if (width >= height) {
+                            height = Math.round(height * (maxDim / width));
+                            width = maxDim;
+                        } else {
+                            width = Math.round(width * (maxDim / height));
+                            height = maxDim;
+                        }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    canvas.toBlob(
+                        (blob) => blob ? resolve(blob) : reject(new Error('Sıkıştırma başarısız')),
+                        'image/jpeg',
+                        quality
+                    );
+                };
+                img.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function handleNewScreenshot(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('adminScreenshotFile');
+            const caption = document.getElementById('adminScreenshotCaption').value.trim();
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Sıkıştırılıyor...'; }
+
+            try {
+                const compressed = await compressImage(file);
+                if (submitBtn) submitBtn.textContent = 'Yükleniyor...';
+
+                const formData = new FormData();
+                formData.append('file', compressed, 'screenshot.jpg');
+                formData.append('caption', caption);
+
+                const res = await fetch(WORKER_BASE + '/screenshots', {
+                    method: 'POST',
+                    headers: getAdminAuthHeader(),
+                    body: formData
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Yükleme başarısız');
+
+                await loadScreenshots();
+                e.target.reset();
+                alert('Ekran görüntüsü eklendi!');
+            } catch (err) {
+                alert('Ekran görüntüsü yüklenemedi: ' + err.message);
+            } finally {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Ekran Görüntüsünü Yükle'; }
+            }
+        }
+
+        async function deleteScreenshot(id) {
+            if (!confirm('Bu ekran görüntüsünü silmek istediğinize emin misiniz?')) return;
+            try {
+                const res = await fetch(WORKER_BASE + '/screenshots?id=' + id, {
+                    method: 'DELETE',
+                    headers: getAdminAuthHeader()
+                });
+                if (!res.ok) throw new Error('Silinemedi');
+                await loadScreenshots();
+            } catch (err) {
+                alert('Ekran görüntüsü silinemedi.');
+            }
+        }
+
+        async function moveScreenshot(index, direction) {
+            const target = index + direction;
+            if (target < 0 || target >= screenshots.length) return;
+
+            // Ekranda anında yer değiştir (hızlı his), sonra kaydet
+            [screenshots[index], screenshots[target]] = [screenshots[target], screenshots[index]];
+            renderScreenshots();
+
+            try {
+                const order = screenshots.map(s => s.id);
+                const res = await fetch(WORKER_BASE + '/screenshots/reorder', {
+                    method: 'POST',
+                    headers: Object.assign({ 'Content-Type': 'application/json' }, getAdminAuthHeader()),
+                    body: JSON.stringify({ order })
+                });
+                if (!res.ok) throw new Error('Sıralama kaydedilemedi');
+            } catch (err) {
+                alert('Sıralama kaydedilemedi, sayfa yenilenerek eski hâline dönülüyor.');
+                await loadScreenshots();
+            }
+        }
+
+        function openLightbox(src) {
+            document.getElementById('imgLightboxImg').src = src;
+            document.getElementById('imgLightbox').style.display = 'flex';
+            // Telefonun geri tuşu/kaydırma hareketi sayfadan çıkmasın diye
+            // sahte bir geçmiş kaydı ekliyoruz; geri tuşu sadece bunu tüketip görseli kapatacak.
+            history.pushState({ lightbox: true }, '');
+        }
+
+        function closeLightbox() {
+            document.getElementById('imgLightbox').style.display = 'none';
+            if (history.state && history.state.lightbox) {
+                history.back();
+            }
+        }
+
+        window.addEventListener('popstate', () => {
+            const lightbox = document.getElementById('imgLightbox');
+            if (lightbox && lightbox.style.display === 'flex') {
+                lightbox.style.display = 'none';
+            }
+        });
     </script>
 </body>
 </html>

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FireEye - TechnoStudios</title>
+    <style>
+        :root {
+            --fire-gradient: linear-gradient(135deg, #ff416c, #ff4b2b, #f9d423);
+            --bg-dark: #0f0f13;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --success-color: #00e676;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(circle at 50% 20%, rgba(255, 75, 43, 0.2) 0%, transparent 60%);
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 30px 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: rgba(20, 20, 25, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
+            overflow: hidden; /* Animasyon taşmalarını engellemek için */
+        }
+
+        .back-btn {
+            display: inline-block;
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+        }
+
+        .back-btn:hover { 
+            color: #fff; 
+        }
+
+        .header { 
+            text-align: center; 
+            margin-bottom: 30px; 
+        }
+
+        .app-icon {
+            width: 80px; 
+            height: 80px;
+            margin: 0 auto 15px;
+            background: var(--fire-gradient);
+            border-radius: 22px;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            font-size: 2.5rem;
+            box-shadow: 0 8px 25px rgba(255, 75, 43, 0.4);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            background: var(--fire-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .subtitle { 
+            color: rgba(255, 255, 255, 0.7); 
+            font-size: 1.1rem; 
+        }
+
+        /* Yatay Tam Ekran Sekmeler */
+        .nav-tabs {
+            display: flex;
+            width: 100%; /* Konteynerin tamamını kaplar */
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            margin-bottom: 35px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden; /* Kenar taşmalarını engeller */
+        }
+
+        .nav-tabs button {
+            flex: 1 1 0; /* Tüm sekmelerin alanı %100 eşit paylaşmasını zorunlu kılar */
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            padding: 16px 0;
+            font-size: 1.05rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            text-align: center;
+        }
+
+        .nav-tabs button.active {
+            color: #fff;
+            background: rgba(255, 75, 43, 0.15);
+            border-bottom: 3px solid #ff4b2b;
+        }
+
+        .nav-tabs button:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+        }
+
+        /* Sekme İçerikleri ve Animasyon */
+        .tab-content {
+            display: none;
+            animation: fadeSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Sayfa İçerik Stilleri */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 20px;
+            transition: transform 0.2s, background 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 75, 43, 0.3);
+        }
+
+        .feature-card h3 { 
+            color: #ff4b2b; 
+            margin-bottom: 10px; 
+            font-size: 1.1rem; 
+        }
+        
+        .feature-card p { 
+            color: rgba(255, 255, 255, 0.75); 
+            line-height: 1.5; 
+            font-size: 0.9rem; 
+        }
+
+        /* Güvenlik Rozeti */
+        .security-badge {
+            display: flex; 
+            align-items: center; 
+            gap: 20px;
+            background: rgba(0, 230, 118, 0.1);
+            border: 1px solid rgba(0, 230, 118, 0.3);
+            border-radius: 14px; 
+            padding: 30px;
+        }
+
+        .security-icon { 
+            font-size: 3.5rem; 
+            color: var(--success-color); 
+        }
+
+        .security-details h4 { 
+            color: var(--success-color); 
+            margin-bottom: 10px; 
+            font-size: 1.3rem; 
+        }
+
+        .security-details p { 
+            color: rgba(255, 255, 255, 0.85); 
+            font-size: 0.95rem; 
+            line-height: 1.5; 
+        }
+
+        .vt-link { 
+            display: inline-block; 
+            margin-top: 12px; 
+            color: #4db8ff; 
+            text-decoration: none; 
+            font-weight: 600;
+        }
+
+        .vt-link:hover {
+            text-decoration: underline;
+        }
+
+        /* İndirme Alanı */
+        .download-box { 
+            text-align: center; 
+            padding: 30px 0 10px; 
+        }
+
+        .btn-download {
+            display: inline-block; 
+            padding: 18px 45px;
+            background: var(--fire-gradient); 
+            color: white;
+            font-weight: 700; 
+            font-size: 1.2rem; 
+            text-decoration: none;
+            border-radius: 14px; 
+            box-shadow: 0 6px 20px rgba(255, 75, 43, 0.35);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-download:hover { 
+            transform: translateY(-3px); 
+            box-shadow: 0 10px 25px rgba(255, 75, 43, 0.5);
+        }
+
+        .file-info { 
+            margin-top: 18px; 
+            font-size: 0.9rem; 
+            color: rgba(255, 255, 255, 0.5); 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../" class="back-btn">&larr; Ana Portala Dön</a>
+
+        <div class="header">
+            <div class="app-icon">🔥</div>
+            <h1>FireEye</h1>
+            <p class="subtitle">Akıllı Yangın Algılama & Erken Müdahale Sistemi</p>
+        </div>
+
+        <!-- Tam Genişlik Yatay Sekmeler -->
+        <div class="nav-tabs">
+            <button class="tab-link active" onclick="openTab(event, 'features')">Özellikler</button>
+            <button class="tab-link" onclick="openTab(event, 'security')">Güvenlik</button>
+            <button class="tab-link" onclick="openTab(event, 'download')">İndir</button>
+        </div>
+
+        <!-- SEKME 1: Özellikler (Konum kaldırıldı) -->
+        <div id="features" class="tab-content active">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3>🚨 Hassas Yangın Algılama</h3>
+                    <p>Gelişmiş sensör entegrasyonu ile duman ve ısı değişimlerini saniyeler içinde tespit edip anında alarm verir.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>📲 Otomatik Acil Durum SMS'i</h3>
+                    <p>Tehlike anında panik yapmanıza gerek kalmaz. Sistem, önceden belirlenen acil durum kişilerine otomatik olarak tehlike bildirimi gönderir.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>☁️ Cloud & Yerel Ağ</h3>
+                    <p>Yerel Wi-Fi ağı üzerinden bağlantı veya Cloud servisi ile dünyanın her yerinden kesintisiz kontrol imkanı.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>⚙️ Anlaşılır Kılavuz</h3>
+                    <p>İnteraktif kurulum senaryoları ve kolay arayüzü sayesinde sistem entegrasyonunu dakikalar içinde tamamlayın.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEKME 2: Güvenlik -->
+        <div id="security" class="tab-content">
+            <div class="security-badge">
+                <div class="security-icon">🛡️</div>
+                <div class="security-details">
+                    <h4>0/65 - Temiz & Güvenli</h4>
+                    <p>FireEye APK dosyası VirusTotal üzerinden sektör lideri 65 farklı antivirüs motoru (Kaspersky, BitDefender, vb.) tarafından taranmış ve hiçbir tehdit bulunmamıştır.</p>
+                    <a href="#" class="vt-link" target="_blank">VirusTotal Raporunu Görüntüle &nearr;</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEKME 3: İndir -->
+        <div id="download" class="tab-content">
+            <div class="download-box">
+                <a href="https://github.com/ereny116011-cloud/TechnoStudios/releases/download/APK/fireeye.apk" class="btn-download" download>
+                    🔥 FireEye APK İndir
+                </a>
+                <p class="file-info">Sürüm: En Güncel Stabil Sürüm | Android 8.0+ Uyumluluğu</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Sekme Geçişlerini Kontrol Eden JavaScript -->
+    <script>
+        function openTab(evt, tabName) {
+            // Tüm sekme içeriklerini gizle
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].classList.remove("active");
+            }
+
+            // Tüm sekme butonlarından "active" sınıfını kaldır
+            tablinks = document.getElementsByClassName("tab-link");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].classList.remove("active");
+            }
+
+            // Tıklanan sekmeyi göster ve butona "active" sınıfı ekle
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+    </script>
+</body>
+</html>
