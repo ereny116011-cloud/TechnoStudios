@@ -6,48 +6,66 @@
     <title>TechnoStudios | Kurumsal Yazılım ve Sistem Çözümleri</title>
     <!-- Favicon -->
     <link rel="icon" type="image/jpeg" href="technostudios_logo.jpg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-base: #090b10;
-            --bg-surface: #121620;
-            --bg-elevated: #1a202c;
-            --border-subtle: #273043;
-            --border-active: #94a3b8;
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
-            --accent-main: #e2e8f0;
-            --accent-gold: #f59e0b;
-            --accent-red: #ff6a00;
-            --gold-bg: rgba(245, 158, 11, 0.08);
-            --gold-border: rgba(245, 158, 11, 0.25);
+            --bg-base: #0c0d10;
+            --bg-surface: #15171b;
+            --bg-elevated: #1b1e23;
+            --border-subtle: #262a31;
+            --border-active: #3b414a;
+            --text-primary: #e9e8e6;
+            --text-secondary: #9aa0a8;
+            --text-muted: #6b7178;
+            --accent: #e2603f;
+            --accent-soft: rgba(226, 96, 63, 0.09);
+            --accent-border: rgba(226, 96, 63, 0.26);
             --logo-bg: transparent;
-            --transition-smooth: all 0.2s ease;
+            --transition-smooth: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+            --grid: rgba(255, 255, 255, 0.028);
+            --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+            /* geriye dönük adlar */
+            --accent-main: var(--text-primary);
+            --accent-gold: var(--accent);
+            --accent-red: var(--accent);
+            --gold-bg: var(--accent-soft);
+            --gold-border: var(--accent-border);
         }
 
         body.light-mode {
-            --bg-base: #f4f5f7;
+            --bg-base: #f5f4f1;
             --bg-surface: #ffffff;
-            --bg-elevated: #f8fafc;
-            --border-subtle: #e2e8f0;
-            --border-active: #64748b;
-            --text-primary: #0f172a;
-            --text-secondary: #475569;
-            --text-muted: #94a3b8;
-            --accent-main: #1e293b;
-            --accent-gold: #d97706;
-            --accent-red: #ea580c;
-            --gold-bg: rgba(217, 119, 6, 0.05);
-            --gold-border: rgba(217, 119, 6, 0.2);
+            --bg-elevated: #f8f7f4;
+            --border-subtle: #e6e3dc;
+            --border-active: #c9c4b9;
+            --text-primary: #17150f;
+            --text-secondary: #5c5a53;
+            --text-muted: #8a877e;
+            --accent: #c24a2b;
+            --accent-soft: rgba(194, 74, 43, 0.07);
+            --accent-border: rgba(194, 74, 43, 0.22);
             --logo-bg: #ffffff;
+            --grid: rgba(20, 18, 12, 0.045);
+
+            /* geriye dönük adlar */
+            --accent-main: var(--text-primary);
+            --accent-gold: var(--accent);
+            --accent-red: var(--accent);
+            --gold-bg: var(--accent-soft);
+            --gold-border: var(--accent-border);
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
+
+        h1, h2, h3, h4 { font-family: 'Space Grotesk', 'Inter', sans-serif; }
 
         body {
             min-height: 100vh;
@@ -60,6 +78,21 @@
             position: relative;
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
+        }
+
+        /* İnce teknik ızgara dokusu (üstten alta sönümlenir) */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(to right, var(--grid) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+            background-size: 68px 68px;
+            -webkit-mask-image: radial-gradient(ellipse 85% 55% at 50% -5%, #000 0%, transparent 78%);
+            mask-image: radial-gradient(ellipse 85% 55% at 50% -5%, #000 0%, transparent 78%);
         }
 
         /* Üst Araç Çubuğu */
@@ -111,12 +144,7 @@
             height: 38px;
             justify-content: center;
         }
-
-        .tool-btn svg {
-            width: 14px;
-            height: 14px;
-            fill: currentColor;
-        }
+        .tool-btn svg { width: 15px; height: 15px; }
 
         /* Doğrudan Akış Alanı */
         .main-wrapper {
@@ -161,35 +189,45 @@
             color: var(--text-primary);
         }
 
+
         /* Modüler Navigasyon (Sekmeler) */
         .nav-modules {
             display: flex;
-            gap: 6px;
-            margin-bottom: 35px;
-            background: var(--bg-surface);
-            padding: 5px;
-            border-radius: 12px;
-            border: 1px solid var(--border-subtle);
+            gap: 28px;
+            margin-bottom: 32px;
+            border-bottom: 1px solid var(--border-subtle);
         }
 
         .module-tab {
-            flex: 1;
             background: transparent;
             border: none;
             color: var(--text-secondary);
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
+            padding: 0 0 12px;
+            font-size: 0.92rem;
+            font-weight: 500;
             cursor: pointer;
-            text-align: center;
-            transition: var(--transition-smooth);
+            position: relative;
+            transition: color 0.15s ease;
+        }
+
+        .module-tab:hover {
+            color: var(--text-primary);
         }
 
         .module-tab.active {
-            background: var(--bg-elevated);
             color: var(--text-primary);
-            border: 1px solid var(--border-subtle);
+            font-weight: 600;
+        }
+
+        .module-tab.active::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -1px;
+            height: 2px;
+            background: var(--accent);
+            border-radius: 2px;
         }
 
         .module-pane {
@@ -198,20 +236,11 @@
 
         .module-pane.active {
             display: block;
-            animation: paneFade 0.2s ease-in-out;
-        }
-
-        @keyframes paneFade {
-            from { opacity: 0; transform: translateY(4px); }
-            to { opacity: 1; transform: translateY(0); }
         }
 
         /* Ürün Kartı */
         .enterprise-card {
-            background:
-                radial-gradient(circle at 80px 65px, rgba(239, 68, 68, 0.10), transparent 55%),
-                linear-gradient(135deg, rgba(249, 115, 22, 0.06), transparent 45%),
-                var(--bg-surface);
+            background: var(--bg-surface);
             border: 1px solid var(--border-subtle);
             border-radius: 16px;
             padding: 30px;
@@ -266,9 +295,10 @@
         }
 
         .product-version {
-            font-size: 0.78rem;
+            font-family: var(--mono);
+            font-size: 0.74rem;
             color: var(--text-muted);
-            font-weight: 500;
+            font-weight: 400;
         }
 
         .action-link-btn {
@@ -321,9 +351,11 @@
         }
 
         .metric-key {
-            font-size: 0.7rem;
+            font-family: var(--mono);
+            font-size: 0.68rem;
             color: var(--text-muted);
-            font-weight: 600;
+            font-weight: 500;
+            letter-spacing: 0.08em;
             text-transform: uppercase;
         }
 
@@ -480,8 +512,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(4px);
+            background: rgba(0, 0, 0, 0.6);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -503,7 +534,7 @@
             width: 90%;
             max-width: 400px;
             padding: 28px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
         }
 
         .modal-heading {
@@ -530,7 +561,7 @@
 
         .modal-dismiss-btn {
             background: var(--accent-gold);
-            color: #090b10;
+            color: #ffffff;
             border: none;
             width: 100%;
             padding: 10px;
@@ -550,27 +581,259 @@
             margin-top: 40px;
             text-align: center;
             color: var(--text-muted);
-            font-size: 0.8rem;
+            font-family: var(--mono);
+            font-size: 0.74rem;
+            letter-spacing: 0.02em;
             border-top: 1px solid var(--border-subtle);
             padding-top: 20px;
             width: 100%;
             max-width: 960px;
         }
 
+        .ftr-sep { margin: 0 8px; opacity: 0.6; }
+
         footer a {
             color: var(--text-primary);
             text-decoration: none;
             font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
+        footer a svg { width: 14px; height: 14px; fill: currentColor; }
 
         footer a:hover {
-            text-decoration: underline;
+            color: var(--accent);
         }
 
         @media (max-width: 768px) {
             .corp-header { flex-direction: column; text-align: center; }
             .enterprise-toolbar { top: 15px; right: 15px; flex-wrap: wrap; justify-content: flex-end; }
         }
+    </style>
+    <style id="linear-theme">
+        /* ——— Linear / Vercel esintili katman ——— */
+        :root {
+            --bg-base: #08090c;
+            --bg-surface: rgba(255, 255, 255, 0.026);
+            --bg-elevated: rgba(255, 255, 255, 0.05);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-active: rgba(255, 255, 255, 0.18);
+            --text-primary: #f3f2f0;
+            --text-secondary: #9a9ea6;
+            --text-muted: #64676e;
+            --accent: #e2603f;
+            --accent-soft: rgba(226, 96, 63, 0.10);
+            --accent-border: rgba(226, 96, 63, 0.30);
+            --logo-bg: transparent;
+            --grid: rgba(255, 255, 255, 0.03);
+            --glass: rgba(255, 255, 255, 0.02);
+            --accent-main: var(--text-primary);
+            --accent-gold: var(--accent);
+            --accent-red: var(--accent);
+            --gold-bg: var(--accent-soft);
+            --gold-border: var(--accent-border);
+        }
+
+        body.light-mode {
+            --bg-base: #f4f3f0;
+            --bg-surface: rgba(255, 255, 255, 0.7);
+            --bg-elevated: rgba(255, 255, 255, 0.9);
+            --border-subtle: rgba(20, 18, 12, 0.10);
+            --border-active: rgba(20, 18, 12, 0.22);
+            --text-primary: #16140f;
+            --text-secondary: #5b584f;
+            --text-muted: #8b877d;
+            --accent: #c24a2b;
+            --accent-soft: rgba(194, 74, 43, 0.08);
+            --accent-border: rgba(194, 74, 43, 0.24);
+            --logo-bg: #ffffff;
+            --grid: rgba(20, 18, 12, 0.05);
+            --glass: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Aurora arka plan */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: -25% -15%;
+            z-index: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(32% 38% at 18% 12%, rgba(226, 96, 63, 0.22), transparent 70%),
+                radial-gradient(30% 34% at 84% 6%, rgba(124, 108, 255, 0.18), transparent 70%),
+                radial-gradient(40% 40% at 68% 88%, rgba(226, 96, 63, 0.10), transparent 70%);
+            filter: blur(26px);
+            animation: auroraDrift 22s ease-in-out infinite alternate;
+        }
+        body.light-mode::after {
+            background:
+                radial-gradient(32% 38% at 18% 12%, rgba(194, 74, 43, 0.14), transparent 70%),
+                radial-gradient(30% 34% at 84% 6%, rgba(124, 108, 255, 0.12), transparent 70%);
+            opacity: 0.85;
+        }
+        @keyframes auroraDrift {
+            0%   { transform: translate3d(0, 0, 0) scale(1); }
+            50%  { transform: translate3d(2%, -2%, 0) scale(1.06); }
+            100% { transform: translate3d(-2%, 2%, 0) scale(1.02); }
+        }
+        @media (prefers-reduced-motion: reduce) { body::after { animation: none; } }
+
+        body { padding-top: clamp(74px, 11vw, 108px); }
+
+        /* Araç çubuğu */
+        .tool-btn, .lang-select {
+            background: var(--glass);
+            border: 1px solid var(--border-subtle);
+            backdrop-filter: blur(14px) saturate(140%);
+            -webkit-backdrop-filter: blur(14px) saturate(140%);
+            border-radius: 10px;
+            height: 40px;
+        }
+        .tool-btn:hover, .lang-select:hover {
+            border-color: var(--border-active);
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+        }
+
+        /* Başlık */
+        .corp-logo-container {
+            width: 66px;
+            height: 66px;
+            border-radius: 17px;
+            border: 1px solid var(--border-subtle);
+            background: var(--glass);
+            box-shadow: 0 12px 34px -16px rgba(226, 96, 63, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(10px);
+        }
+        .corp-title-box h1 {
+            font-size: clamp(2rem, 4.4vw, 2.7rem);
+            letter-spacing: -0.035em;
+            background: linear-gradient(180deg, #ffffff 0%, #b7b3ad 120%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+        }
+        body.light-mode .corp-title-box h1 {
+            background: linear-gradient(180deg, #16140f, #4a463d);
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        /* Sekmeler */
+        .nav-modules { gap: 6px; }
+        .module-tab { padding: 9px 14px 12px; border-radius: 8px 8px 0 0; font-size: 0.9rem; }
+        .module-tab:hover { background: var(--glass); }
+        .module-tab.active::after { height: 2px; background: linear-gradient(90deg, var(--accent), #ff9a6e); }
+
+        /* Ürün kartı */
+        .enterprise-card {
+            position: relative;
+            isolation: isolate;
+            overflow: hidden;
+            border-radius: 18px;
+            border: 1px solid var(--border-subtle);
+            background:
+                radial-gradient(130% 130% at 0% 0%, rgba(226, 96, 63, 0.07), transparent 45%),
+                linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.008));
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 30px 70px -40px rgba(0, 0, 0, 0.9);
+            transition: border-color 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
+        }
+        body.light-mode .enterprise-card {
+            background:
+                radial-gradient(130% 130% at 0% 0%, rgba(194, 74, 43, 0.06), transparent 45%),
+                linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.6));
+        }
+        .enterprise-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            pointer-events: none;
+            z-index: 0;
+            background: radial-gradient(340px circle at var(--mx, 50%) var(--my, 0%), rgba(226, 96, 63, 0.14), transparent 62%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .enterprise-card:hover { border-color: var(--border-active); transform: translateY(-3px); box-shadow: 0 40px 80px -40px rgba(226, 96, 63, 0.4); }
+        .enterprise-card:hover::after { opacity: 1; }
+        .enterprise-card > * { position: relative; z-index: 1; }
+
+        .product-icon-box {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            border: 1px solid var(--border-subtle);
+            background: radial-gradient(120% 120% at 30% 0%, rgba(226, 96, 63, 0.18), rgba(255, 255, 255, 0.02));
+            box-shadow: 0 14px 30px -16px rgba(226, 96, 63, 0.8);
+        }
+        .product-meta h3 { letter-spacing: -0.01em; }
+
+        .action-link-btn {
+            background: var(--glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease, color 0.18s ease;
+        }
+        .action-link-btn:hover { border-color: var(--accent-border); background: var(--accent-soft); color: var(--accent); transform: translateX(2px); }
+
+        /* Metrikler */
+        .metrics-grid { border-radius: 12px; }
+        .metric-cell { padding: 14px 16px; }
+        .metric-val { font-size: 0.92rem; }
+
+        /* Paneller */
+        .vision-container, .corporate-info-box {
+            border-radius: 18px;
+            border: 1px solid var(--border-subtle);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.006));
+            backdrop-filter: blur(10px);
+        }
+        body.light-mode .vision-container, body.light-mode .corporate-info-box {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.62));
+        }
+        .achievements-panel {
+            border-radius: 18px;
+            border: 1px solid var(--gold-border);
+            background: linear-gradient(180deg, var(--accent-soft), rgba(255, 255, 255, 0.006));
+        }
+
+        .vision-section h3 { display: flex; align-items: center; gap: 9px; }
+        .vision-section h3::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        .personnel-card {
+            border-radius: 12px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01));
+            transition: border-color 0.18s ease, transform 0.18s ease;
+        }
+        .personnel-card:hover { border-color: var(--accent-border); transform: translateY(-2px); }
+
+        .course-matrix-item {
+            border-radius: 12px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.006));
+        }
+        .course-matrix-item:hover { border-color: var(--accent-border); box-shadow: 0 18px 40px -24px rgba(226, 96, 63, 0.7); }
+
+        /* Modal */
+        .modal-container-overlay { backdrop-filter: blur(6px); }
+        .modal-content-box {
+            border-radius: 20px;
+            border: 1px solid var(--border-active);
+            background: rgba(16, 17, 20, 0.86);
+            backdrop-filter: blur(22px) saturate(150%);
+            -webkit-backdrop-filter: blur(22px) saturate(150%);
+            box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        }
+        body.light-mode .modal-content-box { background: rgba(255, 255, 255, 0.9); }
     </style>
 </head>
 <body>
@@ -584,18 +847,12 @@
             <option value="es">ES - Español</option>
         </select>
         <a href="https://github.com/ereny116011-cloud/TechnoStudios" target="_blank" class="tool-btn">
-            <svg viewBox="0 0 16 16">
-                <path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path>
-            </svg>
+            <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>
             <span id="txt-source">GitHub</span>
         </a>
         <button class="tool-btn icon-only" onclick="toggleThemeSystem()" aria-label="Tema Modu" title="Tema Modu">
-            <svg id="icon-theme-moon" viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;">
-                <path d="M20.742 13.045a8.088 8.088 0 0 1-2.077.273c-4.612 0-8.35-3.738-8.35-8.35 0-1.284.291-2.5.812-3.586a.75.75 0 0 0-.919-1.02A10.05 10.05 0 0 0 2.25 12.15c0 5.523 4.477 10 10 10a10.05 10.05 0 0 0 9.483-6.938.75.75 0 0 0-.99-.918Z"/>
-            </svg>
-            <svg id="icon-theme-sun" viewBox="0 0 24 24" fill="currentColor" style="width:17px;height:17px;display:none;">
-                <path d="M12 2.75a.75.75 0 0 1 .75.75V5a.75.75 0 0 1-1.5 0V3.5a.75.75 0 0 1 .75-.75ZM19.07 4.93a.75.75 0 0 1 0 1.06l-1.06 1.06a.75.75 0 1 1-1.06-1.06l1.06-1.06a.75.75 0 0 1 1.06 0ZM21.25 12a.75.75 0 0 1-.75.75H19a.75.75 0 0 1 0-1.5h1.5a.75.75 0 0 1 .75.75ZM17.06 19.07a.75.75 0 0 1-1.06 0l-1.06-1.06a.75.75 0 1 1 1.06-1.06l1.06 1.06a.75.75 0 0 1 0 1.06ZM12 21.25a.75.75 0 0 1-.75-.75V19a.75.75 0 0 1 1.5 0v1.5a.75.75 0 0 1-.75.75ZM6.93 19.07a.75.75 0 0 1 0-1.06l1.06-1.06a.75.75 0 1 1 1.06 1.06l-1.06 1.06a.75.75 0 0 1-1.06 0ZM2.75 12a.75.75 0 0 1 .75-.75H5a.75.75 0 0 1 0 1.5H3.5a.75.75 0 0 1-.75-.75ZM6.93 4.93a.75.75 0 0 1 1.06 0l1.06 1.06a.75.75 0 1 1-1.06 1.06L6.93 5.99a.75.75 0 0 1 0-1.06ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Z"/>
-            </svg>
+            <svg id="icon-theme-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg id="icon-theme-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;display:none;"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
         </button>
     </div>
 
@@ -637,7 +894,7 @@
                     </div>
                     <a href="fireeye/" class="action-link-btn">
                         <span id="btn-go-app">Uygulamaya Git</span>
-                        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </a>
                 </div>
 
@@ -710,35 +967,35 @@
                         <div class="course-matrix-item" onclick="openSysModal('Tasarım', '3D CAD modelleme teknikleri, hızlı prototipleme ve dönem sonu şenliği birinciliği.')">
                             <div class="course-meta-info">
                                 <span class="cm-title" id="c-tasarim">Tasarım</span>
-                                <span class="cm-rank" id="c-rank-1">Şenlik 1.liği 🥇</span>
+                                <span class="cm-rank" id="c-rank-1">Şenlik 1.liği</span>
                             </div>
                             <span class="cm-action-tag btn-inspect">İncele</span>
                         </div>
                         <div class="course-matrix-item" onclick="openSysModal('Robotik ve Kodlama', 'Mikrodenetleyici devreleri, sensör kalibrasyonu ve dönem sonu şenliği birinciliği.')">
                             <div class="course-meta-info">
                                 <span class="cm-title" id="c-robotik">Robotik ve Kodlama</span>
-                                <span class="cm-rank" id="c-rank-2">Şenlik 1.liği 🥇</span>
+                                <span class="cm-rank" id="c-rank-2">Şenlik 1.liği</span>
                             </div>
                             <span class="cm-action-tag btn-inspect">İncele</span>
                         </div>
                         <div class="course-matrix-item" onclick="openSysModal('Elektronik Programlama ve Nesnelerin İnterneti', 'IoT ağ protokolleri, uzaktan veri işleme ve dönem sonu şenliği birinciliği.')">
                             <div class="course-meta-info">
                                 <span class="cm-title" id="c-iot">Elektronik Prg. & IoT</span>
-                                <span class="cm-rank" id="c-rank-3">Şenlik 1.liği 🥇</span>
+                                <span class="cm-rank" id="c-rank-3">Şenlik 1.liği</span>
                             </div>
                             <span class="cm-action-tag btn-inspect">İncele</span>
                         </div>
                         <div class="course-matrix-item" onclick="openSysModal('İleri Robotik', 'Endüstriyel mekanizmalar, gelişmiş hareket kontrolü ve dönem sonu şenliği birinciliği.')">
                             <div class="course-meta-info">
                                 <span class="cm-title" id="c-ileri">İleri Robotik</span>
-                                <span class="cm-rank" id="c-rank-4">Şenlik 1.liği 🥇</span>
+                                <span class="cm-rank" id="c-rank-4">Şenlik 1.liği</span>
                             </div>
                             <span class="cm-action-tag btn-inspect">İncele</span>
                         </div>
                         <div class="course-matrix-item" onclick="openSysModal('Mobil Uygulama', 'Mobil kullanıcı arayüzü tasarımı, platform entegrasyonu ve dönem sonu şenliği birinciliği.')">
                             <div class="course-meta-info">
                                 <span class="cm-title" id="c-mobil">Mobil Uygulama</span>
-                                <span class="cm-rank" id="c-rank-5">Şenlik 1.liği 🥇</span>
+                                <span class="cm-rank" id="c-rank-5">Şenlik 1.liği</span>
                             </div>
                             <span class="cm-action-tag btn-inspect">İncele</span>
                         </div>
@@ -790,7 +1047,12 @@
         </div>
 
         <footer>
-            <span id="ftr-text">&copy; 2026 TechnoStudios. Tüm hakları saklıdır.</span> | <a href="https://github.com/ereny116011-cloud/TechnoStudios" target="_blank" id="ftr-src">Kaynak Kod</a>
+            <span id="ftr-text">&copy; 2026 TechnoStudios. Tüm hakları saklıdır.</span>
+            <span class="ftr-sep">&bull;</span>
+            <a href="https://github.com/ereny116011-cloud/TechnoStudios" target="_blank" rel="noopener">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>
+                <span id="ftr-src">Kaynak Kod</span>
+            </a>
         </footer>
     </div>
 
@@ -841,7 +1103,7 @@
                 abtT: "Biz Kimiz?",
                 abtP1: "Biz; teknolojiyi seven, sürekli araştıran ve yeni şeyler üreten bir girişimci ekibiyiz. Genç olsak bile fikirlerimizi somut projelere dönüştürerek ülkemize yararlı teknolojiler üretmeye çalışıyoruz. Disiplinli ve azimli çalışmalarımız sayesinde her gün kendimizi geliştirmeye çalışıyoruz.",
                 achT: "Eğitim Kurlarımız ve Başarılarımız", achSub: "Detaylar için ilgili başlığa tıklayınız:",
-                rankWin: "Şenlik 1.liği 🥇", rankNone: "Şenlik yok", inspect: "İncele",
+                rankWin: "Şenlik 1.liği", rankNone: "Şenlik yok", inspect: "İncele",
                 cTas: "Tasarım", cRob: "Robotik ve Kodlama", cIot: "Elektronik Prg. & IoT", cIleri: "İleri Robotik", cMob: "Mobil Uygulama",
                 cSib: "Siber Güvenlik", cMalz: "Malzeme Bilimi", cEnerji: "Enerji Teknolojileri", cHav: "Havacılık & Uzay", cYz: "Yapay Zeka", cYaz: "Yazılım Teknolojileri",
                 close: "Kapat", ftrText: "© 2026 TechnoStudios. Tüm hakları saklıdır.", ftrSrc: "Kaynak Kod"
@@ -864,7 +1126,7 @@
                 abtT: "Who Are We?",
                 abtP1: "We are an entrepreneurial team driven by a passion for technology, continuous research, and innovation. Despite our youth, we focus on converting ideas into concrete projects to create valuable technology.",
                 achT: "Training Modules & Achievements", achSub: "Click on any topic for further details:",
-                rankWin: "1st Place Fest 🥇", rankNone: "No Festival", inspect: "Details",
+                rankWin: "1st Place Fest", rankNone: "No Festival", inspect: "Details",
                 cTas: "Design", cRob: "Robotics & Coding", cIot: "Electronic Prog. & IoT", cIleri: "Advanced Robotics", cMob: "Mobile App",
                 cSib: "Cyber Security", cMalz: "Materials Science", cEnerji: "Energy Technologies", cHav: "Aerospace", cYz: "Artificial Intelligence", cYaz: "Software Technologies",
                 close: "Close", ftrText: "© 2026 TechnoStudios. All rights reserved.", ftrSrc: "Source Code"
@@ -887,7 +1149,7 @@
                 abtT: "¿Quiénes somos?",
                 abtP1: "Somos un equipo emprendedor apasionado por la tecnología y la innovación, convirtiendo ideas en proyectos concretos.",
                 achT: "Cursos y Logros", achSub: "Haga clic en un tema para más detalles:",
-                rankWin: "1er Lugar 🥇", rankNone: "Sin festival", inspect: "Detalles",
+                rankWin: "1er Lugar", rankNone: "Sin festival", inspect: "Detalles",
                 cTas: "Diseño", cRob: "Robótica y Código", cIot: "Electrónica e IoT", cIleri: "Robótica Avanzada", cMob: "Aplicación Móvil",
                 cSib: "Ciberseguridad", cMalz: "Ciencia de Materiales", cEnerji: "Tecnologías Energéticas", cHav: "Aeroespacial", cYz: "Inteligencia Artificial", cYaz: "Tecnologías de Software",
                 close: "Cerrar", ftrText: "© 2026 TechnoStudios. Todos los derechos reservados.", ftrSrc: "Código Fuente"
@@ -969,8 +1231,10 @@
         function toggleThemeSystem() {
             document.body.classList.toggle('light-mode');
             const isLight = document.body.classList.contains('light-mode');
-            document.getElementById('icon-theme-moon').style.display = isLight ? 'none' : 'block';
-            document.getElementById('icon-theme-sun').style.display = isLight ? 'block' : 'none';
+            const moon = document.getElementById('icon-theme-moon');
+            const sun = document.getElementById('icon-theme-sun');
+            if (moon) moon.style.display = isLight ? 'none' : 'block';
+            if (sun) sun.style.display = isLight ? 'block' : 'none';
         }
 
         function openSysModal(title, desc) {
@@ -978,7 +1242,7 @@
             document.getElementById('modalDesc').textContent = desc;
             
             if (title.includes('Tasarım') || title.includes('Robotik') || title.includes('İnterneti') || title.includes('Mobil') || title.includes('Design') || title.includes('App')) {
-                document.getElementById('modalSubtext').textContent = "Dönem Sonu Şenliği: 1.lik Derecesi 🥇";
+                document.getElementById('modalSubtext').textContent = "Dönem Sonu Şenliği: 1.lik Derecesi";
             } else {
                 document.getElementById('modalSubtext').textContent = "Durum: Tamamlanan Eğitim Kuru";
             }
@@ -996,6 +1260,17 @@
             }
         }
 
+    </script>
+
+    <script>
+        // Kart üzerindeki imleç ışığını takip et (Linear tarzı spot ışık)
+        document.querySelectorAll('.enterprise-card').forEach(card => {
+            card.addEventListener('pointermove', e => {
+                const r = card.getBoundingClientRect();
+                card.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+                card.style.setProperty('--my', (e.clientY - r.top) + 'px');
+            });
+        });
     </script>
 </body>
 </html>

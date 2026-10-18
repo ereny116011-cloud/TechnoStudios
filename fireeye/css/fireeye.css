@@ -253,7 +253,7 @@
         <a href="../" class="back-btn">&larr; Ana Portala Dön</a>
 
         <div class="header">
-            <div class="app-icon">🔥</div>
+            <div class="app-icon">FE</div>
             <h1>FireEye</h1>
             <p class="subtitle">Akıllı Yangın Algılama & Erken Müdahale Sistemi</p>
         </div>
@@ -269,19 +269,19 @@
         <div id="features" class="tab-content active">
             <div class="features-grid">
                 <div class="feature-card">
-                    <h3>🚨 Hassas Yangın Algılama</h3>
+                    <h3>Hassas Yangın Algılama</h3>
                     <p>Gelişmiş sensör entegrasyonu ile duman ve ısı değişimlerini saniyeler içinde tespit edip anında alarm verir.</p>
                 </div>
                 <div class="feature-card">
-                    <h3>📲 Otomatik Acil Durum SMS'i</h3>
+                    <h3>Otomatik Acil Durum SMS'i</h3>
                     <p>Tehlike anında panik yapmanıza gerek kalmaz. Sistem, önceden belirlenen acil durum kişilerine otomatik olarak tehlike bildirimi gönderir.</p>
                 </div>
                 <div class="feature-card">
-                    <h3>☁️ Cloud & Yerel Ağ</h3>
+                    <h3>Cloud & Yerel Ağ</h3>
                     <p>Yerel Wi-Fi ağı üzerinden bağlantı veya Cloud servisi ile dünyanın her yerinden kesintisiz kontrol imkanı.</p>
                 </div>
                 <div class="feature-card">
-                    <h3>⚙️ Anlaşılır Kılavuz</h3>
+                    <h3>Anlaşılır Kılavuz</h3>
                     <p>İnteraktif kurulum senaryoları ve kolay arayüzü sayesinde sistem entegrasyonunu dakikalar içinde tamamlayın.</p>
                 </div>
             </div>
@@ -290,7 +290,7 @@
         <!-- SEKME 2: Güvenlik -->
         <div id="security" class="tab-content">
             <div class="security-badge">
-                <div class="security-icon">🛡️</div>
+                <div class="security-icon">VT</div>
                 <div class="security-details">
                     <h4>0/65 - Temiz & Güvenli</h4>
                     <p>FireEye APK dosyası VirusTotal üzerinden sektör lideri 65 farklı antivirüs motoru (Kaspersky, BitDefender, vb.) tarafından taranmış ve hiçbir tehdit bulunmamıştır.</p>
@@ -303,7 +303,7 @@
         <div id="download" class="tab-content">
             <div class="download-box">
                 <a href="https://github.com/ereny116011-cloud/TechnoStudios/releases/download/APK/fireeye.apk" class="btn-download" download>
-                    🔥 FireEye APK İndir
+                    FireEye APK İndir
                 </a>
                 <p class="file-info">Sürüm: En Güncel Stabil Sürüm | Android 8.0+ Uyumluluğu</p>
             </div>

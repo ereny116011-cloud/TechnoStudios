@@ -5,118 +5,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FireEye // TechnoStudios</title>
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff6a00'%3E%3Cpath d='M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.29 1.14-3.168.45-.558 1.36-.33 1.36.368 0 .842.27 1.704.76 2.298z'/%3E%3C/svg%3E">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23e2603f'%3E%3Cpath d='M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.29 1.14-3.168.45-.558 1.36-.33 1.36.368 0 .842.27 1.704.76 2.298z'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         :root {
-            --ink: #0b0c0d;
-            --panel: #131517;
-            --line: #24272b;
-            --text-primary: #ece9e2;
-            --text-secondary: #8b8f96;
-            --accent: #ff6a00;
-            --accent-glow: rgba(255, 106, 0, 0.14);
-            --success: #10b981;
-            --success-bg: rgba(16, 185, 129, 0.1);
-            --success-border: rgba(16, 185, 129, 0.3);
-            --danger: #ef4444;
-            --danger-bg: rgba(239, 68, 68, 0.1);
-            --danger-border: rgba(239, 68, 68, 0.3);
-            --warning-bg: rgba(245, 158, 11, 0.1);
-            --warning-border: rgba(245, 158, 11, 0.3);
-            --warning-text: #fbbf24;
-            --star-color: #ffb347;
+            --ink: #0c0d0f;
+            --panel: #141518;
+            --line: #26282d;
+            --text-primary: #e9e7e2;
+            --text-secondary: #989ca3;
+            --accent: #e2603f;
+            --accent-glow: rgba(226, 96, 63, 0.12);
+            --success: #34d399;
+            --success-bg: rgba(52, 211, 153, 0.1);
+            --success-border: rgba(52, 211, 153, 0.28);
+            --danger: #f87171;
+            --danger-bg: rgba(248, 113, 113, 0.1);
+            --danger-border: rgba(248, 113, 113, 0.28);
+            --warning-bg: rgba(245, 158, 11, 0.09);
+            --warning-border: rgba(245, 158, 11, 0.26);
+            --warning-text: #f0b866;
+            --star-color: #e2b04a;
+            --grid: rgba(255, 255, 255, 0.028);
 
-            /* Eski değişken adları geriye dönük uyumluluk için */
+            /* tipografi */
+            --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+            /* geriye dönük adlar */
             --bg: var(--ink);
             --surface: var(--panel);
             --surface-border: var(--line);
         }
 
         body.light {
-            --ink: #f7f5f0;
+            --ink: #f6f5f2;
             --panel: #ffffff;
-            --line: #e4e0d6;
-            --text-primary: #16130f;
-            --text-secondary: #635e55;
-            --accent: #d95a00;
-            --accent-glow: rgba(217, 90, 0, 0.1);
+            --line: #e6e3dc;
+            --text-primary: #191713;
+            --text-secondary: #5f5d56;
+            --accent: #c24a2b;
+            --accent-glow: rgba(194, 74, 43, 0.10);
             --success-bg: rgba(16, 185, 129, 0.08);
-            --success-border: rgba(16, 185, 129, 0.25);
+            --success-border: rgba(16, 185, 129, 0.24);
             --danger: #dc2626;
-            --danger-bg: rgba(220, 38, 38, 0.08);
-            --danger-border: rgba(220, 38, 38, 0.25);
+            --danger-bg: rgba(220, 38, 38, 0.07);
+            --danger-border: rgba(220, 38, 38, 0.22);
             --warning-bg: rgba(217, 119, 6, 0.08);
-            --warning-border: rgba(217, 119, 6, 0.25);
+            --warning-border: rgba(217, 119, 6, 0.24);
             --warning-text: #b45309;
             --star-color: #b45309;
+            --grid: rgba(20, 18, 12, 0.045);
+
+            /* tipografi */
+            --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+            /* geriye dönük adlar */
             --bg: var(--ink);
             --surface: var(--panel);
             --surface-border: var(--line);
-        }
-
-        /* --- CANLI MOD (turuncu / sarı / kırmızı doygun gradyan + liquid glass) --- */
-        body.vivid {
-            --panel: rgba(30, 8, 0, 0.4);
-            --line: rgba(255, 255, 255, 0.22);
-            --text-primary: #fff8ee;
-            --text-secondary: rgba(255, 244, 230, 0.8);
-            --accent: #ffd23f;
-            --accent-glow: rgba(255, 210, 63, 0.4);
-            --star-color: #ffe066;
-            --surface: var(--panel);
-            --surface-border: var(--line);
-        }
-
-        body.vivid {
-            background: linear-gradient(155deg, #3a0a00 0%, #8f1d00 22%, #d94600 45%, #ff8a00 68%, #ffd23f 100%);
-            background-attachment: fixed;
-        }
-
-        /* Liquid glass: simge/butonlar buzlu cam gibi, arkadaki gradyanı bulanık gösteriyor */
-        body.vivid .theme-toggle-btn,
-        body.vivid .vivid-toggle-btn,
-        body.vivid .util-btn {
-            position: relative;
-            background: rgba(255, 255, 255, 0.14);
-            backdrop-filter: blur(14px) saturate(180%);
-            -webkit-backdrop-filter: blur(14px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            box-shadow:
-                inset 0 1px 1px rgba(255, 255, 255, 0.55),
-                inset 0 -6px 10px rgba(0, 0, 0, 0.15),
-                0 8px 22px rgba(0, 0, 0, 0.35);
-            overflow: hidden;
-        }
-        body.vivid .theme-toggle-btn::before,
-        body.vivid .vivid-toggle-btn::before,
-        body.vivid .util-btn::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 45%;
-            background: linear-gradient(to bottom, rgba(255,255,255,0.35), transparent);
-            pointer-events: none;
-        }
-        body.vivid .theme-toggle-btn:hover,
-        body.vivid .vivid-toggle-btn:hover,
-        body.vivid .util-btn:hover {
-            background: rgba(255, 255, 255, 0.22);
-            border-color: rgba(255, 255, 255, 0.6);
-        }
-
-        /* Panellerde de hafif buzlu cam hissi */
-        body.vivid .project-hero,
-        body.vivid .feature-card,
-        body.vivid .comment-card,
-        body.vivid .changelog-card,
-        body.vivid .download-box,
-        body.vivid .security-container,
-        body.vivid .modal-content {
-            backdrop-filter: blur(18px) saturate(160%);
-            -webkit-backdrop-filter: blur(18px) saturate(160%);
         }
 
         * {
@@ -124,10 +73,10 @@
             padding: 0;
             box-sizing: border-box;
             font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
-            transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
         }
 
-        .type-display {
+        .type-display,
+        h1, h2, h3, h4 {
             font-family: 'Space Grotesk', 'Inter', sans-serif;
         }
 
@@ -139,11 +88,13 @@
         }
         html::-webkit-scrollbar,
         body::-webkit-scrollbar { display: none; width: 0; height: 0; }
+        html, body { overscroll-behavior-y: none; }
 
         body {
             background-color: var(--bg);
             color: var(--text-primary);
             min-height: 100vh;
+            min-height: 100dvh; /* iOS Safari'de adres çubuğu açılıp kapanınca sayfanın zıplamasını önler */
             width: 100%;
             display: flex;
             flex-direction: column;
@@ -153,6 +104,23 @@
             scrollbar-width: none;
             -ms-overflow-style: none;
         }
+
+        /* İnce teknik ızgara dokusu (üstten alta sönümlenir) */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(to right, var(--grid) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+            background-size: 68px 68px;
+            -webkit-mask-image: radial-gradient(ellipse 85% 55% at 50% -5%, #000 0%, transparent 78%);
+            mask-image: radial-gradient(ellipse 85% 55% at 50% -5%, #000 0%, transparent 78%);
+        }
+
+        .mono { font-family: var(--mono); }
 
         header {
             max-width: 100%;
@@ -178,7 +146,7 @@
 
         .back-home:hover { color: var(--accent); }
 
-        .header-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .header-actions { display: flex; gap: 12px; align-items: center; }
 
         .util-btn {
             background: var(--surface);
@@ -186,7 +154,7 @@
             color: var(--text-primary);
             height: 38px;
             padding: 0 14px;
-            border-radius: 10px;
+            border-radius: 9px;
             font-size: 0.85rem;
             font-weight: 600;
             cursor: pointer;
@@ -194,53 +162,16 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-            transition: all 0.2s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .util-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s ease;
+            transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
         }
 
         .util-btn:hover {
             border-color: var(--accent);
-            box-shadow: 0 4px 16px var(--accent-glow), 0 2px 8px rgba(0,0,0,0.3);
-            transform: translateY(-1px);
+            color: var(--accent);
         }
 
-        .util-btn:hover::before {
-            left: 100%;
-        }
-
-        .theme-toggle-btn {
-            background: var(--surface);
-            border: 1px solid var(--surface-border);
-            color: var(--text-primary);
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 1.1rem;
-        }
-
-        .theme-toggle-btn:hover {
-            border-color: var(--accent);
-            box-shadow: 0 4px 16px var(--accent-glow), 0 2px 8px rgba(0,0,0,0.3);
-            transform: translateY(-1px) rotate(8deg);
-        }
+        .theme-toggle-btn { width: 38px; padding: 0; justify-content: center; }
+        .theme-toggle-btn svg { width: 16px; height: 16px; display: block; }
 
         main {
             max-width: 100%;
@@ -253,14 +184,10 @@
         .project-hero {
             position: relative;
             margin-bottom: 34px;
-            padding: 28px 30px;
-            border-radius: 16px;
-            background:
-                radial-gradient(circle at 12% 20%, var(--accent-glow), transparent 55%),
-                var(--panel);
+            padding: 34px;
+            border-radius: 14px;
+            background: var(--panel);
             border: 1px solid var(--line);
-            border-left: 4px solid var(--accent);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.35);
             overflow: hidden;
         }
 
@@ -274,25 +201,20 @@
             align-items: center;
             gap: 8px;
             color: var(--text-secondary);
-            font-size: 0.82rem;
+            font-family: var(--mono);
+            font-size: 0.76rem;
+            letter-spacing: 0.02em;
             font-weight: 500;
             margin-bottom: 16px;
         }
 
         .status-pill::before {
             content: '';
-            width: 7px;
-            height: 7px;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             background: var(--accent);
-            box-shadow: 0 0 0 3px var(--accent-glow);
             flex-shrink: 0;
-            animation: pulseDot 2.4s ease-in-out infinite;
-        }
-
-        @keyframes pulseDot {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.45; }
         }
 
         h1 {
@@ -331,10 +253,10 @@
             cursor: pointer;
             position: relative;
             white-space: nowrap;
-            transition: color 0.15s ease, transform 0.15s ease;
+            transition: color 0.15s ease;
         }
 
-        .tab-trigger:hover { color: var(--text-primary); transform: translateY(-1px); }
+        .tab-trigger:hover { color: var(--text-primary); }
         .tab-trigger.active { color: var(--accent); font-weight: 700; }
         .tab-trigger.active::after {
             content: '';
@@ -345,26 +267,20 @@
             height: 2px;
             border-radius: 2px;
             background-color: var(--accent);
-            box-shadow: 0 0 10px var(--accent);
         }
 
         .tab-pane { display: none; }
         .tab-pane.active {
             display: block;
-            animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: paneIn 0.25s ease;
         }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(4px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes paneIn { from { opacity: 0; } to { opacity: 1; } }
 
         .download-box {
             background: var(--surface);
             border: 1px solid var(--surface-border);
-            border-radius: 16px;
+            border-radius: 14px;
             padding: 36px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -376,25 +292,21 @@
         .download-info p { color: var(--text-secondary); font-size: 0.9rem; }
 
         .main-cta {
-            background: linear-gradient(135deg, var(--accent), #ff8a3d);
+            background: var(--accent);
             color: #ffffff;
             padding: 12px 24px;
-            border-radius: 10px;
-            font-weight: 700;
+            border-radius: 9px;
+            font-weight: 600;
             text-decoration: none;
             font-size: 0.9rem;
-            box-shadow: 0 6px 20px var(--accent-glow), 0 2px 6px rgba(0,0,0,0.3);
             cursor: pointer;
-            border: none;
+            border: 1px solid var(--accent);
             display: inline-block;
             text-align: center;
+            transition: filter 0.15s ease;
         }
-        .main-cta:hover {
-            filter: brightness(1.08);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 28px var(--accent-glow), 0 4px 10px rgba(0,0,0,0.35);
-        }
-        .main-cta:active { transform: translateY(0); }
+        .main-cta:hover { filter: brightness(1.08); }
+        .main-cta:active { filter: brightness(0.95); }
 
         .ios-warning-banner {
             margin-top: 15px;
@@ -408,12 +320,7 @@
             font-size: 0.85rem;
             color: var(--warning-text);
         }
-        .ios-warning-banner svg {
-            width: 18px;
-            height: 18px;
-            flex-shrink: 0;
-            fill: currentColor;
-        }
+        .ios-warning-banner svg { width: 18px; height: 18px; flex-shrink: 0; }
 
         #downloadProgressContainer {
             display: none;
@@ -442,7 +349,6 @@
             border: 1px solid var(--success-border);
             border-radius: 12px;
             padding: 24px;
-            animation: fadeIn 0.3s ease;
         }
 
         .success-banner-msg {
@@ -454,13 +360,7 @@
             font-size: 1.05rem;
             margin-bottom: 15px;
         }
-
-        .success-banner-msg svg {
-            width: 22px;
-            height: 22px;
-            fill: currentColor;
-            flex-shrink: 0;
-        }
+        .success-banner-msg svg { width: 20px; height: 20px; flex-shrink: 0; }
 
         .features-grid {
             display: grid;
@@ -473,14 +373,25 @@
             border: 1px solid var(--surface-border);
             border-radius: 14px;
             padding: 24px;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
-            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+            transition: border-color 0.15s ease, transform 0.15s ease;
         }
         .feature-card:hover {
             border-color: var(--accent);
-            transform: translateY(-3px);
-            box-shadow: 0 10px 26px rgba(0,0,0,0.35), 0 0 0 1px var(--accent-glow);
+            transform: translateY(-2px);
         }
+        .feature-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 9px;
+            border: 1px solid var(--surface-border);
+            background: var(--bg);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+        .feature-icon svg { width: 17px; height: 17px; }
         .feature-card h4 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
         .feature-card p { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; }
 
@@ -489,7 +400,6 @@
             border: 1px solid var(--surface-border);
             border-radius: 14px;
             padding: 24px;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
         }
 
         .security-info {
@@ -606,12 +516,9 @@
             border-radius: 12px;
             padding: 16px;
             position: relative;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.22);
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
         .comment-card:hover, .changelog-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            border-color: var(--text-secondary);
         }
 
         .comment-header {
@@ -643,33 +550,30 @@
         .admin-delete-btn:hover {
             background: var(--danger);
             color: #fff;
-            box-shadow: 0 4px 12px var(--danger-border);
-            transform: translateY(-1px);
+            border-color: var(--danger);
         }
         body.admin-mode .admin-delete-btn { display: inline-block; }
 
         #adminPanelBox {
             display: none;
             background: var(--surface);
-            border: 2px dashed var(--accent);
+            border: 1px solid var(--line);
             border-radius: 12px;
             padding: 24px;
             margin-bottom: 30px;
-            animation: fadeIn 0.3s ease;
         }
-        #adminPanelBox h3 { color: var(--accent); margin-bottom: 15px; font-size: 1.1rem; }
+        #adminPanelBox h3 { color: var(--text-primary); margin-bottom: 15px; font-size: 1.1rem; }
 
         /* --- EKRAN GÖRÜNTÜLERİ --- */
         #adminScreenshotBox {
             display: none;
             background: var(--surface);
-            border: 2px dashed var(--accent);
+            border: 1px solid var(--line);
             border-radius: 12px;
             padding: 24px;
             margin-bottom: 30px;
-            animation: fadeIn 0.3s ease;
         }
-        #adminScreenshotBox h3 { color: var(--accent); margin-bottom: 15px; font-size: 1.1rem; }
+        #adminScreenshotBox h3 { color: var(--text-primary); margin-bottom: 15px; font-size: 1.1rem; }
 
         .screenshot-grid {
             display: grid;
@@ -726,12 +630,10 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
         }
         .reorder-btn:hover:not(:disabled) {
             border-color: var(--accent);
             color: var(--accent);
-            transform: translateY(-1px);
         }
         .reorder-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
@@ -817,37 +719,162 @@
         .changelog-date { font-size: 0.75rem; color: var(--text-secondary); float: right; }
         .changelog-desc { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; white-space: pre-line; }
 
-        #loginModal {
-            display: none;
+        /* --- HESAP / GİRİŞ-KAYIT / CİHAZIM MODALI --- */
+        .account-modal-overlay {
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 999;
-            justify-content: center;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
             align-items: center;
-            backdrop-filter: blur(4px);
+            justify-content: center;
+            padding: 20px;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            overflow-y: auto;
         }
-        .modal-content {
+        .account-modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+        .account-modal-box {
+            position: relative;
+            width: 100%;
+            max-width: 420px;
+            margin: auto;
             background: var(--surface);
             border: 1px solid var(--surface-border);
-            border-radius: 12px;
-            padding: 30px;
-            width: 100%;
-            max-width: 380px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-radius: 18px;
+            padding: 32px 28px;
+            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
         }
-        .modal-content h3 { margin-bottom: 15px; font-size: 1.2rem; font-weight: 700; }
+
+        .account-modal-close {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            width: 32px;
+            height: 32px;
+            border-radius: 9px;
+            background: var(--bg);
+            border: 1px solid var(--surface-border);
+            color: var(--text-secondary);
+            font-size: 1.25rem;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.15s ease, border-color 0.15s ease;
+        }
+        .account-modal-close:hover { color: var(--accent); border-color: var(--accent); }
+
+        .account-panel-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .account-panel-sub {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin: 0 0 16px;
+        }
+        .account-form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 14px;
+        }
+        .account-link {
+            color: var(--accent);
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .account-link:hover { text-decoration: underline; }
+
+        .account-divider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-secondary);
+            font-family: var(--mono);
+            font-size: 0.68rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            margin: 4px 0;
+        }
+        .account-divider::before,
+        .account-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--surface-border);
+        }
+
+        .google-slot { display: flex; justify-content: center; }
+
+        .google-btn {
+            width: 100%;
+            height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: var(--bg);
+            color: var(--text-primary);
+            border: 1px solid var(--surface-border);
+            border-radius: 9px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .google-btn:hover { border-color: var(--text-secondary); }
+        .google-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+        /* Modal içindeki cihaz durumu paneli biraz daha sade dursun */
+        .account-modal-box .security-container {
+            box-shadow: none;
+            background: var(--bg);
+        }
 
         footer {
             max-width: 100%;
             width: 100%;
             margin: 0 auto;
-            text-align: center;
             color: var(--text-secondary);
             font-size: 0.85rem;
             border-top: 1px solid var(--surface-border);
-            padding-top: 20px;
+            padding-top: 22px;
             z-index: 2;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .footer-meta {
+            font-family: var(--mono);
+            font-size: 0.72rem;
+            letter-spacing: 0.06em;
+            color: var(--text-secondary);
+        }
+
+        .footer-github {
+            color: var(--text-secondary);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            transition: color 0.15s ease;
+        }
+        .footer-github:hover { color: var(--accent); }
+        .footer-github svg { width: 15px; height: 15px; fill: currentColor; }
+
+        @media (max-width: 560px) {
+            footer { flex-direction: column; align-items: flex-start; }
         }
 
         @media (min-width: 1200px) {
@@ -857,37 +884,202 @@
 
         @media (max-width: 768px) {
             body { padding: 20px; }
+            header { flex-wrap: wrap; gap: 12px; }
+            .header-actions { flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
             .download-box { flex-direction: column; align-items: flex-start; }
             .features-grid { grid-template-columns: 1fr; }
             h1 { font-size: 2.2rem; }
         }
     </style>
-    <!-- MQTT (hesaba tanımlı HiveMQ topic'ini okumak için) -->
-    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script src="https://alcdn.msauth.net/browser/2.38.1/js/msal-browser.min.js" defer></script>
+    <style id="linear-theme">
+        /* ——— Linear / Vercel esintili katman ——— */
+        :root {
+            --ink: #08090c;
+            --panel: rgba(255, 255, 255, 0.026);
+            --line: rgba(255, 255, 255, 0.08);
+            --text-primary: #f3f2f0;
+            --text-secondary: #9a9ea6;
+            --accent: #e2603f;
+            --accent-glow: rgba(226, 96, 63, 0.14);
+            --grid: rgba(255, 255, 255, 0.03);
+            --glass: rgba(255, 255, 255, 0.02);
+            --border-active: rgba(255, 255, 255, 0.18);
+            --bg: var(--ink);
+            --surface: var(--panel);
+            --surface-border: var(--line);
+        }
+        body.light {
+            --ink: #f4f3f0;
+            --panel: rgba(255, 255, 255, 0.72);
+            --line: rgba(20, 18, 12, 0.10);
+            --text-primary: #16140f;
+            --text-secondary: #5b584f;
+            --accent: #c24a2b;
+            --accent-glow: rgba(194, 74, 43, 0.10);
+            --grid: rgba(20, 18, 12, 0.05);
+            --glass: rgba(255, 255, 255, 0.6);
+            --border-active: rgba(20, 18, 12, 0.22);
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            inset: -25% -15%;
+            z-index: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(34% 40% at 16% 10%, rgba(226, 96, 63, 0.22), transparent 70%),
+                radial-gradient(30% 34% at 86% 8%, rgba(124, 108, 255, 0.16), transparent 70%),
+                radial-gradient(42% 42% at 72% 92%, rgba(226, 96, 63, 0.09), transparent 70%);
+            filter: blur(28px);
+            animation: auroraDrift 22s ease-in-out infinite alternate;
+        }
+        body.light::after {
+            background:
+                radial-gradient(34% 40% at 16% 10%, rgba(194, 74, 43, 0.13), transparent 70%),
+                radial-gradient(30% 34% at 86% 8%, rgba(124, 108, 255, 0.10), transparent 70%);
+            opacity: 0.85;
+        }
+        @keyframes auroraDrift {
+            0%   { transform: translate3d(0, 0, 0) scale(1); }
+            50%  { transform: translate3d(2%, -2%, 0) scale(1.06); }
+            100% { transform: translate3d(-2%, 2%, 0) scale(1.02); }
+        }
+        @media (prefers-reduced-motion: reduce) { body::after { animation: none; } }
+
+        /* Header */
+        .util-btn {
+            background: var(--glass);
+            border: 1px solid var(--line);
+            backdrop-filter: blur(14px) saturate(140%);
+            -webkit-backdrop-filter: blur(14px) saturate(140%);
+            border-radius: 10px;
+        }
+        .util-btn:hover { border-color: var(--accent); }
+
+        /* Hero */
+        .project-hero {
+            position: relative;
+            overflow: hidden;
+            border-radius: 22px;
+            border: 1px solid var(--line);
+            background:
+                radial-gradient(120% 140% at 0% 0%, rgba(226, 96, 63, 0.16), transparent 52%),
+                radial-gradient(90% 120% at 100% 0%, rgba(124, 108, 255, 0.10), transparent 55%),
+                linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.006));
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 40px 90px -50px rgba(226, 96, 63, 0.6);
+        }
+        body.light .project-hero {
+            background:
+                radial-gradient(120% 140% at 0% 0%, rgba(194, 74, 43, 0.10), transparent 52%),
+                linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.62));
+        }
+        .project-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: radial-gradient(440px circle at var(--mx, 82%) var(--my, 12%), rgba(226, 96, 63, 0.16), transparent 60%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .project-hero:hover::before { opacity: 1; }
+        .project-hero h1 {
+            background: linear-gradient(180deg, #ffffff 0%, #bdb9b3 130%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+            letter-spacing: -0.035em;
+        }
+        body.light .project-hero h1 {
+            background: linear-gradient(180deg, #16140f, #4a463d);
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        /* Sekmeler */
+        .tab-trigger.active { color: var(--text-primary); }
+        .tab-trigger.active::after { background: linear-gradient(90deg, var(--accent), #ff9a6e); }
+
+        /* Kartlar / paneller */
+        .download-box, .security-container, .reviews-section, .changelog-section,
+        .feature-card, .faq-item, .comment-card, .changelog-card, .account-modal-box {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.006));
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        body.light .download-box, body.light .security-container, body.light .reviews-section,
+        body.light .changelog-section, body.light .feature-card, body.light .faq-item,
+        body.light .comment-card, body.light .changelog-card, body.light .account-modal-box {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.66));
+        }
+
+        .feature-card {
+            position: relative;
+            overflow: hidden;
+            isolation: isolate;
+            transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .feature-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            pointer-events: none;
+            z-index: 0;
+            background: radial-gradient(300px circle at var(--mx, 50%) var(--my, 0%), rgba(226, 96, 63, 0.13), transparent 60%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .feature-card:hover { border-color: var(--border-active); transform: translateY(-3px); box-shadow: 0 30px 60px -34px rgba(226, 96, 63, 0.6); }
+        .feature-card:hover::after { opacity: 1; }
+        .feature-card > * { position: relative; z-index: 1; }
+
+        .feature-icon {
+            border-radius: 12px;
+            background: radial-gradient(120% 120% at 30% 0%, rgba(226, 96, 63, 0.20), rgba(255, 255, 255, 0.02));
+            border: 1px solid var(--line);
+            box-shadow: 0 12px 26px -14px rgba(226, 96, 63, 0.8);
+        }
+
+        .main-cta {
+            border-radius: 11px;
+            background: linear-gradient(180deg, #ef6a45, var(--accent));
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            box-shadow: 0 14px 30px -14px rgba(226, 96, 63, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+            transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
+        }
+        .main-cta:hover { filter: brightness(1.05); transform: translateY(-1px); box-shadow: 0 20px 40px -14px rgba(226, 96, 63, 1); }
+
+        /* Modal — cam efektli */
+        .account-modal-overlay { backdrop-filter: blur(6px); }
+        .account-modal-box {
+            background: rgba(16, 17, 20, 0.88);
+            backdrop-filter: blur(22px) saturate(150%);
+            -webkit-backdrop-filter: blur(22px) saturate(150%);
+            border: 1px solid var(--border-active);
+            border-radius: 22px;
+            box-shadow: 0 50px 100px -40px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        }
+        body.light .account-modal-box { background: rgba(255, 255, 255, 0.92); }
+
+        .form-control {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--line);
+            border-radius: 11px;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        body.light .form-control { background: rgba(255, 255, 255, 0.8); }
+        .form-control:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+        .changelog-version-badge { border: 1px solid var(--accent-border, rgba(226, 96, 63, 0.3)); }
+    </style>
 </head>
 <body>
-
-    <!-- Admin Giriş Modalı -->
-    <div id="loginModal">
-        <div class="modal-content">
-            <h3>🔒 Gizli Admin Girişi</h3>
-            <form onsubmit="handleAdminLogin(event)">
-                <div class="form-group">
-                    <label>Kullanıcı Adı</label>
-                    <input type="text" id="adminUser" class="form-control" placeholder="Kullanıcı Adı" required>
-                </div>
-                <div class="form-group">
-                    <label>Şifre</label>
-                    <input type="password" id="adminPass" class="form-control" placeholder="Şifre" required>
-                </div>
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button type="submit" class="main-cta" style="flex: 1;">Giriş Yap</button>
-                    <button type="button" class="util-btn" onclick="closeModal()" style="flex: 1; justify-content: center;">İptal</button>
-                </div>
-                <p id="loginErrorMsg" style="color: var(--danger); font-size: 0.85rem; margin-top: 10px; display: none;"></p>
-            </form>
-        </div>
-    </div>
 
     <!-- Ekran Görüntüsü Büyütme Modalı -->
     <div id="imgLightbox" onclick="closeLightbox()">
@@ -898,8 +1090,10 @@
         <a href="../" class="back-home">&larr; Geri Dön</a>
         <div class="header-actions">
             <button id="adminStatusIndicator" class="util-btn" style="display:none; border-color: var(--accent); color: var(--accent);" onclick="logoutAdmin()">Admin Modu (Çıkış)</button>
-            <a href="https://github.com/ereny116011-cloud/TechnoStudios" target="_blank" class="util-btn">GitHub</a>
-            <button class="theme-toggle-btn" onclick="cycleThemeMode()" id="themeBtn" title="Tema Modu">🌙</button>
+            <button id="headerDeviceBtn" class="util-btn" onclick="openAccountModal('device')" style="display:none; border-color: var(--accent); color: var(--accent);">Cihazım</button>
+            <button id="headerLoginBtn" class="util-btn" onclick="openAccountModal('login')">Giriş Yap</button>
+            <button id="headerRegisterBtn" class="util-btn" onclick="openAccountModal('register')" style="border-color: var(--accent); color: var(--accent);">Kaydol</button>
+            <button class="util-btn theme-toggle-btn" onclick="cycleThemeMode()" id="themeBtn" title="Tema Modu" aria-label="Tema Modu"></button>
         </div>
     </header>
 
@@ -921,7 +1115,6 @@
             <button class="tab-trigger" onclick="switchTab(event, 'reviews')">Değerlendirmeler</button>
             <button class="tab-trigger" onclick="switchTab(event, 'faq')">SSS</button>
             <button class="tab-trigger" onclick="switchTab(event, 'changelog')">Sürüm Notları</button>
-            <button class="tab-trigger" onclick="switchTab(event, 'account')">Hesabım</button>
         </div>
 
         <!-- İndir Sekmesi -->
@@ -935,7 +1128,7 @@
             </div>
 
             <div class="ios-warning-banner">
-                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v5"/><path d="M12 7.6h.01"/></svg>
                 <span><strong>Not:</strong> Bu uygulama Android tabanlı sistemler için geliştirilmiştir. iOS (iPhone / iPad) cihazlarda çalışmaz.</span>
             </div>
 
@@ -948,8 +1141,8 @@
 
             <div id="postDownloadFeedbackArea">
                 <div class="success-banner-msg">
-                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-                    <span>Uygulama Başarıyla İndirildi! Teşekkürler 🎉</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M8 12.5l2.6 2.6L16 9.5"/></svg>
+                    <span>Uygulama başarıyla indirildi. Teşekkürler.</span>
                 </div>
                 <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 15px;">FireEye'ı denedikten sonra deneyimini diğer kullanıcılarla paylaşmak ister misin?</p>
 
@@ -985,18 +1178,22 @@
         <div id="features" class="tab-pane">
             <div class="features-grid">
                 <div class="feature-card">
+                    <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
                     <h4>Anlık Sensör Takibi</h4>
                     <p>Sıcaklık ve duman verilerini milisaniyelik hassasiyetle işler.</p>
                 </div>
                 <div class="feature-card">
+                    <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
                     <h4>Acil Durum SMS</h4>
                     <p>Tehlike anında kayıtlı kişilere otomatik konum gönderir.</p>
                 </div>
                 <div class="feature-card">
+                    <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg></div>
                     <h4>Bulut Altyapısı</h4>
                     <p>Geçmiş raporlarınızı güvenli bulut depolamada saklar.</p>
                 </div>
                 <div class="feature-card">
+                    <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></div>
                     <h4>Hızlı Yapılandırma</h4>
                     <p>Karmaşık ayarlar olmadan saniyeler içinde aktifleşir.</p>
                 </div>
@@ -1006,7 +1203,7 @@
         <!-- Ekran Görüntüleri Sekmesi -->
         <div id="screenshots" class="tab-pane">
             <div id="adminScreenshotBox">
-                <h3>🛠️ Admin Paneli: Ekran Görüntüsü Ekle</h3>
+                <h3>Admin Paneli: Ekran Görüntüsü Ekle</h3>
                 <form onsubmit="handleNewScreenshot(event)">
                     <div class="form-group">
                         <label>Görsel Seç</label>
@@ -1030,7 +1227,7 @@
                     <span class="clean-badge">&#10003; VirusTotal: 0/67 Temiz Raporu</span>
                     <a href="https://github.com/ereny116011-cloud/TechnoStudios/blob/main/testsonuc.png" target="_blank" class="vt-link">Detaylar &rarr;</a>
                 </div>
-                <div class="preview-img-wrap" onclick="triggerSecretLogin()" title="Admin girişi için buraya 10 kez tıkla">
+                <div class="preview-img-wrap">
                     <img src="https://raw.githubusercontent.com/ereny116011-cloud/TechnoStudios/main/testsonuc.png" alt="VirusTotal Raporu">
                 </div>
             </div>
@@ -1083,7 +1280,7 @@
         <!-- Sürüm Notları Sekmesi -->
         <div id="changelog" class="tab-pane">
             <div id="adminPanelBox">
-                <h3>🛠️ Admin Paneli: Yeni Sürüm Ekle</h3>
+                <h3>Admin Paneli: Yeni Sürüm Ekle</h3>
                 <form onsubmit="handleNewChangelog(event)">
                     <div class="form-group">
                         <label>Sürüm Numarası (Örn: v1.1)</label>
@@ -1092,6 +1289,11 @@
                     <div class="form-group">
                         <label>Değişiklikler ve Özellikler</label>
                         <textarea id="adminChangelogDesc" class="form-control" rows="4" placeholder="- Yeni sensör entegrasyonu eklendi.&#10;- Arayüz optimizasyonları yapıldı." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>APK Dosyası (isteğe bağlı — tarayıcından doğrudan GitHub'a yüklenir, ~2GB'a kadar)</label>
+                        <input type="file" id="adminReleaseFile" class="form-control" accept=".apk">
+                        <p id="adminReleaseStatus" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 6px;"></p>
                     </div>
                     <button type="submit" class="main-cta">Yeni Sürümü Yayınla</button>
                 </form>
@@ -1103,87 +1305,147 @@
             </div>
         </div>
 
-        <!-- Hesabım Sekmesi -->
-        <div id="account" class="tab-pane">
-            <div id="adminUserPanelBox" style="display:none; background: var(--surface); border: 2px dashed var(--accent); border-radius: 14px; padding: 24px; margin-bottom: 24px;">
-                <h3 style="color: var(--accent); margin-bottom: 15px;">🛠️ Admin Paneli: Hesap Ekle</h3>
-                <form onsubmit="handleCreateUser(event)" style="display: flex; flex-direction: column; gap: 12px; max-width: 380px;">
-                    <div class="form-group">
-                        <label>Ad Soyad</label>
-                        <input type="text" id="newUserFullName" class="form-control" placeholder="Ad Soyad">
-                    </div>
-                    <div class="form-group">
-                        <label>E-posta</label>
-                        <input type="email" id="newUserEmail" class="form-control" placeholder="ornek@eposta.com" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Geçici Şifre</label>
-                        <input type="text" id="newUserPassword" class="form-control" placeholder="Geçici Şifre" required>
-                    </div>
-                    <div class="form-group">
-                        <label>HiveMQ Topic</label>
-                        <input type="text" id="newUserTopic" class="form-control" placeholder="fireeye/musteri-01/veri">
-                    </div>
-                    <button type="submit" class="main-cta">Hesabı Oluştur</button>
-                </form>
+        <!-- Hesap / Giriş-Kayıt / Cihazım Modalı -->
+        <div class="account-modal-overlay" id="accountModal" onclick="closeAccountModalOutside(event)">
+            <div class="account-modal-box">
+                <button class="account-modal-close" onclick="closeAccountModal()" aria-label="Kapat">&times;</button>
 
-                <h3 style="color: var(--accent); margin: 24px 0 12px;">Kayıtlı Hesaplar</h3>
-                <div id="userListContainer" class="comments-list"></div>
-            </div>
+                <div id="adminUserPanelBox" style="display:none; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 24px; margin-bottom: 24px;">
+                    <h3 style="color: var(--accent); margin-bottom: 15px;">Admin Paneli: Hesap Ekle</h3>
+                    <form onsubmit="handleCreateUser(event)" style="display: flex; flex-direction: column; gap: 12px;">
+                        <div class="form-group">
+                            <label>Ad Soyad</label>
+                            <input type="text" id="newUserFullName" class="form-control" placeholder="Ad Soyad">
+                        </div>
+                        <div class="form-group">
+                            <label>E-posta</label>
+                            <input type="email" id="newUserEmail" class="form-control" placeholder="ornek@eposta.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Geçici Şifre</label>
+                            <input type="text" id="newUserPassword" class="form-control" placeholder="Geçici Şifre" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Cihaz Kimliği</label>
+                            <input type="text" id="newUserTopic" class="form-control" placeholder="fireeye-musteri-01">
+                            <small style="color: var(--text-secondary);">Bu kod, sattığın cihazın firmware'ine de aynen yazılmalı.</small>
+                        </div>
+                        <button type="submit" class="main-cta">Hesabı Oluştur</button>
+                    </form>
 
-            <div id="accountLoginBox">
-            <div class="download-box" style="flex-direction: column; align-items: stretch; gap: 16px;">
-                <div style="text-align: center; margin-bottom: 12px;">
-                    <h3 style="margin: 0 0 8px 0;">Hoş geldiniz</h3>
-                    <p style="color: var(--text-secondary); font-size: 0.95rem; margin: 0;">E-posta ve şifrenizle hesabınıza giriş yapın</p>
+                    <h3 style="color: var(--accent); margin: 24px 0 12px;">Kayıtlı Hesaplar</h3>
+                    <div id="userListContainer" class="comments-list"></div>
                 </div>
-                <form onsubmit="handleUserLogin(event)" style="display: flex; flex-direction: column; gap: 14px; max-width: 380px; margin: 0 auto;">
-                    <div class="form-group">
-                        <label for="accountEmail" style="font-weight: 500; margin-bottom: 6px; color: var(--text-primary);">E-posta Adresi</label>
-                        <input type="email" id="accountEmail" class="form-control" placeholder="ornek@eposta.com" required autocomplete="email">
-                    </div>
-                    <div class="form-group">
-                        <label for="accountPassword" style="font-weight: 500; margin-bottom: 6px; color: var(--text-primary);">Şifre</label>
-                        <input type="password" id="accountPassword" class="form-control" placeholder="Şifreniz" required autocomplete="current-password">
-                    </div>
-                    <button type="submit" class="main-cta" style="width: 100%;">Giriş Yap</button>
-                    <p id="accountLoginError" style="color: var(--danger); font-size: 0.85rem; display: none; text-align: center;"></p>
-                </form>
-            </div>
-        </div>
 
-            <div id="accountForceChangeBox" style="display: none;">
-            <div class="download-box" style="flex-direction: column; align-items: stretch; gap: 16px;">
-                <div style="text-align: center; margin-bottom: 12px;">
-                    <h3 style="margin: 0 0 8px 0;">⚠️ Güvenlik Uyarısı</h3>
-                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">Geçici hesabınızla giriş yaptınız. Lütfen yeni e-posta ve şifrenizi belirleyin.</p>
+                <div id="accountLoginBox">
+                    <div class="account-panel">
+                        <h3 class="account-panel-title">Hesabına Giriş Yap</h3>
+                        <form onsubmit="handleUserLogin(event)" class="account-form">
+                            <div class="form-group">
+                                <label>E-posta</label>
+                                <input type="text" id="accountEmail" class="form-control" placeholder="ornek@eposta.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Şifre</label>
+                                <input type="password" id="accountPassword" class="form-control" placeholder="Şifre" required>
+                            </div>
+                            <button type="submit" class="main-cta">Giriş Yap</button>
+                            <div class="account-divider"><span>veya</span></div>
+                            <div id="googleBtnLogin" class="google-slot"></div>
+                            <div id="msBtnLogin" class="google-slot"></div>
+                            <p id="accountLoginError" style="color: var(--danger); font-size: 0.85rem; display: none;"></p>
+                        </form>
+                        <div style="display: flex; justify-content: space-between;">
+                            <a href="#" onclick="toggleForgotPasswordBox(event)" class="account-link">Şifremi unuttum</a>
+                            <a href="#" onclick="openAccountModal('register')" class="account-link">Hesabın yok mu? Kayıt ol</a>
+                        </div>
+                        <form id="forgotPasswordForm" onsubmit="handleForgotPassword(event)" class="account-form" style="display: none;">
+                            <div class="form-group">
+                                <label>Hesap E-postan</label>
+                                <input type="email" id="forgotPasswordEmail" class="form-control" placeholder="ornek@eposta.com" required>
+                            </div>
+                            <button type="submit" class="main-cta" style="opacity: 0.85;">Sıfırlama Talebi Gönder</button>
+                            <p id="forgotPasswordMsg" style="font-size: 0.85rem; display: none;"></p>
+                        </form>
+                    </div>
                 </div>
-                <form onsubmit="handleForceChange(event)" style="display: flex; flex-direction: column; gap: 14px; max-width: 380px; margin: 0 auto;">
-                    <div class="form-group">
-                        <label for="forceChangeEmail" style="font-weight: 500; margin-bottom: 6px; color: var(--text-primary);">Yeni E-posta</label>
-                        <input type="email" id="forceChangeEmail" class="form-control" placeholder="yeni@eposta.com" required autocomplete="email">
-                    </div>
-                    <div class="form-group">
-                        <label for="forceChangePassword" style="font-weight: 500; margin-bottom: 6px; color: var(--text-primary);">Yeni Şifre</label>
-                        <input type="password" id="forceChangePassword" class="form-control" placeholder="En az 6 karakter" required autocomplete="new-password">
-                    </div>
-                    <button type="submit" class="main-cta" style="width: 100%;">Bilgileri Güncelle</button>
-                    <p id="forceChangeError" style="color: var(--danger); font-size: 0.85rem; display: none; text-align: center;"></p>
-                </form>
-            </div>
-        </div>
 
-            <div id="accountDashboardBox" style="display: none;">
-                <div class="download-box" style="flex-direction: column; align-items: stretch; gap: 16px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <h3 style="margin: 0;">Hoş geldin, <span id="accountEmailLabel"></span></h3>
-                        <button class="util-btn" onclick="handleUserLogout()">Çıkış Yap</button>
+                <div id="accountRegisterBox" style="display: none;">
+                    <div class="account-panel">
+                        <h3 class="account-panel-title">Kaydol</h3>
+                        <p class="account-panel-sub">FireEye hesabı oluştur, cihazını buradan takip et.</p>
+                        <form id="registerForm" onsubmit="handleRegister(event)" class="account-form">
+                            <div class="form-group">
+                                <label>Ad Soyad</label>
+                                <input type="text" id="registerFullName" class="form-control" placeholder="Ad Soyad">
+                            </div>
+                            <div class="form-group">
+                                <label>E-posta</label>
+                                <input type="email" id="registerEmail" class="form-control" placeholder="ornek@eposta.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Şifre</label>
+                                <input type="password" id="registerPassword" class="form-control" placeholder="En az 6 karakter" minlength="6" required>
+                            </div>
+                            <button type="submit" class="main-cta">Kayıt Ol</button>
+                            <div class="account-divider"><span>veya</span></div>
+                            <div id="googleBtnRegister" class="google-slot"></div>
+                            <div id="msBtnRegister" class="google-slot"></div>
+                            <p id="registerMsg" style="font-size: 0.85rem; display: none;"></p>
+                        </form>
+                        <p style="text-align: center; margin: 4px 0 0;">
+                            <a href="#" onclick="openAccountModal('login')" class="account-link">Zaten hesabın var mı? Giriş yap</a>
+                        </p>
                     </div>
-                    <div class="security-container">
-                        <p style="color: var(--text-secondary); margin-bottom: 10px;">Cihaz Durumu (Canlı)</p>
-                        <p id="mqttStatus" style="font-weight: 700;">Bağlanıyor...</p>
-                        <pre id="mqttData" style="white-space: pre-wrap; word-break: break-word; margin-top: 10px; font-size: 0.85rem; color: var(--text-secondary);"></pre>
-                        <button id="mqttMuteBtn" class="main-cta" style="display: none; margin-top: 14px; background: var(--danger);">🔇 Alarmı Sustur</button>
+                </div>
+
+                <div id="resetPasswordBox" style="display: none;">
+                    <div class="account-panel">
+                        <h3 class="account-panel-title">Yeni Şifre Belirle</h3>
+                        <p class="account-panel-sub">E-postandaki bağlantı üzerinden buradasın. Yeni şifreni belirle.</p>
+                        <form onsubmit="handleResetPassword(event)" class="account-form">
+                            <div class="form-group">
+                                <label>Yeni Şifre</label>
+                                <input type="password" id="resetPasswordNew" class="form-control" placeholder="En az 6 karakter" minlength="6" required>
+                            </div>
+                            <button type="submit" class="main-cta">Şifreyi Güncelle</button>
+                            <p id="resetPasswordMsg" style="font-size: 0.85rem; display: none;"></p>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="accountForceChangeBox" style="display: none;">
+                    <div class="account-panel">
+                        <h3 class="account-panel-title">Güvenliğiniz İçin</h3>
+                        <p class="account-panel-sub">TechnoStudios tarafından sağlanan geçici kullanıcı adı ve şifrenizi değiştirmeniz gerekmektedir.</p>
+                        <form onsubmit="handleForceChange(event)" class="account-form">
+                            <div class="form-group">
+                                <label>Yeni E-posta</label>
+                                <input type="email" id="forceChangeEmail" class="form-control" placeholder="yeni@eposta.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Yeni Şifre</label>
+                                <input type="password" id="forceChangePassword" class="form-control" placeholder="Yeni Şifre" required>
+                            </div>
+                            <button type="submit" class="main-cta">Bilgileri Güncelle</button>
+                            <p id="forceChangeError" style="color: var(--danger); font-size: 0.85rem; display: none;"></p>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="accountDashboardBox" style="display: none;">
+                    <div class="account-panel">
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; padding-right: 30px;">
+                            <h3 class="account-panel-title" style="margin: 0;">Cihazım</h3>
+                            <button class="util-btn" onclick="handleUserLogout()">Çıkış Yap</button>
+                        </div>
+                        <p class="account-panel-sub">Hoş geldin, <span id="accountEmailLabel"></span></p>
+                        <div class="security-container">
+                            <p style="color: var(--text-secondary); margin-bottom: 10px;">FireEye Cihaz Durumu (Canlı)</p>
+                            <p id="mqttStatus" style="font-weight: 700;">Bağlanıyor...</p>
+                            <pre id="mqttData" style="white-space: pre-wrap; word-break: break-word; margin-top: 10px; font-size: 0.85rem; color: var(--text-secondary);"></pre>
+                            <button id="mqttMuteBtn" class="main-cta" style="display: none; margin-top: 14px; background: var(--danger);">Alarmı Sustur</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1191,7 +1453,11 @@
     </main>
 
     <footer>
-        <p>&copy; 2026 TechnoStudios &bull; Tüm Hakları Saklıdır.</p>
+        <div class="footer-meta">&copy; 2026 TechnoStudios &bull; Tüm hakları saklıdır.</div>
+        <a href="https://github.com/ereny116011-cloud/TechnoStudios" target="_blank" rel="noopener" class="footer-github">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>
+            GitHub
+        </a>
     </footer>
 
     <script>
@@ -1201,13 +1467,140 @@
         // adresi (https://fireeye-api.SENIN-ALT-ADIN.workers.dev) buraya yapıştır.
         const WORKER_BASE = 'https://fireeye-api.ereny116011.workers.dev';
 
+        // Google ile Giriş — Google Cloud Console > OAuth istemci kimliği.
+        // Worker tarafında da aynı değeri GOOGLE_CLIENT_ID gizli değişkenine yaz.
+        const GOOGLE_CLIENT_ID = '';
+
+        // Microsoft ile Giriş — Azure Portal > Uygulama kaydı (Application/client ID).
+        // Worker tarafında aynı uygulamaya Microsoft Graph izni verilmelidir.
+        const MICROSOFT_CLIENT_ID = '37f732b9-1256-41ac-ad50-d432674cf06d';
+        const MICROSOFT_TENANT = 'common';
+        const MS_LOGO = '<svg viewBox="0 0 23 23" aria-hidden="true"><rect x="1" y="1" width="10" height="10" fill="#f25022"/><rect x="12" y="1" width="10" height="10" fill="#7fba00"/><rect x="1" y="12" width="10" height="10" fill="#00a4ef"/><rect x="12" y="12" width="10" height="10" fill="#ffb900"/></svg>';
+        const GOOGLE_LOGO = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.4 29.3 35 24 35c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.1 5.1 29.3 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21 21-9.4 21-21c0-1.4-.1-2.5-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.1 5.1 29.3 3 24 3 16 3 9.1 7.6 6.3 14.7z"/><path fill="#4CAF50" d="M24 45c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 36.1 26.7 37 24 37c-5.3 0-9.7-2.6-11.3-7l-6.6 5.1C9 41.4 15.9 45 24 45z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.1 5.6l6.2 5.2C37.9 40.6 45 36 45 24c0-1.4-.1-2.5-.4-3.5z"/></svg>';
+
+        function initGoogleSignIn(view) {
+            const slot = document.getElementById(view === 'register' ? 'googleBtnRegister' : 'googleBtnLogin');
+            if (!slot || slot.dataset.ready === '1') return;
+
+            if (!GOOGLE_CLIENT_ID) {
+                slot.dataset.ready = '1';
+                slot.innerHTML = '<button type="button" class="google-btn" onclick="googleNotConfigured()">' + GOOGLE_LOGO + 'Google ile devam et</button>';
+                return;
+            }
+            if (!(window.google && google.accounts && google.accounts.id)) {
+                slot.innerHTML = '<button type="button" class="google-btn" onclick="googleNotConfigured()">' + GOOGLE_LOGO + 'Google ile devam et</button>';
+                return; // Google servisi yüklenince modal tekrar açıldığında gerçek buton çizilir
+            }
+
+            google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogleCredential });
+            google.accounts.id.renderButton(slot, {
+                theme: document.body.classList.contains('light') ? 'outline' : 'filled_black',
+                size: 'large',
+                shape: 'rectangular',
+                text: 'continue_with',
+                locale: 'tr',
+                width: 320,
+            });
+            slot.dataset.ready = '1';
+        }
+
+        function googleNotConfigured() {
+            const errMsg = document.getElementById('accountLoginError') || document.getElementById('registerMsg');
+            if (!errMsg) return;
+            errMsg.style.color = 'var(--text-secondary)';
+            errMsg.textContent = GOOGLE_CLIENT_ID
+                ? 'Google servisi yüklenemedi. Sayfayı yenileyip tekrar dene.'
+                : 'Google girişi henüz yapılandırılmadı.';
+            errMsg.style.display = 'block';
+        }
+
+        async function onGoogleCredential(response) {
+            if (!response || !response.credential) return;
+            const errMsg = document.getElementById('accountLoginError');
+            if (errMsg) errMsg.style.display = 'none';
+            try {
+                const res = await fetch(WORKER_BASE + '/auth/google', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ credential: response.credential }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!data.success) throw new Error(data.message || 'Google girişi başarısız.');
+
+                localStorage.setItem('fireeye_user', JSON.stringify({ token: data.token, user: data.user }));
+                if (data.user.isAdmin) enableAdminMode();
+                showAccountDashboard(data.user);
+            } catch (err) {
+                if (errMsg) {
+                    errMsg.style.color = 'var(--danger)';
+                    errMsg.textContent = err.message;
+                    errMsg.style.display = 'block';
+                }
+            }
+        }
+
+        function showAuthError(msg) {
+            ['accountLoginError', 'registerMsg'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) { el.style.color = 'var(--danger)'; el.textContent = msg; el.style.display = 'block'; }
+            });
+        }
+
+        function initMicrosoftSignIn(view) {
+            const slot = document.getElementById(view === 'register' ? 'msBtnRegister' : 'msBtnLogin');
+            if (!slot || slot.dataset.ready === '1') return;
+            slot.dataset.ready = '1';
+            slot.innerHTML = '<button type="button" class="google-btn" onclick="handleMicrosoftLogin()">' + MS_LOGO + 'Microsoft ile devam et</button>';
+        }
+
+        let msalInstance = null;
+        async function handleMicrosoftLogin() {
+            if (!MICROSOFT_CLIENT_ID) { showAuthError('Microsoft girişi henüz yapılandırılmadı.'); return; }
+            if (!window.msal) { showAuthError('Microsoft servisi yüklenemedi. Sayfayı yenileyip tekrar dene.'); return; }
+            try {
+                if (!msalInstance) {
+                    msalInstance = new msal.PublicClientApplication({
+                        auth: {
+                            clientId: MICROSOFT_CLIENT_ID,
+                            authority: 'https://login.microsoftonline.com/' + MICROSOFT_TENANT,
+                            redirectUri: location.origin + location.pathname,
+                        },
+                    });
+                }
+                const result = await msalInstance.loginPopup({ scopes: ['openid', 'profile', 'email', 'User.Read'] });
+                const accessToken = result && result.accessToken;
+                if (!accessToken) throw new Error('Microsoft erişim anahtarı alınamadı.');
+
+                const res = await fetch(WORKER_BASE + '/auth/microsoft', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ accessToken }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!data.success) throw new Error(data.message || 'Microsoft girişi başarısız.');
+
+                localStorage.setItem('fireeye_user', JSON.stringify({ token: data.token, user: data.user }));
+                if (data.user.isAdmin) enableAdminMode();
+                showAccountDashboard(data.user);
+            } catch (err) {
+                if (err && (err.errorCode === 'user_cancelled' || err.errorCode === 'popup_window_error')) return;
+                showAuthError((err && err.message) || 'Microsoft girişi tamamlanamadı.');
+            }
+        }
+
         let comments = [];
         let screenshots = [];
         let changelogs = [];
 
         function getAdminAuthHeader() {
-            // Admin status is now determined from user login's isAdmin flag
-            return {};
+            const stored = localStorage.getItem('fireeye_user');
+            if (!stored) return {};
+            try {
+                const { token } = JSON.parse(stored);
+                return token ? { 'Authorization': 'Bearer ' + token } : {};
+            } catch (e) {
+                return {};
+            }
         }
 
         async function loadReviews() {
@@ -1231,8 +1624,6 @@
             updateVersionDisplay();
         }
 
-        let clickCount = 0;
-        let clickTimer = null;
 
         function playClickSound(freq = 600, duration = 0.05, type = 'triangle') {
             try {
@@ -1251,18 +1642,73 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            const savedMode = localStorage.getItem('theme') || 'dark';
-            applyThemeMode(['dark', 'light', 'vivid'].includes(savedMode) ? savedMode : 'dark');
-            restoreUserSession();
+            const savedMode = localStorage.getItem('theme') === 'light' ? 'light' : 'dark';
+            applyThemeMode(savedMode);
+            // Check for admin mode from the stored user object (set on login)
+            const fireeyeUser = localStorage.getItem('fireeye_user');
+            if (fireeyeUser) {
+                try {
+                    const { user } = JSON.parse(fireeyeUser);
+                    if (user && user.isAdmin) {
+                        enableAdminMode();
+                    } else {
+                        localStorage.removeItem('fireeye_admin');
+                    }
+                } catch (e) {
+                    console.error('Failed to parse fireeye_user', e);
+                    localStorage.removeItem('fireeye_admin');
+                }
+            } else {
+                localStorage.removeItem('fireeye_admin');
+            }
 
             loadReviews();
             loadChangelogs();
             loadScreenshots();
+            restoreUserSession();
+
+            // E-postadaki sıfırlama linkinden geldiyse (?reset_token=...) doğrudan
+            // "Hesabım" sekmesini aç ve yeni şifre belirleme formunu göster.
+            const resetToken = new URLSearchParams(window.location.search).get('reset_token');
+            if (resetToken) {
+                openAccountModal('reset');
+            }
         });
 
-        // --- Kullanıcı hesabı girişi (kayıt yok, admin oluşturur) + hesaba tanımlı HiveMQ topic'ini canlı okuma ---
+        async function handleResetPassword(e) {
+            e.preventDefault();
+            const token = new URLSearchParams(window.location.search).get('reset_token');
+            const newPassword = document.getElementById('resetPasswordNew').value;
+            const msg = document.getElementById('resetPasswordMsg');
+            msg.style.display = 'none';
+
+            try {
+                const res = await fetch(WORKER_BASE + '/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token, newPassword })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!data.success) throw new Error(data.message || 'Şifre güncellenemedi.');
+
+                msg.style.color = 'var(--accent)';
+                msg.textContent = data.message + ' Yönlendiriliyorsun...';
+                msg.style.display = 'block';
+
+                // Linkteki token'ı URL'den temizle ve giriş ekranına dön.
+                const cleanUrl = window.location.origin + window.location.pathname;
+                setTimeout(() => { window.location.href = cleanUrl; }, 1500);
+            } catch (err) {
+                msg.style.color = 'var(--danger)';
+                msg.textContent = err.message;
+                msg.style.display = 'block';
+            }
+        }
+
+        // --- Kullanıcı hesabı girişi (kayıt yok, admin oluşturur) + hesaba tanımlı cihazı canlı okuma ---
         // Uygulama ile TAMAMEN aynı API sözleşmesi: /login, /admin/create-user, /user/update-credentials.
-        let mqttClient = null;
+        // Cihaz artık MQTT/HiveMQ kullanmıyor; doğrudan Worker'a HTTP ile veri gönderiyor.
+        let deviceDataInterval = null;
 
         function restoreUserSession() {
             const raw = localStorage.getItem('fireeye_user');
@@ -1279,12 +1725,71 @@
             }
         }
 
+        // Sağ üst butonların görünürlüğünü oturum durumuna göre ayarlar.
+        // true  → giriş yapılmamış: "Giriş Yap" + "Kaydol" görünür
+        // false → giriş yapılmış: sadece "Cihazım" görünür
+        function setHeaderAuthButtons(show) {
+            const login = document.getElementById('headerLoginBtn');
+            const register = document.getElementById('headerRegisterBtn');
+            const device = document.getElementById('headerDeviceBtn');
+            if (login) login.style.display = show ? 'inline-flex' : 'none';
+            if (register) register.style.display = show ? 'inline-flex' : 'none';
+            if (device) device.style.display = show ? 'none' : 'inline-flex';
+        }
+
+        // Giriş/Kayıt/Cihazım modalını açar.
+        // view: 'login' | 'register' | 'forgot' | 'reset' | 'device' | 'force'
+        function openAccountModal(view) {
+            const modal = document.getElementById('accountModal');
+            if (!modal) return;
+
+            const panels = {
+                login: 'accountLoginBox',
+                register: 'accountRegisterBox',
+                forgot: 'accountLoginBox',
+                reset: 'resetPasswordBox',
+                device: 'accountDashboardBox',
+                force: 'accountForceChangeBox',
+            };
+            Object.values(panels).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+
+            const target = document.getElementById(panels[view] || 'accountLoginBox');
+            if (target) target.style.display = 'block';
+
+            const registerForm = document.getElementById('registerForm');
+            const forgotForm = document.getElementById('forgotPasswordForm');
+            if (registerForm) registerForm.style.display = (view === 'register') ? 'flex' : 'none';
+            if (forgotForm) forgotForm.style.display = (view === 'forgot') ? 'flex' : 'none';
+
+            modal.classList.add('active');
+
+            if (view === 'login' || view === 'register' || view === 'forgot') {
+                const oauthView = view === 'register' ? 'register' : 'login';
+                initGoogleSignIn(oauthView);
+                initMicrosoftSignIn(oauthView);
+            }
+        }
+
+        function closeAccountModal() {
+            const modal = document.getElementById('accountModal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        function closeAccountModalOutside(event) {
+            if (event.target.id === 'accountModal') closeAccountModal();
+        }
+
         async function handleUserLogin(e) {
             e.preventDefault();
             const email = document.getElementById('accountEmail').value.trim();
             const password = document.getElementById('accountPassword').value;
             const errMsg = document.getElementById('accountLoginError');
             errMsg.style.display = 'none';
+
+            // Admin girişi artık backend tarafından belirlenir; sadece normal giriş akışını takip ederiz.
 
             try {
                 const res = await fetch(WORKER_BASE + '/login', {
@@ -1297,6 +1802,10 @@
 
                 localStorage.setItem('fireeye_user', JSON.stringify({ token: data.token, user: data.user }));
 
+                if (data.user.isAdmin) {
+                    enableAdminMode();
+                }
+
                 if (data.user.isNoData) {
                     showForceChange(data.user.email);
                 } else {
@@ -1308,19 +1817,88 @@
             }
         }
 
+        function toggleForgotPasswordBox(e) {
+            e.preventDefault();
+            document.getElementById('registerForm').style.display = 'none';
+            const box = document.getElementById('forgotPasswordForm');
+            box.style.display = box.style.display === 'none' ? 'flex' : 'none';
+        }
+
+        function toggleRegisterBox(e) {
+            e.preventDefault();
+            document.getElementById('forgotPasswordForm').style.display = 'none';
+            const box = document.getElementById('registerForm');
+            box.style.display = box.style.display === 'none' ? 'flex' : 'none';
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const fullName = document.getElementById('registerFullName').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            const msg = document.getElementById('registerMsg');
+            msg.style.display = 'none';
+
+            try {
+                const res = await fetch(WORKER_BASE + '/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, fullName })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!data.success) throw new Error(data.message || 'Kayıt başarısız.');
+
+                localStorage.setItem('fireeye_user', JSON.stringify({ token: data.token, user: data.user }));
+                document.getElementById('registerForm').reset();
+                document.getElementById('registerForm').style.display = 'none';
+                showAccountDashboard(data.user);
+            } catch (err) {
+                msg.style.color = 'var(--danger)';
+                msg.textContent = err.message;
+                msg.style.display = 'block';
+            }
+        }
+
+        async function handleForgotPassword(e) {
+            e.preventDefault();
+            const email = document.getElementById('forgotPasswordEmail').value.trim();
+            const msg = document.getElementById('forgotPasswordMsg');
+            msg.style.display = 'none';
+
+            try {
+                const resetBaseUrl = window.location.origin + window.location.pathname;
+                const res = await fetch(WORKER_BASE + '/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, resetBaseUrl })
+                });
+                const data = await res.json().catch(() => ({}));
+                msg.style.color = 'var(--accent)';
+                msg.textContent = data.message || 'Eğer bu e-posta ile bir hesap varsa, sıfırlama bağlantısı gönderildi.';
+                msg.style.display = 'block';
+                document.getElementById('forgotPasswordEmail').value = '';
+            } catch (err) {
+                msg.style.color = 'var(--danger)';
+                msg.textContent = 'Talep gönderilemedi, tekrar dene.';
+                msg.style.display = 'block';
+            }
+        }
+
         function handleUserLogout() {
-            if (mqttClient) { mqttClient.end(true); mqttClient = null; }
+            if (deviceDataInterval) { clearInterval(deviceDataInterval); deviceDataInterval = null; }
             localStorage.removeItem('fireeye_user');
-            document.getElementById('accountLoginBox').style.display = 'block';
-            document.getElementById('accountForceChangeBox').style.display = 'none';
-            document.getElementById('accountDashboardBox').style.display = 'none';
+            const statusEl = document.getElementById('mqttStatus');
+            const dataEl = document.getElementById('mqttData');
+            if (statusEl) statusEl.textContent = 'Bağlanıyor...';
+            if (dataEl) dataEl.textContent = '';
+            setHeaderAuthButtons(true);
+            openAccountModal('login');
         }
 
         function showForceChange(email) {
-            document.getElementById('accountLoginBox').style.display = 'none';
-            document.getElementById('accountDashboardBox').style.display = 'none';
-            document.getElementById('accountForceChangeBox').style.display = 'block';
+            setHeaderAuthButtons(false);
             document.getElementById('forceChangeEmail').value = email;
+            openAccountModal('force');
         }
 
         async function handleForceChange(e) {
@@ -1351,14 +1929,17 @@
         }
 
         function showAccountDashboard(user) {
+            setHeaderAuthButtons(false);
             document.getElementById('accountLoginBox').style.display = 'none';
+            document.getElementById('accountRegisterBox').style.display = 'none';
+            document.getElementById('resetPasswordBox').style.display = 'none';
             document.getElementById('accountForceChangeBox').style.display = 'none';
             document.getElementById('accountDashboardBox').style.display = 'block';
             document.getElementById('accountEmailLabel').textContent = user.email;
-            connectToHiveMQ(user.mqttTopic);
+            startDeviceReading(user.mqttTopic);
         }
 
-        // Uygulamanın kullandığı gerçek veri formatını (SICAKLIK:.., NEM:.., DURUM:..) ayrıştırır.
+        // Cihazın gönderdiği veri formatını (SICAKLIK:.., NEM:.., DURUM:..) ayrıştırır.
         function parseVeriPayload(payload) {
             const result = {};
             payload.split(',').map(s => s.trim()).forEach(part => {
@@ -1370,48 +1951,55 @@
             return result;
         }
 
-        function connectToHiveMQ(topic) {
+        async function fetchDeviceReading(deviceKey) {
             const statusEl = document.getElementById('mqttStatus');
             const dataEl = document.getElementById('mqttData');
-            const muteBtn = document.getElementById('mqttMuteBtn');
 
-            if (!topic) {
-                statusEl.textContent = 'Bu hesaba tanımlı bir cihaz topic\'i yok.';
-                muteBtn.style.display = 'none';
-                return;
-            }
-
-            if (mqttClient) { mqttClient.end(true); mqttClient = null; }
-
-            statusEl.textContent = 'Bağlanıyor...';
-            // Uygulamanın kullandığı ücretsiz genel HiveMQ broker'ı (kullanıcı adı/şifre gerekmez).
-            mqttClient = mqtt.connect('wss://broker.hivemq.com:8884/mqtt', {
-                clientId: 'FireEyeWeb-' + Math.random().toString(16).slice(2)
-            });
-
-            const komutTopic = topic.endsWith('/veri') ? topic.replace(/\/veri$/, '/komut') : topic + '/komut';
-
-            mqttClient.on('connect', () => {
-                statusEl.textContent = 'Bağlandı, dinleniyor: ' + topic;
-                mqttClient.subscribe(topic);
-                muteBtn.style.display = 'inline-flex';
-                muteBtn.onclick = () => mqttClient.publish(komutTopic, 'kapat');
-            });
-            mqttClient.on('message', (t, message) => {
-                const raw = message.toString();
-                const parsed = parseVeriPayload(raw);
+            try {
+                const res = await fetch(WORKER_BASE + '/device/report?device_key=' + encodeURIComponent(deviceKey));
+                if (!res.ok) {
+                    statusEl.textContent = 'Henüz cihazdan veri gelmedi.';
+                    return;
+                }
+                const data = await res.json();
+                const parsed = parseVeriPayload(data.payload);
+                statusEl.textContent = 'Bağlı — son güncelleme: ' + data.updated_at;
                 dataEl.textContent =
                     (parsed.sicaklik ? 'Sıcaklık: ' + parsed.sicaklik + '°C\n' : '') +
                     (parsed.nem ? 'Nem: %' + parsed.nem + '\n' : '') +
                     (parsed.durum ? 'Durum: ' + parsed.durum + '\n' : '') +
-                    '\n(ham veri: ' + raw + ')';
-            });
-            mqttClient.on('error', (err) => {
-                statusEl.textContent = 'Bağlantı hatası: ' + err.message;
-            });
-            mqttClient.on('close', () => {
-                statusEl.textContent = 'Bağlantı kapandı.';
-            });
+                    '\n(ham veri: ' + data.payload + ')';
+            } catch (err) {
+                statusEl.textContent = 'Sunucuya ulaşılamadı.';
+            }
+        }
+
+        function startDeviceReading(deviceKey) {
+            const statusEl = document.getElementById('mqttStatus');
+            const muteBtn = document.getElementById('mqttMuteBtn');
+
+            if (deviceDataInterval) { clearInterval(deviceDataInterval); deviceDataInterval = null; }
+
+            if (!deviceKey) {
+                statusEl.textContent = 'Bu hesaba tanımlı bir cihaz yok.';
+                muteBtn.style.display = 'none';
+                return;
+            }
+
+            statusEl.textContent = 'Bağlanıyor...';
+            muteBtn.style.display = 'inline-flex';
+            muteBtn.onclick = async () => {
+                try {
+                    await fetch(WORKER_BASE + '/device/command', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ device_key: deviceKey, command: 'kapat' })
+                    });
+                } catch (err) { /* sessiz geç */ }
+            };
+
+            fetchDeviceReading(deviceKey);
+            deviceDataInterval = setInterval(() => fetchDeviceReading(deviceKey), 5000);
         }
 
         async function handleCreateUser(e) {
@@ -1424,7 +2012,7 @@
             try {
                 const res = await fetch(WORKER_BASE + '/admin/create-user', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer admin-static-token' },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': getAdminAuthHeader() },
                     body: JSON.stringify({ email, password, fullName, mqttTopic })
                 });
                 const data = await res.json();
@@ -1442,7 +2030,7 @@
             const container = document.getElementById('userListContainer');
             try {
                 const res = await fetch(WORKER_BASE + '/admin/users', {
-                    headers: { 'Authorization': 'Bearer admin-static-token' }
+                    headers: { 'Authorization': getAdminAuthHeader() }
                 });
                 const users = await res.json();
                 renderUsers(Array.isArray(users) ? users : []);
@@ -1466,13 +2054,31 @@
                 card.innerHTML = `
                     <div class="comment-header">
                         <span class="comment-author">${escapeHtml(u.fullName || u.email)}</span>
-                        <span class="comment-date">${u.isNoData ? 'İlk giriş bekleniyor' : 'Aktif'}</span>
+                        <span class="comment-date">${u.resetRequested ? 'Şifre sıfırlama istedi' : (u.isNoData ? 'İlk giriş bekleniyor' : 'Aktif')}</span>
                     </div>
                     <p class="comment-text">${escapeHtml(u.email)}${u.mqttTopic ? ' · ' + escapeHtml(u.mqttTopic) : ''}</p>
+                    <button class="admin-delete-btn" style="background: var(--accent); border-color: var(--accent); margin-right: 8px;" onclick="resetUserPassword(${u.id}, '${escapeHtml(u.email)}')">Yeni Şifre Oluştur</button>
                     <button class="admin-delete-btn" onclick="deleteUser(${u.id}, '${escapeHtml(u.email)}')">Sil</button>
                 `;
                 container.appendChild(card);
             });
+        }
+
+        async function resetUserPassword(id, email) {
+            if (!confirm(email + ' için yeni bir geçici şifre oluşturulsun mu? (kullanıcının eski şifresi geçersiz olur)')) return;
+            try {
+                const res = await fetch(WORKER_BASE + '/admin/users/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': getAdminAuthHeader() },
+                    body: JSON.stringify({ id })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || 'Sıfırlanamadı');
+                alert(email + ' için yeni geçici şifre:\n\n' + data.tempPassword + '\n\nBu şifreyi kullanıcıya ilet — ilk girişte kendi şifresini belirlemesi istenecek.');
+                await loadUsers();
+            } catch (err) {
+                alert('Şifre sıfırlanamadı: ' + err.message);
+            }
         }
 
         async function deleteUser(id, email) {
@@ -1480,7 +2086,7 @@
             try {
                 const res = await fetch(WORKER_BASE + '/admin/users?id=' + id, {
                     method: 'DELETE',
-                    headers: { 'Authorization': 'Bearer admin-static-token' }
+                    headers: { 'Authorization': getAdminAuthHeader() }
                 });
                 if (!res.ok) throw new Error('Silinemedi');
                 loadUsers();
@@ -1494,6 +2100,9 @@
             document.querySelectorAll('.tab-trigger').forEach(t => t.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             evt.currentTarget.classList.add('active');
+            // Küçük ekranlarda (telefon) yeni sekme içeriği ekranın altında kalmasın diye
+            // sekme çubuğunu görünür alana kaydır.
+            document.querySelector('.nav-tabs').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         function switchTabToDownload() {
@@ -1504,67 +2113,21 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        const _svg = (p) => '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + p + '</svg>';
+        const ICON_MOON = _svg('<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>');
+        const ICON_SUN = _svg('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>');
+
         function applyThemeMode(mode) {
-            document.body.classList.remove('light', 'vivid');
-            let icon = '🌙';
-            if (mode === 'light') {
-                document.body.classList.add('light');
-                icon = '☀️';
-            } else if (mode === 'vivid') {
-                document.body.classList.add('vivid');
-                icon = '🔥';
-            }
+            if (mode !== 'light') mode = 'dark';
+            document.body.classList.toggle('light', mode === 'light');
             const btn = document.getElementById('themeBtn');
-            if (btn) {
-                btn.textContent = icon;
-                btn.title = 'Tema Modu: ' + (mode === 'light' ? 'Açık' : mode === 'vivid' ? 'Canlı' : 'Koyu');
-            }
+            if (btn) btn.innerHTML = mode === 'light' ? ICON_SUN : ICON_MOON;
             localStorage.setItem('theme', mode);
         }
 
         function cycleThemeMode() {
-            const current = localStorage.getItem('theme') || 'dark';
-            const next = current === 'dark' ? 'light' : current === 'light' ? 'vivid' : 'dark';
-            applyThemeMode(next);
-        }
-
-        function triggerSecretLogin() {
-            clickCount++;
-
-            const imgWrap = document.querySelector('.preview-img-wrap');
-            imgWrap.style.transform = 'scale(0.97)';
-            setTimeout(() => imgWrap.style.transform = 'scale(1)', 90);
-
-            clearTimeout(clickTimer);
-            
-            if (clickCount >= 10) {
-                clickCount = 0;
-                document.getElementById('loginModal').style.display = 'flex';
-            } else {
-                clickTimer = setTimeout(() => { clickCount = 0; }, 1500);
-            }
-        }
-
-        function closeModal() {
-            document.getElementById('loginModal').style.display = 'none';
-        }
-
-        function handleAdminLogin(e) {
-            e.preventDefault();
-            const u = document.getElementById('adminUser').value.trim();
-            const p = document.getElementById('adminPass').value.trim();
-            const errMsg = document.getElementById('loginErrorMsg');
-            errMsg.style.display = 'none';
-
-            if (u === 'TechnoStudios11' && p === 'giradmine') {
-                localStorage.setItem('fireeye_admin', 'true');
-                sessionStorage.setItem('fireeye_admin_token', btoa(u + ':' + p));
-                enableAdminMode();
-                closeModal();
-            } else {
-                errMsg.textContent = 'Hatalı kullanıcı adı veya şifre!';
-                errMsg.style.display = 'block';
-            }
+            const current = localStorage.getItem('theme') === 'light' ? 'light' : 'dark';
+            applyThemeMode(current === 'dark' ? 'light' : 'dark');
         }
 
         function enableAdminMode() {
@@ -1611,7 +2174,7 @@
                     clearInterval(interval);
                     statusText.textContent = "İndirme Tamamlandı!";
                     playClickSound(800, 0.15, 'sine');
-                    window.location.href = "https://github.com/ereny116011-cloud/TechnoStudios/releases/download/APK/fireeye.apk";
+                    window.location.href = WORKER_BASE + "/release/latest/download";
                     setTimeout(() => {
                         progressContainer.style.display = 'none';
                         feedbackArea.style.display = 'block';
@@ -1746,14 +2309,95 @@
             if (btn) btn.textContent = 'APK İndir (' + latest + ')';
         }
 
+        const GITHUB_OWNER = 'ereny116011-cloud';
+        const GITHUB_REPO = 'TechnoStudios';
+        const GITHUB_RELEASE_TAG = 'APK';
+
+        function getGithubToken() {
+            let token = sessionStorage.getItem('fireeye_gh_token');
+            if (!token) {
+                token = (prompt('GitHub Personal Access Token gir (sadece bu tarayıcı oturumunda tutulur, Contents: Read and write izinli TechnoStudios reposu için):') || '').trim();
+                if (token) sessionStorage.setItem('fireeye_gh_token', token);
+            }
+            return token;
+        }
+
+        // APK dosyasını doğrudan tarayıcıdan GitHub Releases'e yükler (Worker'ı hiç kullanmaz,
+        // böylece Cloudflare'in Worker isteklerine koyduğu 100MB sınırına takılmaz).
+        async function uploadApkToGithub(file, statusEl) {
+            const token = getGithubToken();
+            if (!token) throw new Error('GitHub token girilmedi.');
+
+            const ghHeaders = {
+                'Authorization': 'Bearer ' + token,
+                'Accept': 'application/vnd.github+json',
+            };
+
+            statusEl.textContent = 'GitHub sürümü kontrol ediliyor...';
+            let release;
+            const getRes = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/tags/${GITHUB_RELEASE_TAG}`, { headers: ghHeaders });
+            if (getRes.ok) {
+                release = await getRes.json();
+            } else if (getRes.status === 404) {
+                const createRes = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases`, {
+                    method: 'POST',
+                    headers: Object.assign({ 'Content-Type': 'application/json' }, ghHeaders),
+                    body: JSON.stringify({ tag_name: GITHUB_RELEASE_TAG, name: 'FireEye APK', body: 'Otomatik yüklenen APK sürümleri.' }),
+                });
+                if (!createRes.ok) throw new Error('GitHub release oluşturulamadı (' + createRes.status + ')');
+                release = await createRes.json();
+            } else if (getRes.status === 401) {
+                sessionStorage.removeItem('fireeye_gh_token');
+                throw new Error('GitHub token geçersiz.');
+            } else {
+                throw new Error('GitHub release bilgisi alınamadı (' + getRes.status + ')');
+            }
+
+            const existingAsset = (release.assets || []).find(a => a.name === file.name);
+            if (existingAsset) {
+                statusEl.textContent = 'Eski dosya siliniyor...';
+                await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/assets/${existingAsset.id}`, {
+                    method: 'DELETE',
+                    headers: ghHeaders,
+                });
+            }
+
+            statusEl.textContent = 'APK GitHub\'a yükleniyor... (büyük dosyalarda biraz sürebilir)';
+            const uploadUrl = release.upload_url.replace('{?name,label}', '') + '?name=' + encodeURIComponent(file.name);
+            const uploadRes = await fetch(uploadUrl, {
+                method: 'POST',
+                headers: Object.assign({ 'Content-Type': file.type || 'application/vnd.android.package-archive' }, ghHeaders),
+                body: file,
+            });
+            if (!uploadRes.ok) throw new Error('GitHub yüklemesi başarısız (' + uploadRes.status + ')');
+            const asset = await uploadRes.json();
+            return { fileName: file.name, downloadUrl: asset.browser_download_url, fileSize: file.size };
+        }
+
         async function handleNewChangelog(e) {
             e.preventDefault();
             const version = document.getElementById('adminVersionInput').value.trim();
             const text = document.getElementById('adminChangelogDesc').value.trim();
+            const fileInput = document.getElementById('adminReleaseFile');
+            const statusEl = document.getElementById('adminReleaseStatus');
+            const file = fileInput && fileInput.files && fileInput.files[0];
 
             if(!version || !text) return;
 
             try {
+                // Dosya seçildiyse, doğrudan GitHub'a yükle, sonra Worker'a sadece meta veriyi kaydet.
+                if (file) {
+                    const uploaded = await uploadApkToGithub(file, statusEl);
+                    statusEl.textContent = 'APK yüklendi, kaydediliyor...';
+                    const metaRes = await fetch(WORKER_BASE + '/admin/release', {
+                        method: 'POST',
+                        headers: Object.assign({ 'Content-Type': 'application/json' }, getAdminAuthHeader()),
+                        body: JSON.stringify({ version, fileName: uploaded.fileName, downloadUrl: uploaded.downloadUrl, fileSize: uploaded.fileSize }),
+                    });
+                    if (!metaRes.ok) throw new Error('Sürüm bilgisi kaydedilemedi');
+                    statusEl.textContent = 'APK yüklendi ✓';
+                }
+
                 const res = await fetch(WORKER_BASE + '/changelogs', {
                     method: 'POST',
                     headers: Object.assign({ 'Content-Type': 'application/json' }, getAdminAuthHeader()),
@@ -1764,9 +2408,12 @@
                 await loadChangelogs();
                 document.getElementById('adminVersionInput').value = '';
                 document.getElementById('adminChangelogDesc').value = '';
-                alert('Yeni sürüm notu eklendi!');
+                fileInput.value = '';
+                statusEl.textContent = '';
+                alert('Yeni sürüm yayınlandı!');
             } catch (err) {
-                alert('Sürüm notu eklenemedi.');
+                statusEl.textContent = '';
+                alert('Sürüm eklenemedi: ' + err.message);
             }
         }
 
@@ -1952,6 +2599,17 @@
             if (lightbox && lightbox.style.display === 'flex') {
                 lightbox.style.display = 'none';
             }
+        });
+    </script>
+
+    <script>
+        // Hero ve özellik kartlarında imleci takip eden spot ışığı
+        document.querySelectorAll('.project-hero, .feature-card').forEach(el => {
+            el.addEventListener('pointermove', e => {
+                const r = el.getBoundingClientRect();
+                el.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+                el.style.setProperty('--my', (e.clientY - r.top) + 'px');
+            });
         });
     </script>
 </body>

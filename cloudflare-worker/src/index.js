@@ -506,6 +506,7 @@ export default {
                         fullName: user.full_name || '',
                         isNoData: !!user.is_no_data,
                         mqttTopic: user.mqtt_topic || null,
+                     isAdmin: (user.email === env.ADMIN_USER),
                     },
                 });
             }
@@ -542,11 +543,131 @@ export default {
                 });
             }
 
+            // --- /auth/google --- (Google ile giriş; hesap yoksa otomatik oluşturur) ---
+            if (url.pathname === '/auth/google' && request.method === 'POST') {
+                if (!env.SESSION_SECRET) return json({ success: false, message: 'Sunucu yapılandırma hatası.' }, 500);
+                if (!env.GOOGLE_CLIENT_ID) return json({ success: false, message: 'Google girişi sunucuda yapılandırılmadı.' }, 500);
+
+                const body = await request.json().catch(() => ({}));
+                const credential = body.credential || '';
+                if (!credential) return json({ success: false, message: 'Google kimliği eksik.' }, 400);
+
+                let info;
+                try {
+                    const vr = await fetch('https://oauth2.googleapis.com/tokeninfo?id_token=' + encodeURIComponent(credential));
+                    if (!vr.ok) throw new Error('invalid');
+                    info = await vr.json();
+                } catch (e) {
+                    return json({ success: false, message: 'Google kimliği doğrulanamadı.' }, 401);
+                }
+
+                if (info.aud !== env.GOOGLE_CLIENT_ID) {
+                    return json({ success: false, message: 'Google kimliği bu uygulama için geçerli değil.' }, 401);
+                }
+                if (String(info.email_verified) !== 'true') {
+                    return json({ success: false, message: 'Google e-postası doğrulanmamış.' }, 401);
+                }
+
+                const email = (info.email || '').trim().toLowerCase();
+                const fullName = info.name || '';
+                if (!email) return json({ success: false, message: 'Google hesabından e-posta alınamadı.' }, 400);
+
+                let user = await env.DB.prepare(
+                    'SELECT id, email, full_name, mqtt_topic, is_no_data FROM users WHERE email = ?'
+                ).bind(email).first();
+
+                if (!user) {
+                    // Google hesapları için rastgele bir şifre üretilir; kullanıcı isterse "şifremi unuttum" ile şifre belirler.
+                    const { hash, salt } = await hashPassword('google-' + crypto.randomUUID());
+                    const ins = await env.DB.prepare(
+                        'INSERT INTO users (email, password_hash, password_salt, full_name, is_no_data) VALUES (?, ?, ?, ?, 0)'
+                    ).bind(email, hash, salt, fullName).run();
+                    user = await env.DB.prepare(
+                        'SELECT id, email, full_name, mqtt_topic, is_no_data FROM users WHERE id = ?'
+                    ).bind(ins.meta.last_row_id).first();
+                }
+
+                const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30;
+                const token = await signSession({ uid: user.id, exp }, env.SESSION_SECRET);
+
+                return json({
+                    success: true,
+                    message: 'Giriş başarılı',
+                    token,
+                    user: {
+                        id: String(user.id),
+                        email: user.email,
+                        fullName: user.full_name || '',
+                        isNoData: !!user.is_no_data,
+                        mqttTopic: user.mqtt_topic || null,
+                        isAdmin: (user.email === env.ADMIN_USER),
+                    },
+                });
+            }
+
+            // --- /auth/microsoft --- (Microsoft ile giriş; Graph token'ı ile doğrular, hesap yoksa oluşturur) ---
+            if (url.pathname === '/auth/microsoft' && request.method === 'POST') {
+                if (!env.SESSION_SECRET) return json({ success: false, message: 'Sunucu yapılandırma hatası.' }, 500);
+
+                const body = await request.json().catch(() => ({}));
+                const accessToken = body.accessToken || '';
+                if (!accessToken) return json({ success: false, message: 'Microsoft kimliği eksik.' }, 400);
+
+                let me;
+                try {
+                    const gr = await fetch('https://graph.microsoft.com/v1.0/me?$select=mail,userPrincipalName,displayName', {
+                        headers: { 'Authorization': 'Bearer ' + accessToken },
+                    });
+                    if (!gr.ok) throw new Error('invalid');
+                    me = await gr.json();
+                } catch (e) {
+                    return json({ success: false, message: 'Microsoft kimliği doğrulanamadı.' }, 401);
+                }
+
+                const email = ((me.mail || me.userPrincipalName) || '').trim().toLowerCase();
+                const fullName = me.displayName || '';
+                if (!email) return json({ success: false, message: 'Microsoft hesabından e-posta alınamadı.' }, 400);
+
+                let user = await env.DB.prepare(
+                    'SELECT id, email, full_name, mqtt_topic, is_no_data FROM users WHERE email = ?'
+                ).bind(email).first();
+
+                if (!user) {
+                    // Microsoft hesapları için rastgele bir şifre üretilir; kullanıcı isterse \"şifremi unuttum\" ile şifre belirler.
+                    const { hash, salt } = await hashPassword('microsoft-' + crypto.randomUUID());
+                    const ins = await env.DB.prepare(
+                        'INSERT INTO users (email, password_hash, password_salt, full_name, is_no_data) VALUES (?, ?, ?, ?, 0)'
+                    ).bind(email, hash, salt, fullName).run();
+                    user = await env.DB.prepare(
+                        'SELECT id, email, full_name, mqtt_topic, is_no_data FROM users WHERE id = ?'
+                    ).bind(ins.meta.last_row_id).first();
+                }
+
+                const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30;
+                const token = await signSession({ uid: user.id, exp }, env.SESSION_SECRET);
+
+                return json({
+                    success: true,
+                    message: 'Giriş başarılı',
+                    token,
+                    user: {
+                        id: String(user.id),
+                        email: user.email,
+                        fullName: user.full_name || '',
+                        isNoData: !!user.is_no_data,
+                        mqttTopic: user.mqtt_topic || null,
+                        isAdmin: (user.email === env.ADMIN_USER),
+                    },
+                });
+            }
+
             // --- /admin/create-user --- (admin: sattığın ürünün HiveMQ topic'ini hesaba bağlar) ---
             if (url.pathname === '/admin/create-user' && request.method === 'POST') {
+                const authHeader = request.headers.get('Authorization') || '';
                 if (!(await isAdmin(request, env))) {
                     return json({ success: false, message: 'Yetkisiz işlem' }, 401);
                 }
+
                 const body = await request.json().catch(() => ({}));
                 const email = (body.email || '').trim().toLowerCase();
                 const password = body.password || '';
@@ -568,13 +689,14 @@ export default {
 
             // --- /admin/users --- (admin: hesap listesi ve silme) ---
             if (url.pathname === '/admin/users') {
+                const authHeader = request.headers.get('Authorization') || '';
                 if (!(await isAdmin(request, env))) {
                     return json({ error: 'Yetkisiz.' }, 401);
                 }
 
                 if (request.method === 'GET') {
                     const { results } = await env.DB
-                        .prepare('SELECT id, email, full_name, mqtt_topic, is_no_data, created_at FROM users ORDER BY id DESC')
+                        .prepare('SELECT id, email, full_name, mqtt_topic, is_no_data, reset_requested, reset_requested_at, created_at FROM users ORDER BY reset_requested DESC, id DESC')
                         .all();
                     return json(results.map(r => ({
                         id: r.id,
@@ -582,6 +704,8 @@ export default {
                         fullName: r.full_name,
                         mqttTopic: r.mqtt_topic,
                         isNoData: !!r.is_no_data,
+                        resetRequested: !!r.reset_requested,
+                        resetRequestedAt: r.reset_requested_at,
                         createdAt: r.created_at,
                     })));
                 }
@@ -634,7 +758,7 @@ export default {
                             buttonUrl: resetLink,
                             copyLabel: 'Buton çalışmazsa bu bağlantıyı kopyala',
                             copyValue: resetLink,
-                            chips: ['⏱ 30 dakika geçerli', '🔒 Tek kullanımlık'],
+                            chips: ['30 dakika geçerli', 'Tek kullanımlık'],
                             note: 'Bu talebi sen yapmadıysan bu e-postayı güvenle yok sayabilirsin; şifren değişmeyecek.',
                         }),
                         `Merhaba,\n\nFireEye şifre sıfırlama bağlantın (30 dakika geçerli):\n${resetLink}\n\nBu talebi sen yapmadıysan bu e-postayı yok sayabilirsin.`);
@@ -677,7 +801,7 @@ export default {
                             icon: '&#9989;',
                             heading: 'Şifren değiştirildi',
                             intro: 'FireEye hesabının şifresi az önce başarıyla güncellendi. Artık yeni şifrenle giriş yapabilirsin.',
-                            chips: ['✅ İşlem tamamlandı'],
+                            chips: ['İşlem tamamlandı'],
                             note: `Bu işlemi sen yapmadıysan hemen bizimle iletişime geç: <b>${escapeHtml(supportMail)}</b>`,
                         }),
                         `Merhaba,\n\nFireEye hesabının şifresi az önce değiştirildi. Bu işlemi sen yapmadıysan lütfen bizimle iletişime geç: ${supportMail}`);
@@ -689,8 +813,7 @@ export default {
             // --- /admin/users/reset-password --- (admin: yeni bir geçici şifre üretir, hesaba yazar) ---
             if (url.pathname === '/admin/users/reset-password' && request.method === 'POST') {
                 const authHeader = request.headers.get('Authorization') || '';
-                const isStaticAdmin = authHeader === 'Bearer admin-static-token';
-                if (!isStaticAdmin && !(await isAdmin(request, env))) {
+                if (!(await isAdmin(request, env))) {
                     return json({ error: 'Yetkisiz.' }, 401);
                 }
 
@@ -736,7 +859,7 @@ export default {
                             icon: '&#128737;&#65039;',
                             heading: 'Hesap bilgilerin güncellendi',
                             intro: 'FireEye hesabının e-posta ve şifre bilgileri az önce güncellendi. Yeni bilgilerinle giriş yapabilirsin.',
-                            chips: ['✅ İşlem tamamlandı'],
+                            chips: ['İşlem tamamlandı'],
                             note: `Bu işlemi sen yapmadıysan hemen bizimle iletişime geç: <b>${escapeHtml(supportMail)}</b>`,
                         }),
                         `Merhaba,\n\nFireEye hesabının e-posta/şifre bilgileri az önce güncellendi. Bu işlemi sen yapmadıysan lütfen bizimle iletişime geç: ${supportMail}`);
