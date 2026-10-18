@@ -814,6 +814,28 @@
 
         .google-slot { display: flex; justify-content: center; }
 
+        /* Üç sağlayıcı butonu yan yana, eşit boyutlu ikon butonlar (Linear/Vercel tarzı) */
+        .oauth-row { display: flex; gap: 12px; justify-content: center; }
+        .oauth-icon-btn {
+            width: 40px;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg);
+            color: var(--text-primary);
+            border: 1px solid var(--surface-border);
+            border-radius: 9px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: border-color 0.15s ease, background 0.15s ease;
+        }
+        .oauth-icon-btn:hover { border-color: var(--text-secondary); }
+        .oauth-icon-btn svg { width: 19px; height: 19px; }
+
+        /* Google'ın resmî ikon butonunun iç rozetini koyu temaya uydur */
+        .oauth-row [id^="googleBtn"] [role="button"] [class*="Bz112c-haAclf"] { background: transparent !important; }
+
         .google-btn {
             width: 100%;
             height: 42px;
@@ -1366,9 +1388,11 @@
                             </div>
                             <button type="submit" class="main-cta">Giriş Yap</button>
                             <div class="account-divider"><span>veya</span></div>
-                            <div id="googleBtnLogin" class="google-slot"></div>
-                            <div id="msBtnLogin" class="google-slot"></div>
-                            <div id="ghBtnLogin" class="google-slot"></div>
+                            <div class="oauth-row">
+                                <div id="googleBtnLogin" class="google-slot"></div>
+                                <div id="msBtnLogin" class="google-slot"></div>
+                                <div id="ghBtnLogin" class="google-slot"></div>
+                            </div>
                             <p id="accountLoginError" style="color: var(--danger); font-size: 0.85rem; display: none;"></p>
                         </form>
                         <div style="display: flex; justify-content: space-between; margin-top: 12px;">
@@ -1405,9 +1429,11 @@
                             </div>
                             <button type="submit" class="main-cta">Kayıt Ol</button>
                             <div class="account-divider"><span>veya</span></div>
-                            <div id="googleBtnRegister" class="google-slot"></div>
-                            <div id="msBtnRegister" class="google-slot"></div>
-                            <div id="ghBtnRegister" class="google-slot"></div>
+                            <div class="oauth-row">
+                                <div id="googleBtnRegister" class="google-slot"></div>
+                                <div id="msBtnRegister" class="google-slot"></div>
+                                <div id="ghBtnRegister" class="google-slot"></div>
+                            </div>
                             <p id="registerMsg" style="font-size: 0.85rem; display: none;"></p>
                         </form>
                         <p style="text-align: center; margin: 12px 0 0;">
@@ -1489,22 +1515,21 @@
 
             if (!GOOGLE_CLIENT_ID) {
                 slot.dataset.ready = '1';
-                slot.innerHTML = '<button type="button" class="google-btn" onclick="googleNotConfigured()">' + GOOGLE_LOGO + 'Google ile devam et</button>';
+                slot.innerHTML = '<button type="button" class="oauth-icon-btn" title="Google ile devam et" aria-label="Google ile devam et" onclick="googleNotConfigured()">' + GOOGLE_LOGO + '</button>';
                 return;
             }
             if (!(window.google && google.accounts && google.accounts.id)) {
-                slot.innerHTML = '<button type="button" class="google-btn" onclick="googleNotConfigured()">' + GOOGLE_LOGO + 'Google ile devam et</button>';
+                slot.innerHTML = '<button type="button" class="oauth-icon-btn" title="Google ile devam et" aria-label="Google ile devam et" onclick="googleNotConfigured()">' + GOOGLE_LOGO + '</button>';
                 return; // Google servisi yüklenince modal tekrar açıldığında gerçek buton çizilir
             }
 
             google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogleCredential });
             google.accounts.id.renderButton(slot, {
+                type: 'icon',
                 theme: document.body.classList.contains('light') ? 'outline' : 'filled_black',
                 size: 'large',
                 shape: 'rectangular',
-                text: 'continue_with',
                 locale: 'tr',
-                width: 320,
             });
             slot.dataset.ready = '1';
         }
@@ -1554,7 +1579,7 @@
             const slot = document.getElementById(view === 'register' ? 'msBtnRegister' : 'msBtnLogin');
             if (!slot || slot.dataset.ready === '1') return;
             slot.dataset.ready = '1';
-            slot.innerHTML = '<button type="button" class="google-btn" onclick="handleMicrosoftLogin()">' + MS_LOGO + 'Microsoft ile devam et</button>';
+            slot.innerHTML = '<button type="button" class="oauth-icon-btn" title="Microsoft ile devam et" aria-label="Microsoft ile devam et" onclick="handleMicrosoftLogin()">' + MS_LOGO + '</button>';
         }
 
         let msalInstance = null;
@@ -1598,7 +1623,7 @@
             const slot = document.getElementById(view === 'register' ? 'ghBtnRegister' : 'ghBtnLogin');
             if (!slot || slot.dataset.ready === '1') return;
             slot.dataset.ready = '1';
-            slot.innerHTML = '<button type="button" class="google-btn" onclick="handleGithubLogin()">' + GH_LOGO + 'GitHub ile devam et</button>';
+            slot.innerHTML = '<button type="button" class="oauth-icon-btn" title="GitHub ile devam et" aria-label="GitHub ile devam et" onclick="handleGithubLogin()">' + GH_LOGO + '</button>';
         }
 
         function handleGithubLogin() {
