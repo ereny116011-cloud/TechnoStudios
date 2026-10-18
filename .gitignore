@@ -1,0 +1,9 @@
+# Cloudflare Wrangler yerel önbelleği / oturum bilgileri
+.wrangler/
+
+# Node bağımlılıkları
+node_modules/
+
+# İşletim sistemi ve editör dosyaları
+.DS_Store
+Thumbs.db
