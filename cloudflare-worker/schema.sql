@@ -27,7 +27,10 @@ CREATE TABLE IF NOT EXISTS screenshots (
 -- Uygulama/site hesapları: Android uygulamasının kullandığı alan adlarıyla birebir eşleşir.
 -- Kayıt formu sitede gösterilmez; hesaplar admin panelinden (adminCreateUser) oluşturulur.
 -- is_no_data = 1: kullanıcı geçici şifreyle giriş yaptı, e-posta/şifresini değiştirmesi gerekiyor.
+<<<<<<< HEAD
 -- reset_requested = 1: kullanıcı "şifremi unuttum" dedi, admin panelinde bekliyor.
+=======
+>>>>>>> 065d170 (Security: Remove hardcoded admin credentials and static token)
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT NOT NULL UNIQUE,
@@ -36,6 +39,7 @@ CREATE TABLE IF NOT EXISTS users (
     full_name TEXT,
     mqtt_topic TEXT,
     is_no_data INTEGER NOT NULL DEFAULT 0,
+<<<<<<< HEAD
     reset_requested INTEGER NOT NULL DEFAULT 0,
     reset_requested_at TEXT,
     created_at TEXT DEFAULT (datetime('now'))
@@ -83,6 +87,8 @@ CREATE TABLE IF NOT EXISTS password_resets (
     token_hash TEXT NOT NULL,
     expires_at TEXT NOT NULL,
     used INTEGER NOT NULL DEFAULT 0,
+=======
+>>>>>>> 065d170 (Security: Remove hardcoded admin credentials and static token)
     created_at TEXT DEFAULT (datetime('now'))
 );
 

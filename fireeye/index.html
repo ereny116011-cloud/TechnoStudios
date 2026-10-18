@@ -113,7 +113,8 @@
         body.vivid .comment-card,
         body.vivid .changelog-card,
         body.vivid .download-box,
-        body.vivid .security-container {
+        body.vivid .security-container,
+        body.vivid .modal-content {
             backdrop-filter: blur(18px) saturate(160%);
             -webkit-backdrop-filter: blur(18px) saturate(160%);
         }
@@ -138,13 +139,11 @@
         }
         html::-webkit-scrollbar,
         body::-webkit-scrollbar { display: none; width: 0; height: 0; }
-        html, body { overscroll-behavior-y: none; }
 
         body {
             background-color: var(--bg);
             color: var(--text-primary);
             min-height: 100vh;
-            min-height: 100dvh; /* iOS Safari'de adres çubuğu açılıp kapanınca sayfanın zıplamasını önler */
             width: 100%;
             display: flex;
             flex-direction: column;
@@ -179,7 +178,7 @@
 
         .back-home:hover { color: var(--accent); }
 
-        .header-actions { display: flex; gap: 12px; align-items: center; }
+        .header-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 
         .util-btn {
             background: var(--surface);
@@ -196,12 +195,30 @@
             align-items: center;
             gap: 6px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .util-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
         }
 
         .util-btn:hover {
             border-color: var(--accent);
             box-shadow: 0 4px 16px var(--accent-glow), 0 2px 8px rgba(0,0,0,0.3);
             transform: translateY(-1px);
+        }
+
+        .util-btn:hover::before {
+            left: 100%;
         }
 
         .theme-toggle-btn {
@@ -800,6 +817,27 @@
         .changelog-date { font-size: 0.75rem; color: var(--text-secondary); float: right; }
         .changelog-desc { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; white-space: pre-line; }
 
+        #loginModal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background: var(--surface);
+            border: 1px solid var(--surface-border);
+            border-radius: 12px;
+            padding: 30px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .modal-content h3 { margin-bottom: 15px; font-size: 1.2rem; font-weight: 700; }
+
         footer {
             max-width: 100%;
             width: 100%;
@@ -824,8 +862,32 @@
             h1 { font-size: 2.2rem; }
         }
     </style>
+    <!-- MQTT (hesaba tanımlı HiveMQ topic'ini okumak için) -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 </head>
 <body>
+
+    <!-- Admin Giriş Modalı -->
+    <div id="loginModal">
+        <div class="modal-content">
+            <h3>🔒 Gizli Admin Girişi</h3>
+            <form onsubmit="handleAdminLogin(event)">
+                <div class="form-group">
+                    <label>Kullanıcı Adı</label>
+                    <input type="text" id="adminUser" class="form-control" placeholder="Kullanıcı Adı" required>
+                </div>
+                <div class="form-group">
+                    <label>Şifre</label>
+                    <input type="password" id="adminPass" class="form-control" placeholder="Şifre" required>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="main-cta" style="flex: 1;">Giriş Yap</button>
+                    <button type="button" class="util-btn" onclick="closeModal()" style="flex: 1; justify-content: center;">İptal</button>
+                </div>
+                <p id="loginErrorMsg" style="color: var(--danger); font-size: 0.85rem; margin-top: 10px; display: none;"></p>
+            </form>
+        </div>
+    </div>
 
     <!-- Ekran Görüntüsü Büyütme Modalı -->
     <div id="imgLightbox" onclick="closeLightbox()">
@@ -968,7 +1030,7 @@
                     <span class="clean-badge">&#10003; VirusTotal: 0/67 Temiz Raporu</span>
                     <a href="https://github.com/ereny116011-cloud/TechnoStudios/blob/main/testsonuc.png" target="_blank" class="vt-link">Detaylar &rarr;</a>
                 </div>
-                <div class="preview-img-wrap">
+                <div class="preview-img-wrap" onclick="triggerSecretLogin()" title="Admin girişi için buraya 10 kez tıkla">
                     <img src="https://raw.githubusercontent.com/ereny116011-cloud/TechnoStudios/main/testsonuc.png" alt="VirusTotal Raporu">
                 </div>
             </div>
@@ -1031,11 +1093,6 @@
                         <label>Değişiklikler ve Özellikler</label>
                         <textarea id="adminChangelogDesc" class="form-control" rows="4" placeholder="- Yeni sensör entegrasyonu eklendi.&#10;- Arayüz optimizasyonları yapıldı." required></textarea>
                     </div>
-                    <div class="form-group">
-                        <label>APK Dosyası (isteğe bağlı — tarayıcından doğrudan GitHub'a yüklenir, ~2GB'a kadar)</label>
-                        <input type="file" id="adminReleaseFile" class="form-control" accept=".apk">
-                        <p id="adminReleaseStatus" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 6px;"></p>
-                    </div>
                     <button type="submit" class="main-cta">Yeni Sürümü Yayınla</button>
                 </form>
             </div>
@@ -1064,9 +1121,8 @@
                         <input type="text" id="newUserPassword" class="form-control" placeholder="Geçici Şifre" required>
                     </div>
                     <div class="form-group">
-                        <label>Cihaz Kimliği</label>
-                        <input type="text" id="newUserTopic" class="form-control" placeholder="fireeye-musteri-01">
-                        <small style="color: var(--text-secondary);">Bu kod, sattığın cihazın firmware'ine de aynen yazılmalı.</small>
+                        <label>HiveMQ Topic</label>
+                        <input type="text" id="newUserTopic" class="form-control" placeholder="fireeye/musteri-01/veri">
                     </div>
                     <button type="submit" class="main-cta">Hesabı Oluştur</button>
                 </form>
@@ -1076,84 +1132,46 @@
             </div>
 
             <div id="accountLoginBox">
-                <div class="download-box" style="flex-direction: column; align-items: stretch; gap: 16px;">
-                    <h3 style="margin: 0;">Hesabına Giriş Yap</h3>
-                    <form onsubmit="handleUserLogin(event)" style="display: flex; flex-direction: column; gap: 12px; max-width: 380px;">
-                        <div class="form-group">
-                            <label>E-posta</label>
-                            <input type="text" id="accountEmail" class="form-control" placeholder="ornek@eposta.com" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Şifre</label>
-                            <input type="password" id="accountPassword" class="form-control" placeholder="Şifre" required>
-                        </div>
-                        <button type="submit" class="main-cta">Giriş Yap</button>
-                        <p id="accountLoginError" style="color: var(--danger); font-size: 0.85rem; display: none;"></p>
-                    </form>
-                    <div style="display: flex; justify-content: space-between; max-width: 380px;">
-                        <a href="#" onclick="toggleForgotPasswordBox(event)" style="color: var(--accent); font-size: 0.85rem; text-decoration: none;">Şifremi unuttum</a>
-                        <a href="#" onclick="toggleRegisterBox(event)" style="color: var(--accent); font-size: 0.85rem; text-decoration: none;">Hesabın yok mu? Kayıt ol</a>
+            <div class="download-box" style="flex-direction: column; align-items: stretch; gap: 16px;">
+                <div style="text-align: center; margin-bottom: 12px;">
+                    <h3 style="margin: 0 0 8px 0;">Hoş geldiniz</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.95rem; margin: 0;">E-posta ve şifrenizle hesabınıza giriş yapın</p>
+                </div>
+                <form onsubmit="handleUserLogin(event)" style="display: flex; flex-direction: column; gap: 14px; max-width: 380px; margin: 0 auto;">
+                    <div class="form-group">
+                        <label for="accountEmail" style="font-weight: 500; margin-bottom: 6px; color: var(--text-primary);">E-posta Adresi</label>
+                        <input type="email" id="accountEmail" class="form-control" placeholder="ornek@eposta.com" required autocomplete="email">
                     </div>
-                    <form id="forgotPasswordForm" onsubmit="handleForgotPassword(event)" style="display: none; flex-direction: column; gap: 12px; max-width: 380px;">
-                        <div class="form-group">
-                            <label>Hesap E-postan</label>
-                            <input type="email" id="forgotPasswordEmail" class="form-control" placeholder="ornek@eposta.com" required>
-                        </div>
-                        <button type="submit" class="main-cta" style="opacity: 0.85;">Sıfırlama Talebi Gönder</button>
-                        <p id="forgotPasswordMsg" style="font-size: 0.85rem; display: none;"></p>
-                    </form>
-                    <form id="registerForm" onsubmit="handleRegister(event)" style="display: none; flex-direction: column; gap: 12px; max-width: 380px;">
-                        <div class="form-group">
-                            <label>Ad Soyad</label>
-                            <input type="text" id="registerFullName" class="form-control" placeholder="Ad Soyad">
-                        </div>
-                        <div class="form-group">
-                            <label>E-posta</label>
-                            <input type="email" id="registerEmail" class="form-control" placeholder="ornek@eposta.com" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Şifre</label>
-                            <input type="password" id="registerPassword" class="form-control" placeholder="En az 6 karakter" minlength="6" required>
-                        </div>
-                        <button type="submit" class="main-cta" style="opacity: 0.85;">Kayıt Ol</button>
-                        <p id="registerMsg" style="font-size: 0.85rem; display: none;"></p>
-                    </form>
-                </div>
+                    <div class="form-group">
+                        <label for="accountPassword" style="font-weight: 500; margin-bottom: 6px; color: var(--text-primary);">Şifre</label>
+                        <input type="password" id="accountPassword" class="form-control" placeholder="Şifreniz" required autocomplete="current-password">
+                    </div>
+                    <button type="submit" class="main-cta" style="width: 100%;">Giriş Yap</button>
+                    <p id="accountLoginError" style="color: var(--danger); font-size: 0.85rem; display: none; text-align: center;"></p>
+                </form>
             </div>
-
-            <div id="resetPasswordBox" style="display: none;">
-                <div class="download-box" style="flex-direction: column; align-items: stretch; gap: 16px;">
-                    <h3 style="margin: 0;">Yeni Şifre Belirle</h3>
-                    <p style="color: var(--text-secondary); margin: 0;">E-postandaki bağlantı üzerinden buradasın. Yeni şifreni belirle.</p>
-                    <form onsubmit="handleResetPassword(event)" style="display: flex; flex-direction: column; gap: 12px; max-width: 380px;">
-                        <div class="form-group">
-                            <label>Yeni Şifre</label>
-                            <input type="password" id="resetPasswordNew" class="form-control" placeholder="En az 6 karakter" minlength="6" required>
-                        </div>
-                        <button type="submit" class="main-cta">Şifreyi Güncelle</button>
-                        <p id="resetPasswordMsg" style="font-size: 0.85rem; display: none;"></p>
-                    </form>
-                </div>
-            </div>
+        </div>
 
             <div id="accountForceChangeBox" style="display: none;">
-                <div class="download-box" style="flex-direction: column; align-items: stretch; gap: 16px;">
-                    <h3 style="margin: 0;">Güvenliğiniz İçin</h3>
-                    <p style="color: var(--text-secondary); margin: 0;">TechnoStudios tarafından sağlanan geçici kullanıcı adı ve şifrenizi değiştirmeniz gerekmektedir.</p>
-                    <form onsubmit="handleForceChange(event)" style="display: flex; flex-direction: column; gap: 12px; max-width: 380px;">
-                        <div class="form-group">
-                            <label>Yeni E-posta</label>
-                            <input type="email" id="forceChangeEmail" class="form-control" placeholder="yeni@eposta.com" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Yeni Şifre</label>
-                            <input type="password" id="forceChangePassword" class="form-control" placeholder="Yeni Şifre" required>
-                        </div>
-                        <button type="submit" class="main-cta">Bilgileri Güncelle</button>
-                        <p id="forceChangeError" style="color: var(--danger); font-size: 0.85rem; display: none;"></p>
-                    </form>
+            <div class="download-box" style="flex-direction: column; align-items: stretch; gap: 16px;">
+                <div style="text-align: center; margin-bottom: 12px;">
+                    <h3 style="margin: 0 0 8px 0;">⚠️ Güvenlik Uyarısı</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">Geçici hesabınızla giriş yaptınız. Lütfen yeni e-posta ve şifrenizi belirleyin.</p>
                 </div>
+                <form onsubmit="handleForceChange(event)" style="display: flex; flex-direction: column; gap: 14px; max-width: 380px; margin: 0 auto;">
+                    <div class="form-group">
+                        <label for="forceChangeEmail" style="font-weight: 500; margin-bottom: 6px; color: var(--text-primary);">Yeni E-posta</label>
+                        <input type="email" id="forceChangeEmail" class="form-control" placeholder="yeni@eposta.com" required autocomplete="email">
+                    </div>
+                    <div class="form-group">
+                        <label for="forceChangePassword" style="font-weight: 500; margin-bottom: 6px; color: var(--text-primary);">Yeni Şifre</label>
+                        <input type="password" id="forceChangePassword" class="form-control" placeholder="En az 6 karakter" required autocomplete="new-password">
+                    </div>
+                    <button type="submit" class="main-cta" style="width: 100%;">Bilgileri Güncelle</button>
+                    <p id="forceChangeError" style="color: var(--danger); font-size: 0.85rem; display: none; text-align: center;"></p>
+                </form>
             </div>
+        </div>
 
             <div id="accountDashboardBox" style="display: none;">
                 <div class="download-box" style="flex-direction: column; align-items: stretch; gap: 16px;">
@@ -1188,8 +1206,8 @@
         let changelogs = [];
 
         function getAdminAuthHeader() {
-            const token = sessionStorage.getItem('fireeye_admin_token');
-            return token ? { 'Authorization': 'Basic ' + token } : {};
+            // Admin status is now determined from user login's isAdmin flag
+            return {};
         }
 
         async function loadReviews() {
@@ -1213,6 +1231,8 @@
             updateVersionDisplay();
         }
 
+        let clickCount = 0;
+        let clickTimer = null;
 
         function playClickSound(freq = 600, duration = 0.05, type = 'triangle') {
             try {
@@ -1233,68 +1253,16 @@
         window.addEventListener('DOMContentLoaded', () => {
             const savedMode = localStorage.getItem('theme') || 'dark';
             applyThemeMode(['dark', 'light', 'vivid'].includes(savedMode) ? savedMode : 'dark');
-            if (localStorage.getItem('fireeye_admin') === 'true' && sessionStorage.getItem('fireeye_admin_token')) {
-                enableAdminMode();
-            } else {
-                localStorage.removeItem('fireeye_admin');
-            }
+            restoreUserSession();
 
             loadReviews();
             loadChangelogs();
             loadScreenshots();
-            restoreUserSession();
-
-            // E-postadaki sıfırlama linkinden geldiyse (?reset_token=...) doğrudan
-            // "Hesabım" sekmesini aç ve yeni şifre belirleme formunu göster.
-            const resetToken = new URLSearchParams(window.location.search).get('reset_token');
-            if (resetToken) {
-                document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-                document.querySelectorAll('.tab-trigger').forEach(t => t.classList.remove('active'));
-                document.getElementById('account').classList.add('active');
-                const accountTrigger = Array.from(document.querySelectorAll('.tab-trigger')).find(t => t.textContent.trim() === 'Hesabım');
-                if (accountTrigger) accountTrigger.classList.add('active');
-
-                document.getElementById('accountLoginBox').style.display = 'none';
-                document.getElementById('accountForceChangeBox').style.display = 'none';
-                document.getElementById('accountDashboardBox').style.display = 'none';
-                document.getElementById('resetPasswordBox').style.display = 'block';
-            }
         });
 
-        async function handleResetPassword(e) {
-            e.preventDefault();
-            const token = new URLSearchParams(window.location.search).get('reset_token');
-            const newPassword = document.getElementById('resetPasswordNew').value;
-            const msg = document.getElementById('resetPasswordMsg');
-            msg.style.display = 'none';
-
-            try {
-                const res = await fetch(WORKER_BASE + '/reset-password', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token, newPassword })
-                });
-                const data = await res.json().catch(() => ({}));
-                if (!data.success) throw new Error(data.message || 'Şifre güncellenemedi.');
-
-                msg.style.color = 'var(--accent)';
-                msg.textContent = data.message + ' Yönlendiriliyorsun...';
-                msg.style.display = 'block';
-
-                // Linkteki token'ı URL'den temizle ve giriş ekranına dön.
-                const cleanUrl = window.location.origin + window.location.pathname;
-                setTimeout(() => { window.location.href = cleanUrl; }, 1500);
-            } catch (err) {
-                msg.style.color = 'var(--danger)';
-                msg.textContent = err.message;
-                msg.style.display = 'block';
-            }
-        }
-
-        // --- Kullanıcı hesabı girişi (kayıt yok, admin oluşturur) + hesaba tanımlı cihazı canlı okuma ---
+        // --- Kullanıcı hesabı girişi (kayıt yok, admin oluşturur) + hesaba tanımlı HiveMQ topic'ini canlı okuma ---
         // Uygulama ile TAMAMEN aynı API sözleşmesi: /login, /admin/create-user, /user/update-credentials.
-        // Cihaz artık MQTT/HiveMQ kullanmıyor; doğrudan Worker'a HTTP ile veri gönderiyor.
-        let deviceDataInterval = null;
+        let mqttClient = null;
 
         function restoreUserSession() {
             const raw = localStorage.getItem('fireeye_user');
@@ -1318,16 +1286,6 @@
             const errMsg = document.getElementById('accountLoginError');
             errMsg.style.display = 'none';
 
-            // Admin girişi: aynı formdan, admin kullanıcı adı/şifresi girilirse admin moduna geçilir.
-            if (email === 'TechnoStudios11' && password === 'giradmine') {
-                localStorage.setItem('fireeye_admin', 'true');
-                sessionStorage.setItem('fireeye_admin_token', btoa(email + ':' + password));
-                enableAdminMode();
-                document.getElementById('accountEmail').value = '';
-                document.getElementById('accountPassword').value = '';
-                return;
-            }
-
             try {
                 const res = await fetch(WORKER_BASE + '/login', {
                     method: 'POST',
@@ -1350,75 +1308,8 @@
             }
         }
 
-        function toggleForgotPasswordBox(e) {
-            e.preventDefault();
-            document.getElementById('registerForm').style.display = 'none';
-            const box = document.getElementById('forgotPasswordForm');
-            box.style.display = box.style.display === 'none' ? 'flex' : 'none';
-        }
-
-        function toggleRegisterBox(e) {
-            e.preventDefault();
-            document.getElementById('forgotPasswordForm').style.display = 'none';
-            const box = document.getElementById('registerForm');
-            box.style.display = box.style.display === 'none' ? 'flex' : 'none';
-        }
-
-        async function handleRegister(e) {
-            e.preventDefault();
-            const fullName = document.getElementById('registerFullName').value.trim();
-            const email = document.getElementById('registerEmail').value.trim();
-            const password = document.getElementById('registerPassword').value;
-            const msg = document.getElementById('registerMsg');
-            msg.style.display = 'none';
-
-            try {
-                const res = await fetch(WORKER_BASE + '/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password, fullName })
-                });
-                const data = await res.json().catch(() => ({}));
-                if (!data.success) throw new Error(data.message || 'Kayıt başarısız.');
-
-                localStorage.setItem('fireeye_user', JSON.stringify({ token: data.token, user: data.user }));
-                document.getElementById('registerForm').reset();
-                document.getElementById('registerForm').style.display = 'none';
-                showAccountDashboard(data.user);
-            } catch (err) {
-                msg.style.color = 'var(--danger)';
-                msg.textContent = err.message;
-                msg.style.display = 'block';
-            }
-        }
-
-        async function handleForgotPassword(e) {
-            e.preventDefault();
-            const email = document.getElementById('forgotPasswordEmail').value.trim();
-            const msg = document.getElementById('forgotPasswordMsg');
-            msg.style.display = 'none';
-
-            try {
-                const resetBaseUrl = window.location.origin + window.location.pathname;
-                const res = await fetch(WORKER_BASE + '/forgot-password', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, resetBaseUrl })
-                });
-                const data = await res.json().catch(() => ({}));
-                msg.style.color = 'var(--accent)';
-                msg.textContent = data.message || 'Eğer bu e-posta ile bir hesap varsa, sıfırlama bağlantısı gönderildi.';
-                msg.style.display = 'block';
-                document.getElementById('forgotPasswordEmail').value = '';
-            } catch (err) {
-                msg.style.color = 'var(--danger)';
-                msg.textContent = 'Talep gönderilemedi, tekrar dene.';
-                msg.style.display = 'block';
-            }
-        }
-
         function handleUserLogout() {
-            if (deviceDataInterval) { clearInterval(deviceDataInterval); deviceDataInterval = null; }
+            if (mqttClient) { mqttClient.end(true); mqttClient = null; }
             localStorage.removeItem('fireeye_user');
             document.getElementById('accountLoginBox').style.display = 'block';
             document.getElementById('accountForceChangeBox').style.display = 'none';
@@ -1464,10 +1355,10 @@
             document.getElementById('accountForceChangeBox').style.display = 'none';
             document.getElementById('accountDashboardBox').style.display = 'block';
             document.getElementById('accountEmailLabel').textContent = user.email;
-            startDeviceReading(user.mqttTopic);
+            connectToHiveMQ(user.mqttTopic);
         }
 
-        // Cihazın gönderdiği veri formatını (SICAKLIK:.., NEM:.., DURUM:..) ayrıştırır.
+        // Uygulamanın kullandığı gerçek veri formatını (SICAKLIK:.., NEM:.., DURUM:..) ayrıştırır.
         function parseVeriPayload(payload) {
             const result = {};
             payload.split(',').map(s => s.trim()).forEach(part => {
@@ -1479,55 +1370,48 @@
             return result;
         }
 
-        async function fetchDeviceReading(deviceKey) {
+        function connectToHiveMQ(topic) {
             const statusEl = document.getElementById('mqttStatus');
             const dataEl = document.getElementById('mqttData');
-
-            try {
-                const res = await fetch(WORKER_BASE + '/device/report?device_key=' + encodeURIComponent(deviceKey));
-                if (!res.ok) {
-                    statusEl.textContent = 'Henüz cihazdan veri gelmedi.';
-                    return;
-                }
-                const data = await res.json();
-                const parsed = parseVeriPayload(data.payload);
-                statusEl.textContent = 'Bağlı — son güncelleme: ' + data.updated_at;
-                dataEl.textContent =
-                    (parsed.sicaklik ? 'Sıcaklık: ' + parsed.sicaklik + '°C\n' : '') +
-                    (parsed.nem ? 'Nem: %' + parsed.nem + '\n' : '') +
-                    (parsed.durum ? 'Durum: ' + parsed.durum + '\n' : '') +
-                    '\n(ham veri: ' + data.payload + ')';
-            } catch (err) {
-                statusEl.textContent = 'Sunucuya ulaşılamadı.';
-            }
-        }
-
-        function startDeviceReading(deviceKey) {
-            const statusEl = document.getElementById('mqttStatus');
             const muteBtn = document.getElementById('mqttMuteBtn');
 
-            if (deviceDataInterval) { clearInterval(deviceDataInterval); deviceDataInterval = null; }
-
-            if (!deviceKey) {
-                statusEl.textContent = 'Bu hesaba tanımlı bir cihaz yok.';
+            if (!topic) {
+                statusEl.textContent = 'Bu hesaba tanımlı bir cihaz topic\'i yok.';
                 muteBtn.style.display = 'none';
                 return;
             }
 
-            statusEl.textContent = 'Bağlanıyor...';
-            muteBtn.style.display = 'inline-flex';
-            muteBtn.onclick = async () => {
-                try {
-                    await fetch(WORKER_BASE + '/device/command', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ device_key: deviceKey, command: 'kapat' })
-                    });
-                } catch (err) { /* sessiz geç */ }
-            };
+            if (mqttClient) { mqttClient.end(true); mqttClient = null; }
 
-            fetchDeviceReading(deviceKey);
-            deviceDataInterval = setInterval(() => fetchDeviceReading(deviceKey), 5000);
+            statusEl.textContent = 'Bağlanıyor...';
+            // Uygulamanın kullandığı ücretsiz genel HiveMQ broker'ı (kullanıcı adı/şifre gerekmez).
+            mqttClient = mqtt.connect('wss://broker.hivemq.com:8884/mqtt', {
+                clientId: 'FireEyeWeb-' + Math.random().toString(16).slice(2)
+            });
+
+            const komutTopic = topic.endsWith('/veri') ? topic.replace(/\/veri$/, '/komut') : topic + '/komut';
+
+            mqttClient.on('connect', () => {
+                statusEl.textContent = 'Bağlandı, dinleniyor: ' + topic;
+                mqttClient.subscribe(topic);
+                muteBtn.style.display = 'inline-flex';
+                muteBtn.onclick = () => mqttClient.publish(komutTopic, 'kapat');
+            });
+            mqttClient.on('message', (t, message) => {
+                const raw = message.toString();
+                const parsed = parseVeriPayload(raw);
+                dataEl.textContent =
+                    (parsed.sicaklik ? 'Sıcaklık: ' + parsed.sicaklik + '°C\n' : '') +
+                    (parsed.nem ? 'Nem: %' + parsed.nem + '\n' : '') +
+                    (parsed.durum ? 'Durum: ' + parsed.durum + '\n' : '') +
+                    '\n(ham veri: ' + raw + ')';
+            });
+            mqttClient.on('error', (err) => {
+                statusEl.textContent = 'Bağlantı hatası: ' + err.message;
+            });
+            mqttClient.on('close', () => {
+                statusEl.textContent = 'Bağlantı kapandı.';
+            });
         }
 
         async function handleCreateUser(e) {
@@ -1582,31 +1466,13 @@
                 card.innerHTML = `
                     <div class="comment-header">
                         <span class="comment-author">${escapeHtml(u.fullName || u.email)}</span>
-                        <span class="comment-date">${u.resetRequested ? '🔔 Şifre sıfırlama istedi' : (u.isNoData ? 'İlk giriş bekleniyor' : 'Aktif')}</span>
+                        <span class="comment-date">${u.isNoData ? 'İlk giriş bekleniyor' : 'Aktif'}</span>
                     </div>
                     <p class="comment-text">${escapeHtml(u.email)}${u.mqttTopic ? ' · ' + escapeHtml(u.mqttTopic) : ''}</p>
-                    <button class="admin-delete-btn" style="background: var(--accent); border-color: var(--accent); margin-right: 8px;" onclick="resetUserPassword(${u.id}, '${escapeHtml(u.email)}')">Yeni Şifre Oluştur</button>
                     <button class="admin-delete-btn" onclick="deleteUser(${u.id}, '${escapeHtml(u.email)}')">Sil</button>
                 `;
                 container.appendChild(card);
             });
-        }
-
-        async function resetUserPassword(id, email) {
-            if (!confirm(email + ' için yeni bir geçici şifre oluşturulsun mu? (kullanıcının eski şifresi geçersiz olur)')) return;
-            try {
-                const res = await fetch(WORKER_BASE + '/admin/users/reset-password', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer admin-static-token' },
-                    body: JSON.stringify({ id })
-                });
-                const data = await res.json().catch(() => ({}));
-                if (!res.ok) throw new Error(data.error || 'Sıfırlanamadı');
-                alert(email + ' için yeni geçici şifre:\n\n' + data.tempPassword + '\n\nBu şifreyi kullanıcıya ilet — ilk girişte kendi şifresini belirlemesi istenecek.');
-                await loadUsers();
-            } catch (err) {
-                alert('Şifre sıfırlanamadı: ' + err.message);
-            }
         }
 
         async function deleteUser(id, email) {
@@ -1628,9 +1494,6 @@
             document.querySelectorAll('.tab-trigger').forEach(t => t.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             evt.currentTarget.classList.add('active');
-            // Küçük ekranlarda (telefon) yeni sekme içeriği ekranın altında kalmasın diye
-            // sekme çubuğunu görünür alana kaydır.
-            document.querySelector('.nav-tabs').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         function switchTabToDownload() {
@@ -1663,6 +1526,45 @@
             const current = localStorage.getItem('theme') || 'dark';
             const next = current === 'dark' ? 'light' : current === 'light' ? 'vivid' : 'dark';
             applyThemeMode(next);
+        }
+
+        function triggerSecretLogin() {
+            clickCount++;
+
+            const imgWrap = document.querySelector('.preview-img-wrap');
+            imgWrap.style.transform = 'scale(0.97)';
+            setTimeout(() => imgWrap.style.transform = 'scale(1)', 90);
+
+            clearTimeout(clickTimer);
+            
+            if (clickCount >= 10) {
+                clickCount = 0;
+                document.getElementById('loginModal').style.display = 'flex';
+            } else {
+                clickTimer = setTimeout(() => { clickCount = 0; }, 1500);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('loginModal').style.display = 'none';
+        }
+
+        function handleAdminLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('adminUser').value.trim();
+            const p = document.getElementById('adminPass').value.trim();
+            const errMsg = document.getElementById('loginErrorMsg');
+            errMsg.style.display = 'none';
+
+            if (u === 'TechnoStudios11' && p === 'giradmine') {
+                localStorage.setItem('fireeye_admin', 'true');
+                sessionStorage.setItem('fireeye_admin_token', btoa(u + ':' + p));
+                enableAdminMode();
+                closeModal();
+            } else {
+                errMsg.textContent = 'Hatalı kullanıcı adı veya şifre!';
+                errMsg.style.display = 'block';
+            }
         }
 
         function enableAdminMode() {
@@ -1709,7 +1611,7 @@
                     clearInterval(interval);
                     statusText.textContent = "İndirme Tamamlandı!";
                     playClickSound(800, 0.15, 'sine');
-                    window.location.href = WORKER_BASE + "/release/latest/download";
+                    window.location.href = "https://github.com/ereny116011-cloud/TechnoStudios/releases/download/APK/fireeye.apk";
                     setTimeout(() => {
                         progressContainer.style.display = 'none';
                         feedbackArea.style.display = 'block';
@@ -1844,95 +1746,14 @@
             if (btn) btn.textContent = 'APK İndir (' + latest + ')';
         }
 
-        const GITHUB_OWNER = 'ereny116011-cloud';
-        const GITHUB_REPO = 'TechnoStudios';
-        const GITHUB_RELEASE_TAG = 'APK';
-
-        function getGithubToken() {
-            let token = sessionStorage.getItem('fireeye_gh_token');
-            if (!token) {
-                token = (prompt('GitHub Personal Access Token gir (sadece bu tarayıcı oturumunda tutulur, Contents: Read and write izinli TechnoStudios reposu için):') || '').trim();
-                if (token) sessionStorage.setItem('fireeye_gh_token', token);
-            }
-            return token;
-        }
-
-        // APK dosyasını doğrudan tarayıcıdan GitHub Releases'e yükler (Worker'ı hiç kullanmaz,
-        // böylece Cloudflare'in Worker isteklerine koyduğu 100MB sınırına takılmaz).
-        async function uploadApkToGithub(file, statusEl) {
-            const token = getGithubToken();
-            if (!token) throw new Error('GitHub token girilmedi.');
-
-            const ghHeaders = {
-                'Authorization': 'Bearer ' + token,
-                'Accept': 'application/vnd.github+json',
-            };
-
-            statusEl.textContent = 'GitHub sürümü kontrol ediliyor...';
-            let release;
-            const getRes = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/tags/${GITHUB_RELEASE_TAG}`, { headers: ghHeaders });
-            if (getRes.ok) {
-                release = await getRes.json();
-            } else if (getRes.status === 404) {
-                const createRes = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases`, {
-                    method: 'POST',
-                    headers: Object.assign({ 'Content-Type': 'application/json' }, ghHeaders),
-                    body: JSON.stringify({ tag_name: GITHUB_RELEASE_TAG, name: 'FireEye APK', body: 'Otomatik yüklenen APK sürümleri.' }),
-                });
-                if (!createRes.ok) throw new Error('GitHub release oluşturulamadı (' + createRes.status + ')');
-                release = await createRes.json();
-            } else if (getRes.status === 401) {
-                sessionStorage.removeItem('fireeye_gh_token');
-                throw new Error('GitHub token geçersiz.');
-            } else {
-                throw new Error('GitHub release bilgisi alınamadı (' + getRes.status + ')');
-            }
-
-            const existingAsset = (release.assets || []).find(a => a.name === file.name);
-            if (existingAsset) {
-                statusEl.textContent = 'Eski dosya siliniyor...';
-                await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/assets/${existingAsset.id}`, {
-                    method: 'DELETE',
-                    headers: ghHeaders,
-                });
-            }
-
-            statusEl.textContent = 'APK GitHub\'a yükleniyor... (büyük dosyalarda biraz sürebilir)';
-            const uploadUrl = release.upload_url.replace('{?name,label}', '') + '?name=' + encodeURIComponent(file.name);
-            const uploadRes = await fetch(uploadUrl, {
-                method: 'POST',
-                headers: Object.assign({ 'Content-Type': file.type || 'application/vnd.android.package-archive' }, ghHeaders),
-                body: file,
-            });
-            if (!uploadRes.ok) throw new Error('GitHub yüklemesi başarısız (' + uploadRes.status + ')');
-            const asset = await uploadRes.json();
-            return { fileName: file.name, downloadUrl: asset.browser_download_url, fileSize: file.size };
-        }
-
         async function handleNewChangelog(e) {
             e.preventDefault();
             const version = document.getElementById('adminVersionInput').value.trim();
             const text = document.getElementById('adminChangelogDesc').value.trim();
-            const fileInput = document.getElementById('adminReleaseFile');
-            const statusEl = document.getElementById('adminReleaseStatus');
-            const file = fileInput && fileInput.files && fileInput.files[0];
 
             if(!version || !text) return;
 
             try {
-                // Dosya seçildiyse, doğrudan GitHub'a yükle, sonra Worker'a sadece meta veriyi kaydet.
-                if (file) {
-                    const uploaded = await uploadApkToGithub(file, statusEl);
-                    statusEl.textContent = 'APK yüklendi, kaydediliyor...';
-                    const metaRes = await fetch(WORKER_BASE + '/admin/release', {
-                        method: 'POST',
-                        headers: Object.assign({ 'Content-Type': 'application/json' }, getAdminAuthHeader()),
-                        body: JSON.stringify({ version, fileName: uploaded.fileName, downloadUrl: uploaded.downloadUrl, fileSize: uploaded.fileSize }),
-                    });
-                    if (!metaRes.ok) throw new Error('Sürüm bilgisi kaydedilemedi');
-                    statusEl.textContent = 'APK yüklendi ✓';
-                }
-
                 const res = await fetch(WORKER_BASE + '/changelogs', {
                     method: 'POST',
                     headers: Object.assign({ 'Content-Type': 'application/json' }, getAdminAuthHeader()),
@@ -1943,12 +1764,9 @@
                 await loadChangelogs();
                 document.getElementById('adminVersionInput').value = '';
                 document.getElementById('adminChangelogDesc').value = '';
-                fileInput.value = '';
-                statusEl.textContent = '';
-                alert('Yeni sürüm yayınlandı!');
+                alert('Yeni sürüm notu eklendi!');
             } catch (err) {
-                statusEl.textContent = '';
-                alert('Sürüm eklenemedi: ' + err.message);
+                alert('Sürüm notu eklenemedi.');
             }
         }
 

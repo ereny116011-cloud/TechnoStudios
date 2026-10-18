@@ -74,6 +74,7 @@ async function verifyPassword(password, storedHash, storedSalt) {
     return hash === storedHash;
 }
 
+<<<<<<< HEAD
 // --- Şifre sıfırlama token'larını hash'lemek için (geri döndürülemez; DB'de sadece hash tutulur) ---
 async function sha256Hex(text) {
     const enc = new TextEncoder();
@@ -188,6 +189,8 @@ function emailLayout({ preheader = '', icon = '', heading, intro, buttonText, bu
 </body></html>`;
 }
 
+=======
+>>>>>>> 065d170 (Security: Remove hardcoded admin credentials and static token)
 // --- Oturum token'ı: HMAC-SHA256 imzalı, kayıt gerektirmeyen hesap girişleri için ---
 async function signSession(payloadObj, secret) {
     const enc = new TextEncoder();
@@ -318,6 +321,7 @@ export default {
                 }
             }
 
+<<<<<<< HEAD
             // --- /admin/release --- (admin: tarayıcı APK'yı doğrudan GitHub'a yükledikten SONRA
             // buraya sadece meta veriyi kaydeder — dosyanın kendisi Worker'dan geçmez, çünkü
             // Cloudflare Worker'a gelen istekler ücretsiz planda 100MB ile sınırlı; GitHub'a
@@ -387,6 +391,8 @@ export default {
                 return Response.redirect(row.download_url, 302);
             }
 
+=======
+>>>>>>> 065d170 (Security: Remove hardcoded admin credentials and static token)
             // --- /screenshots (ss klasörü): görseller D1'de saklanır, /images/<id>'den hızlı ve önbellekli sunulur ---
             if (url.pathname === '/screenshots') {
                 if (request.method === 'GET') {
@@ -544,12 +550,9 @@ export default {
 
             // --- /admin/create-user --- (admin: sattığın ürünün HiveMQ topic'ini hesaba bağlar) ---
             if (url.pathname === '/admin/create-user' && request.method === 'POST') {
-                const authHeader = request.headers.get('Authorization') || '';
-                const isStaticAdmin = authHeader === 'Bearer admin-static-token';
-                if (!isStaticAdmin && !(await isAdmin(request, env))) {
+                if (!(await isAdmin(request, env))) {
                     return json({ success: false, message: 'Yetkisiz işlem' }, 401);
                 }
-
                 const body = await request.json().catch(() => ({}));
                 const email = (body.email || '').trim().toLowerCase();
                 const password = body.password || '';
@@ -571,15 +574,13 @@ export default {
 
             // --- /admin/users --- (admin: hesap listesi ve silme) ---
             if (url.pathname === '/admin/users') {
-                const authHeader = request.headers.get('Authorization') || '';
-                const isStaticAdmin = authHeader === 'Bearer admin-static-token';
-                if (!isStaticAdmin && !(await isAdmin(request, env))) {
+                if (!(await isAdmin(request, env))) {
                     return json({ error: 'Yetkisiz.' }, 401);
                 }
 
                 if (request.method === 'GET') {
                     const { results } = await env.DB
-                        .prepare('SELECT id, email, full_name, mqtt_topic, is_no_data, reset_requested, reset_requested_at, created_at FROM users ORDER BY reset_requested DESC, id DESC')
+                        .prepare('SELECT id, email, full_name, mqtt_topic, is_no_data, created_at FROM users ORDER BY id DESC')
                         .all();
                     return json(results.map(r => ({
                         id: r.id,
@@ -587,8 +588,6 @@ export default {
                         fullName: r.full_name,
                         mqttTopic: r.mqtt_topic,
                         isNoData: !!r.is_no_data,
-                        resetRequested: !!r.reset_requested,
-                        resetRequestedAt: r.reset_requested_at,
                         createdAt: r.created_at,
                     })));
                 }
@@ -720,6 +719,8 @@ export default {
                 return json({ status: 'ok', tempPassword });
             }
 
+=======
+>>>>>>> 065d170 (Security: Remove hardcoded admin credentials and static token)
             // --- /user/update-credentials --- (ilk girişte zorunlu e-posta/şifre değişimi) ---
             if (url.pathname === '/user/update-credentials' && request.method === 'PUT') {
                 const session = await getSessionUser(request, env);
@@ -735,6 +736,7 @@ export default {
                     await env.DB.prepare(
                         'UPDATE users SET email = ?, password_hash = ?, password_salt = ?, is_no_data = 0 WHERE id = ?'
                     ).bind(newEmail, hash, salt, session.uid).run();
+<<<<<<< HEAD
 
                     const supportMail = env.SUPPORT_EMAIL || 'technostudios11@gmail.com';
                     await sendEmail(env, newEmail, 'FireEye — Hesap Bilgilerin Güncellendi',
@@ -748,12 +750,15 @@ export default {
                         }),
                         `Merhaba,\n\nFireEye hesabının e-posta/şifre bilgileri az önce güncellendi. Bu işlemi sen yapmadıysan lütfen bizimle iletişime geç: ${supportMail}`);
 
+=======
+>>>>>>> 065d170 (Security: Remove hardcoded admin credentials and static token)
                     return json({ success: true, message: 'Bilgiler güncellendi' });
                 } catch (e) {
                     return json({ success: false, message: 'Bu e-posta zaten kullanılıyor.' }, 400);
                 }
             }
 
+<<<<<<< HEAD
             // --- /device/report --- (ESP32/Arduino buraya periyodik olarak veri gönderir, MQTT'ye gerek yok) ---
             if (url.pathname === '/device/report' && request.method === 'POST') {
                 const deviceSecret = request.headers.get('X-Device-Secret') || '';
@@ -816,6 +821,8 @@ export default {
                 return json({ command: null });
             }
 
+=======
+>>>>>>> 065d170 (Security: Remove hardcoded admin credentials and static token)
             return json({ error: 'Bulunamadı.' }, 404);
         } catch (err) {
             return json({ error: 'Sunucu hatası: ' + err.message }, 500);

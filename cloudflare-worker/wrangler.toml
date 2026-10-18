@@ -12,6 +12,7 @@ database_id = "203a8f3c-ae0d-42e9-8f50-5c6b20261d00"
 # Kullanıcı oturum token'larını imzalamak için gizli bir anahtar gerekiyor.
 # Terminalde şunu çalıştır: wrangler secret put SESSION_SECRET
 # (İstediğin uzun, rastgele bir metin gir — örn. bir şifre üreticiden.)
+<<<<<<< HEAD
 
 # Cihazların (ESP32/Arduino) veri gönderirken/komut çekerken kullandığı paylaşılan şifre.
 # Varsayılan: "fireeye-device-2026" — istersen değiştirmek için:
@@ -30,3 +31,5 @@ database_id = "203a8f3c-ae0d-42e9-8f50-5c6b20261d00"
 RESEND_FROM_EMAIL = "FireEye <no-reply@technoweb.win>"
 # E-postalardaki "bizimle iletişime geç" adresi (istersen değiştir):
 SUPPORT_EMAIL = "technostudios11@gmail.com"
+=======
+>>>>>>> 065d170 (Security: Remove hardcoded admin credentials and static token)
