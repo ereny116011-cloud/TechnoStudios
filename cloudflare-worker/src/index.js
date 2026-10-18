@@ -32,6 +32,21 @@ function isAdmin(request, env) {
     return user === expectedUser && pass === expectedPass;
 }
 
+// GitHub OAuth dönüş adresini güvenli bir site adresine indirger (açık yönlendirmeyi önler).
+function githubSafeRedirect(input) {
+    const fallback = 'https://www.technoweb.win/fireeye/';
+    if (!input) return fallback;
+    try {
+        const u = new URL(input);
+        const host = u.hostname.toLowerCase();
+        const ok = host === 'www.technoweb.win' || host === 'technoweb.win' || host === 'localhost' || host === '127.0.0.1';
+        if (!ok) return fallback;
+        return u.origin + u.pathname;
+    } catch (e) {
+        return fallback;
+    }
+}
+
 // --- Base64url yardımcıları (kullanıcı oturum token'ları ve şifre hash'leri için) ---
 function base64UrlEncode(bytes) {
     let binary = '';
@@ -674,6 +689,102 @@ export default {
                         mqttTopic: user.mqtt_topic || null,
                     },
                 });
+            }
+
+            // --- /me --- (Bearer oturum token'ı ile giriş yapan kullanıcının bilgilerini döndürür) ---
+            if (url.pathname === '/me' && request.method === 'GET') {
+                const session = await getSessionUser(request, env);
+                if (!session || !session.uid) return json({ success: false, message: 'Oturum bulunamadı.' }, 401);
+                const user = await env.DB.prepare(
+                    'SELECT id, email, full_name, mqtt_topic, is_no_data FROM users WHERE id = ?'
+                ).bind(session.uid).first();
+                if (!user) return json({ success: false, message: 'Hesap bulunamadı.' }, 404);
+                return json({
+                    success: true,
+                    user: {
+                        id: String(user.id),
+                        email: user.email,
+                        fullName: user.full_name || '',
+                        isNoData: !!user.is_no_data,
+                        mqttTopic: user.mqtt_topic || null,
+                    },
+                });
+            }
+
+            // --- /auth/github --- (GitHub OAuth girişine yönlendirir) ---
+            if (url.pathname === '/auth/github' && request.method === 'GET') {
+                if (!env.GITHUB_CLIENT_ID || !env.SESSION_SECRET) {
+                    return json({ success: false, message: 'GitHub girişi sunucuda yapılandırılmadı.' }, 500);
+                }
+                const redirect = githubSafeRedirect(url.searchParams.get('redirect'));
+                const state = await signSession({ nonce: crypto.randomUUID(), redirect }, env.SESSION_SECRET);
+                const callback = url.origin + '/auth/github/callback';
+                const ghUrl = 'https://github.com/login/oauth/authorize'
+                    + '?client_id=' + encodeURIComponent(env.GITHUB_CLIENT_ID)
+                    + '&redirect_uri=' + encodeURIComponent(callback)
+                    + '&scope=' + encodeURIComponent('read:user user:email')
+                    + '&state=' + encodeURIComponent(state);
+                return Response.redirect(ghUrl, 302);
+            }
+
+            // --- /auth/github/callback --- (kodu token'a çevirir, hesabı bulur/oluşturur, siteye döner) ---
+            if (url.pathname === '/auth/github/callback' && request.method === 'GET') {
+                const code = url.searchParams.get('code') || '';
+                const stateRaw = url.searchParams.get('state') || '';
+                const state = (stateRaw && env.SESSION_SECRET) ? await verifySession(stateRaw, env.SESSION_SECRET) : null;
+                const backBase = githubSafeRedirect(state && state.redirect);
+                const back = (qs) => Response.redirect(backBase + (backBase.includes('?') ? '&' : '?') + qs, 302);
+
+                if (!code) return back('gh_error=1');
+                if (!env.GITHUB_CLIENT_ID || !env.GITHUB_CLIENT_SECRET || !env.SESSION_SECRET) return back('gh_error=config');
+
+                let ghToken = '';
+                try {
+                    const tr = await fetch('https://github.com/login/oauth/access_token', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                        body: JSON.stringify({ client_id: env.GITHUB_CLIENT_ID, client_secret: env.GITHUB_CLIENT_SECRET, code }),
+                    });
+                    const td = await tr.json();
+                    ghToken = td.access_token || '';
+                } catch (e) { ghToken = ''; }
+                if (!ghToken) return back('gh_error=token');
+
+                const ghHeaders = { 'Authorization': 'Bearer ' + ghToken, 'Accept': 'application/vnd.github+json', 'User-Agent': 'FireEye' };
+                let ghUser = {};
+                try { ghUser = await (await fetch('https://api.github.com/user', { headers: ghHeaders })).json(); } catch (e) { ghUser = {}; }
+
+                let email = (ghUser.email || '').trim().toLowerCase();
+                if (!email) {
+                    try {
+                        const emails = await (await fetch('https://api.github.com/user/emails', { headers: ghHeaders })).json();
+                        if (Array.isArray(emails)) {
+                            const pick = emails.find(x => x.primary && x.verified) || emails.find(x => x.verified) || emails[0];
+                            if (pick && pick.email) email = String(pick.email).trim().toLowerCase();
+                        }
+                    } catch (e) {}
+                }
+                if (!email) return back('gh_error=noemail');
+
+                const fullName = (ghUser.name || ghUser.login || '').trim();
+
+                let dbUser = await env.DB.prepare(
+                    'SELECT id, email, full_name, mqtt_topic, is_no_data FROM users WHERE email = ?'
+                ).bind(email).first();
+
+                if (!dbUser) {
+                    const { hash, salt } = await hashPassword('github-' + crypto.randomUUID());
+                    const ins = await env.DB.prepare(
+                        'INSERT INTO users (email, password_hash, password_salt, full_name, is_no_data) VALUES (?, ?, ?, ?, 0)'
+                    ).bind(email, hash, salt, fullName).run();
+                    dbUser = await env.DB.prepare(
+                        'SELECT id, email, full_name, mqtt_topic, is_no_data FROM users WHERE id = ?'
+                    ).bind(ins.meta.last_row_id).first();
+                }
+
+                const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30;
+                const token = await signSession({ uid: dbUser.id, exp }, env.SESSION_SECRET);
+                return back('gh_token=' + encodeURIComponent(token));
             }
 
             // --- /admin/create-user --- (admin: sattığın ürünün HiveMQ topic'ini hesaba bağlar) ---

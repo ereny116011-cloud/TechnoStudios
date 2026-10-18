@@ -23,6 +23,17 @@ database_id = "203a8f3c-ae0d-42e9-8f50-5c6b20261d00"
 # gerektirmemek için). Bu yüzden Worker'ın GitHub token'a ihtiyacı yok — admin panelinde
 # sürüm yüklerken tarayıcıya bir kez GitHub Personal Access Token giriliyor (bkz. index.html).
 
+# Google ile giriş (isteğe bağlı): wrangler secret put GOOGLE_CLIENT_ID
+# (Aynı istemci kimliği fireeye/index.html içindeki GOOGLE_CLIENT_ID ile eşleşmeli.)
+
+# Microsoft ile giriş (isteğe bağlı): yalnızca istemci kimliği kullanılır.
+# wrangler secret put MICROSOFT_CLIENT_ID
+
+# GitHub ile giriş (isteğe bağlı): GitHub OAuth App oluşturup iki gizli değer gir.
+# Callback adresi: https://fireeye-api.SENIN-ALT-ADIN.workers.dev/auth/github/callback
+#   wrangler secret put GITHUB_CLIENT_ID
+#   wrangler secret put GITHUB_CLIENT_SECRET
+
 # Şifre sıfırlama / şifre değişikliği bildirim e-postaları Resend üzerinden gönderilir.
 # technoweb.win Resend'de doğrulandı, o yüzden herkese e-posta gidebilir.
 # API anahtarı (bir kez): wrangler secret put RESEND_API_KEY
