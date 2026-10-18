@@ -47,7 +47,7 @@
             --text-primary: #191713;
             --text-secondary: #5f5d56;
             --accent: #c24a2b;
-            --accent-glow: rgba(194, 74, 43, 0.10);
+            --accent-glow: rgba(194, 74, 43, 0.20);
             --success-bg: rgba(16, 185, 129, 0.08);
             --success-border: rgba(16, 185, 129, 0.24);
             --danger: #dc2626;
@@ -814,27 +814,35 @@
 
         .google-slot { display: flex; justify-content: center; }
 
-        /* Üç sağlayıcı butonu yan yana, eşit boyutlu ikon butonlar (Linear/Vercel tarzı) */
-        .oauth-row { display: flex; gap: 12px; justify-content: center; }
-        .oauth-icon-btn {
-            width: 40px;
-            height: 40px;
+        /* Üç sağlayıcı butonu yan yana; ikon + marka adı (Linear/Vercel tarzı) */
+        .oauth-row { display: flex; gap: 10px; }
+        .oauth-row .google-slot { flex: 1 1 0; min-width: 0; }
+        .oauth-btn {
+            width: 100%;
+            height: 42px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            gap: 7px;
             background: var(--bg);
             color: var(--text-primary);
             border: 1px solid var(--surface-border);
-            border-radius: 9px;
-            cursor: pointer;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
             font-family: inherit;
-            transition: border-color 0.15s ease, background 0.15s ease;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
         }
-        .oauth-icon-btn:hover { border-color: var(--text-secondary); }
-        .oauth-icon-btn svg { width: 19px; height: 19px; }
+        .oauth-btn:hover { border-color: var(--text-secondary); box-shadow: 0 8px 20px -12px var(--accent); }
+        .oauth-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
 
-        /* Google'ın resmî ikon butonunun iç rozetini koyu temaya uydur */
-        .oauth-row [id^="googleBtn"] [role="button"] [class*="Bz112c-haAclf"] { background: transparent !important; }
+        /* Google'ın gerçek butonu, şeffaf biçimde kendi görsel butonumuzun üzerine bindirilir */
+        .oauth-gsi-wrap { position: relative; width: 100%; }
+        .oauth-gsi-hit { position: absolute; inset: 0; opacity: 0; overflow: hidden; cursor: pointer; }
+        .oauth-gsi-hit * { width: 100% !important; height: 100% !important; }
+        @media (max-width: 420px) { .oauth-row { flex-direction: column; } }
 
         .google-btn {
             width: 100%;
@@ -938,7 +946,7 @@
             --text-primary: #16140f;
             --text-secondary: #5b584f;
             --accent: #c24a2b;
-            --accent-glow: rgba(194, 74, 43, 0.10);
+            --accent-glow: rgba(194, 74, 43, 0.20);
             --grid: rgba(20, 18, 12, 0.05);
             --glass: rgba(255, 255, 255, 0.6);
             --border-active: rgba(20, 18, 12, 0.22);
@@ -959,9 +967,10 @@
         }
         body.light::after {
             background:
-                radial-gradient(34% 40% at 16% 10%, rgba(194, 74, 43, 0.13), transparent 70%),
-                radial-gradient(30% 34% at 86% 8%, rgba(124, 108, 255, 0.10), transparent 70%);
-            opacity: 0.85;
+                radial-gradient(38% 44% at 16% 8%, rgba(194, 74, 43, 0.30), transparent 70%),
+                radial-gradient(32% 36% at 86% 6%, rgba(124, 108, 255, 0.24), transparent 70%),
+                radial-gradient(48% 48% at 74% 94%, rgba(194, 74, 43, 0.18), transparent 70%);
+            opacity: 1;
         }
         @keyframes auroraDrift {
             0%   { transform: translate3d(0, 0, 0) scale(1); }
@@ -994,8 +1003,10 @@
         }
         body.light .project-hero {
             background:
-                radial-gradient(120% 140% at 0% 0%, rgba(194, 74, 43, 0.10), transparent 52%),
-                linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.62));
+                radial-gradient(120% 140% at 0% 0%, rgba(194, 74, 43, 0.18), transparent 52%),
+                radial-gradient(90% 120% at 100% 0%, rgba(124, 108, 255, 0.12), transparent 55%),
+                linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.66));
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 30px 70px -40px rgba(194, 74, 43, 0.65), 0 12px 34px -24px rgba(20, 18, 12, 0.35);
         }
         .project-hero::before {
             content: '';
@@ -1007,6 +1018,9 @@
             transition: opacity 0.3s ease;
         }
         .project-hero:hover::before { opacity: 1; }
+        body.light .project-hero::before {
+            background: radial-gradient(440px circle at var(--mx, 82%) var(--my, 12%), rgba(194, 74, 43, 0.26), transparent 60%);
+        }
         .project-hero h1 {
             background: linear-gradient(180deg, #ffffff 0%, #bdb9b3 130%);
             -webkit-background-clip: text;
@@ -1037,7 +1051,9 @@
         body.light .download-box, body.light .security-container, body.light .reviews-section,
         body.light .changelog-section, body.light .feature-card, body.light .faq-item,
         body.light .comment-card, body.light .changelog-card, body.light .account-modal-box {
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.66));
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.72));
+            border-color: rgba(20, 18, 12, 0.12);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 18px 40px -28px rgba(20, 18, 12, 0.35), 0 4px 14px -10px rgba(20, 18, 12, 0.15);
         }
 
         .feature-card {
@@ -1058,6 +1074,7 @@
             transition: opacity 0.3s ease;
         }
         .feature-card:hover { border-color: var(--border-active); transform: translateY(-3px); box-shadow: 0 30px 60px -34px rgba(226, 96, 63, 0.6); }
+        body.light .feature-card:hover { box-shadow: 0 30px 60px -30px rgba(194, 74, 43, 0.8), 0 12px 28px -18px rgba(20, 18, 12, 0.3); }
         .feature-card:hover::after { opacity: 1; }
         .feature-card > * { position: relative; z-index: 1; }
 
@@ -1067,6 +1084,7 @@
             border: 1px solid var(--line);
             box-shadow: 0 12px 26px -14px rgba(226, 96, 63, 0.8);
         }
+        body.light .feature-icon { box-shadow: 0 14px 28px -14px rgba(194, 74, 43, 0.6); }
 
         .main-cta {
             border-radius: 11px;
@@ -1076,6 +1094,8 @@
             transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
         }
         .main-cta:hover { filter: brightness(1.05); transform: translateY(-1px); box-shadow: 0 20px 40px -14px rgba(226, 96, 63, 1); }
+        body.light .main-cta { box-shadow: 0 16px 32px -14px rgba(194, 74, 43, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.35); }
+        body.light .main-cta:hover { box-shadow: 0 22px 42px -14px rgba(194, 74, 43, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.4); }
 
         /* Modal — cam efektli */
         .account-modal-overlay { backdrop-filter: blur(6px); }
@@ -1087,7 +1107,11 @@
             border-radius: 22px;
             box-shadow: 0 50px 100px -40px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.06);
         }
-        body.light .account-modal-box { background: rgba(255, 255, 255, 0.92); }
+        body.light .account-modal-box {
+            background: rgba(255, 255, 255, 0.94);
+            border-color: rgba(20, 18, 12, 0.12);
+            box-shadow: 0 50px 100px -45px rgba(20, 18, 12, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+        }
 
         .form-control {
             background: rgba(255, 255, 255, 0.03);
@@ -1513,23 +1537,32 @@
             const slot = document.getElementById(view === 'register' ? 'googleBtnRegister' : 'googleBtnLogin');
             if (!slot || slot.dataset.ready === '1') return;
 
+            const visualInner = GOOGLE_LOGO + '<span>Google</span>';
             if (!GOOGLE_CLIENT_ID) {
                 slot.dataset.ready = '1';
-                slot.innerHTML = '<button type="button" class="oauth-icon-btn" title="Google ile devam et" aria-label="Google ile devam et" onclick="googleNotConfigured()">' + GOOGLE_LOGO + '</button>';
+                slot.innerHTML = '<button type="button" class="oauth-btn" onclick="googleNotConfigured()">' + visualInner + '</button>';
                 return;
             }
             if (!(window.google && google.accounts && google.accounts.id)) {
-                slot.innerHTML = '<button type="button" class="oauth-icon-btn" title="Google ile devam et" aria-label="Google ile devam et" onclick="googleNotConfigured()">' + GOOGLE_LOGO + '</button>';
+                slot.innerHTML = '<button type="button" class="oauth-btn" onclick="googleNotConfigured()">' + visualInner + '</button>';
                 return; // Google servisi yüklenince modal tekrar açıldığında gerçek buton çizilir
             }
 
+            // Kendi görsel butonumuzu çizip, gerçek Google butonunu şeffaf biçimde üzerine bindiriyoruz.
+            // Böylece tıklama Google'ın resmî akışını tetiklerken görünüm diğerleriyle aynı olur.
+            slot.innerHTML = '<div class="oauth-gsi-wrap">'
+                + '<button type="button" class="oauth-btn" tabindex="-1" aria-hidden="true">' + visualInner + '</button>'
+                + '<div class="oauth-gsi-hit" aria-label="Google ile devam et"></div>'
+                + '</div>';
             google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogleCredential });
-            google.accounts.id.renderButton(slot, {
-                type: 'icon',
-                theme: document.body.classList.contains('light') ? 'outline' : 'filled_black',
+            google.accounts.id.renderButton(slot.querySelector('.oauth-gsi-hit'), {
+                type: 'standard',
+                theme: 'outline',
                 size: 'large',
                 shape: 'rectangular',
+                text: 'continue_with',
                 locale: 'tr',
+                width: 320,
             });
             slot.dataset.ready = '1';
         }
@@ -1579,7 +1612,7 @@
             const slot = document.getElementById(view === 'register' ? 'msBtnRegister' : 'msBtnLogin');
             if (!slot || slot.dataset.ready === '1') return;
             slot.dataset.ready = '1';
-            slot.innerHTML = '<button type="button" class="oauth-icon-btn" title="Microsoft ile devam et" aria-label="Microsoft ile devam et" onclick="handleMicrosoftLogin()">' + MS_LOGO + '</button>';
+            slot.innerHTML = '<button type="button" class="oauth-btn" title="Microsoft ile devam et" aria-label="Microsoft ile devam et" onclick="handleMicrosoftLogin()">' + MS_LOGO + '<span>Microsoft</span></button>';
         }
 
         let msalInstance = null;
@@ -1623,7 +1656,7 @@
             const slot = document.getElementById(view === 'register' ? 'ghBtnRegister' : 'ghBtnLogin');
             if (!slot || slot.dataset.ready === '1') return;
             slot.dataset.ready = '1';
-            slot.innerHTML = '<button type="button" class="oauth-icon-btn" title="GitHub ile devam et" aria-label="GitHub ile devam et" onclick="handleGithubLogin()">' + GH_LOGO + '</button>';
+            slot.innerHTML = '<button type="button" class="oauth-btn" title="GitHub ile devam et" aria-label="GitHub ile devam et" onclick="handleGithubLogin()">' + GH_LOGO + '<span>GitHub</span></button>';
         }
 
         function handleGithubLogin() {
