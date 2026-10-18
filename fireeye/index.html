@@ -1527,7 +1527,6 @@
                 if (!data.success) throw new Error(data.message || 'Google girişi başarısız.');
 
                 localStorage.setItem('fireeye_user', JSON.stringify({ token: data.token, user: data.user }));
-                if (data.user.isAdmin) enableAdminMode();
                 showAccountDashboard(data.user);
             } catch (err) {
                 if (errMsg) {
@@ -1579,7 +1578,6 @@
                 if (!data.success) throw new Error(data.message || 'Microsoft girişi başarısız.');
 
                 localStorage.setItem('fireeye_user', JSON.stringify({ token: data.token, user: data.user }));
-                if (data.user.isAdmin) enableAdminMode();
                 showAccountDashboard(data.user);
             } catch (err) {
                 if (err && (err.errorCode === 'user_cancelled' || err.errorCode === 'popup_window_error')) return;
@@ -1591,15 +1589,11 @@
         let screenshots = [];
         let changelogs = [];
 
+        // Yönetici modunda admin uçları, giriş ekranında girilen ADMIN_USER/ADMIN_PASS
+        // bilgilerinden oluşturulan Basic başlığıyla çağrılır.
         function getAdminAuthHeader() {
-            const stored = localStorage.getItem('fireeye_user');
-            if (!stored) return {};
-            try {
-                const { token } = JSON.parse(stored);
-                return token ? { 'Authorization': 'Bearer ' + token } : {};
-            } catch (e) {
-                return {};
-            }
+            const adminAuth = sessionStorage.getItem('fireeye_admin_auth');
+            return adminAuth ? { 'Authorization': adminAuth } : {};
         }
 
         async function loadReviews() {
@@ -1643,20 +1637,9 @@
         window.addEventListener('DOMContentLoaded', () => {
             const savedMode = localStorage.getItem('theme') === 'light' ? 'light' : 'dark';
             applyThemeMode(savedMode);
-            // Check for admin mode from the stored user object (set on login)
-            const fireeyeUser = localStorage.getItem('fireeye_user');
-            if (fireeyeUser) {
-                try {
-                    const { user } = JSON.parse(fireeyeUser);
-                    if (user && user.isAdmin) {
-                        enableAdminMode();
-                    } else {
-                        localStorage.removeItem('fireeye_admin');
-                    }
-                } catch (e) {
-                    console.error('Failed to parse fireeye_user', e);
-                    localStorage.removeItem('fireeye_admin');
-                }
+            // Yönetici modunu, sekme oturumundaki admin bilgileri varsa geri yükle.
+            if (sessionStorage.getItem('fireeye_admin_auth')) {
+                enableAdminMode();
             } else {
                 localStorage.removeItem('fireeye_admin');
             }
@@ -1803,6 +1786,8 @@
                 localStorage.setItem('fireeye_user', JSON.stringify({ token: data.token, user: data.user }));
 
                 if (data.user.isAdmin) {
+                    // Yönetici bilgileriyle girildi: admin uçları için Basic başlığını sakla.
+                    sessionStorage.setItem('fireeye_admin_auth', 'Basic ' + btoa(email + ':' + password));
                     enableAdminMode();
                 }
 
@@ -2154,6 +2139,7 @@
         function logoutAdmin(silent) {
             localStorage.removeItem('fireeye_admin');
             sessionStorage.removeItem('fireeye_admin_token');
+            sessionStorage.removeItem('fireeye_admin_auth');
             document.body.classList.remove('admin-mode');
             document.getElementById('adminStatusIndicator').style.display = 'none';
             document.getElementById('adminPanelBox').style.display = 'none';

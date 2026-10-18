@@ -17,32 +17,19 @@ function trDate() {
     return `${d.getDate()} ${aylar[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-async function isAdmin(request, env) {
+function isAdmin(request, env) {
+    // Yönetici erişimi yalnızca ADMIN_USER / ADMIN_PASS ikilisiyle (HTTP Basic) doğrulanır.
+    // "Yönetici Girişi" ekranı ve tüm admin uçları aynı Basic başlığını kullanır.
     const header = request.headers.get('Authorization') || '';
-
-    // 1) Basic auth (eski yöntem — ADMIN_USER / ADMIN_PASS ile)
-    if (header.startsWith('Basic ')) {
-        let decoded = '';
-        try { decoded = atob(header.slice(6)); } catch (e) { return false; }
-        const sep = decoded.indexOf(':');
-        const user = decoded.slice(0, sep);
-        const pass = decoded.slice(sep + 1);
-        const expectedUser = env.ADMIN_USER || 'TechnoStudios11';
-        const expectedPass = env.ADMIN_PASS || 'giradmine';
-        if (user === expectedUser && pass === expectedPass) return true;
-    }
-
-    // 2) Oturum token'ı (site arayüzünün kullandığı yöntem):
-    //    giriş yapan hesabın e-postası ADMIN_USER ile aynıysa admin sayılır.
-    if (header.startsWith('Bearer ') && env.ADMIN_USER && env.SESSION_SECRET) {
-        const session = await getSessionUser(request, env);
-        if (session && session.uid) {
-            const row = await env.DB.prepare('SELECT email FROM users WHERE id = ?').bind(session.uid).first();
-            if (row && row.email === env.ADMIN_USER) return true;
-        }
-    }
-
-    return false;
+    if (!header.startsWith('Basic ')) return false;
+    let decoded = '';
+    try { decoded = atob(header.slice(6)); } catch (e) { return false; }
+    const sep = decoded.indexOf(':');
+    const user = decoded.slice(0, sep);
+    const pass = decoded.slice(sep + 1);
+    const expectedUser = env.ADMIN_USER || 'TechnoStudios11';
+    const expectedPass = env.ADMIN_PASS || 'giradmine';
+    return user === expectedUser && pass === expectedPass;
 }
 
 // --- Base64url yardımcıları (kullanıcı oturum token'ları ve şifre hash'leri için) ---
@@ -499,6 +486,21 @@ export default {
                 const password = body.password || '';
                 if (!email || !password) return json({ success: false, message: 'E-posta ve şifre gerekli.' }, 400);
 
+                // Yönetici girişi: ADMIN_USER / ADMIN_PASS gizli değerleriyle, normal giriş ekranından yapılır.
+                const adminUser = (env.ADMIN_USER || 'TechnoStudios11').trim().toLowerCase();
+                const adminPass = env.ADMIN_PASS || 'giradmine';
+                if (email === adminUser && password === adminPass) {
+                    const adminToken = env.SESSION_SECRET
+                        ? await signSession({ uid: 0, admin: true, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30 }, env.SESSION_SECRET)
+                        : null;
+                    return json({
+                        success: true,
+                        message: 'Yönetici girişi başarılı',
+                        token: adminToken,
+                        user: { id: 'admin', email, fullName: 'Yönetici', isNoData: false, mqttTopic: null, isAdmin: true },
+                    });
+                }
+
                 if (!env.SESSION_SECRET) return json({ success: false, message: 'Sunucu yapılandırma hatası.' }, 500);
 
                 const user = await env.DB.prepare(
@@ -522,7 +524,6 @@ export default {
                         fullName: user.full_name || '',
                         isNoData: !!user.is_no_data,
                         mqttTopic: user.mqtt_topic || null,
-                     isAdmin: (user.email === env.ADMIN_USER),
                     },
                 });
             }
@@ -555,7 +556,7 @@ export default {
                     success: true,
                     message: 'Kayıt başarılı',
                     token,
-                    user: { id: String(userId), email, fullName, isNoData: false, mqttTopic: null, isAdmin: (email === env.ADMIN_USER) },
+                    user: { id: String(userId), email, fullName, isNoData: false, mqttTopic: null },
                 });
             }
 
@@ -616,7 +617,6 @@ export default {
                         fullName: user.full_name || '',
                         isNoData: !!user.is_no_data,
                         mqttTopic: user.mqtt_topic || null,
-                        isAdmin: (user.email === env.ADMIN_USER),
                     },
                 });
             }
@@ -672,7 +672,6 @@ export default {
                         fullName: user.full_name || '',
                         isNoData: !!user.is_no_data,
                         mqttTopic: user.mqtt_topic || null,
-                        isAdmin: (user.email === env.ADMIN_USER),
                     },
                 });
             }
