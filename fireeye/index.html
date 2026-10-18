@@ -1090,9 +1090,9 @@
         <a href="../" class="back-home">&larr; Geri Dön</a>
         <div class="header-actions">
             <button id="adminStatusIndicator" class="util-btn" style="display:none; border-color: var(--accent); color: var(--accent);" onclick="logoutAdmin()">Admin Modu (Çıkış)</button>
-            <button id="headerDeviceBtn" class="util-btn" onclick="openAccountModal('device')" style="display:none; border-color: var(--accent); color: var(--accent);">Cihazım</button>
             <button id="headerLoginBtn" class="util-btn" onclick="openAccountModal('login')">Giriş Yap</button>
             <button id="headerRegisterBtn" class="util-btn" onclick="openAccountModal('register')" style="border-color: var(--accent); color: var(--accent);">Kaydol</button>
+            <button id="headerLogoutBtn" class="util-btn" onclick="handleUserLogout()" style="display:none; border-color: var(--accent); color: var(--accent);">Çıkış Yap</button>
             <button class="util-btn theme-toggle-btn" onclick="cycleThemeMode()" id="themeBtn" title="Tema Modu" aria-label="Tema Modu"></button>
         </div>
     </header>
@@ -1115,6 +1115,7 @@
             <button class="tab-trigger" onclick="switchTab(event, 'reviews')">Değerlendirmeler</button>
             <button class="tab-trigger" onclick="switchTab(event, 'faq')">SSS</button>
             <button class="tab-trigger" onclick="switchTab(event, 'changelog')">Sürüm Notları</button>
+            <button id="deviceTabBtn" class="tab-trigger" onclick="switchTab(event, 'device')" style="display:none;">Cihazım</button>
         </div>
 
         <!-- İndir Sekmesi -->
@@ -1305,6 +1306,20 @@
             </div>
         </div>
 
+        <!-- Cihazım Sekmesi -->
+        <div id="device" class="tab-pane">
+            <div class="account-panel" style="max-width: 720px; margin: 0 auto;">
+                <h3 class="account-panel-title">Cihazım</h3>
+                <p class="account-panel-sub">Hoş geldin, <span id="accountEmailLabel"></span></p>
+                <div class="security-container">
+                    <p style="color: var(--text-secondary); margin-bottom: 10px;">FireEye Cihaz Durumu (Canlı)</p>
+                    <p id="mqttStatus" style="font-weight: 700;">Bağlanıyor...</p>
+                    <pre id="mqttData" style="white-space: pre-wrap; word-break: break-word; margin-top: 10px; font-size: 0.85rem; color: var(--text-secondary);"></pre>
+                    <button id="mqttMuteBtn" class="main-cta" style="display: none; margin-top: 14px; background: var(--danger);">Alarmı Sustur</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Hesap / Giriş-Kayıt / Cihazım Modalı -->
         <div class="account-modal-overlay" id="accountModal" onclick="closeAccountModalOutside(event)">
             <div class="account-modal-box">
@@ -1430,22 +1445,6 @@
                             <button type="submit" class="main-cta">Bilgileri Güncelle</button>
                             <p id="forceChangeError" style="color: var(--danger); font-size: 0.85rem; display: none;"></p>
                         </form>
-                    </div>
-                </div>
-
-                <div id="accountDashboardBox" style="display: none;">
-                    <div class="account-panel">
-                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; padding-right: 30px;">
-                            <h3 class="account-panel-title" style="margin: 0;">Cihazım</h3>
-                            <button class="util-btn" onclick="handleUserLogout()">Çıkış Yap</button>
-                        </div>
-                        <p class="account-panel-sub">Hoş geldin, <span id="accountEmailLabel"></span></p>
-                        <div class="security-container">
-                            <p style="color: var(--text-secondary); margin-bottom: 10px;">FireEye Cihaz Durumu (Canlı)</p>
-                            <p id="mqttStatus" style="font-weight: 700;">Bağlanıyor...</p>
-                            <pre id="mqttData" style="white-space: pre-wrap; word-break: break-word; margin-top: 10px; font-size: 0.85rem; color: var(--text-secondary);"></pre>
-                            <button id="mqttMuteBtn" class="main-cta" style="display: none; margin-top: 14px; background: var(--danger);">Alarmı Sustur</button>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -1727,18 +1726,20 @@
 
         // Sağ üst butonların görünürlüğünü oturum durumuna göre ayarlar.
         // true  → giriş yapılmamış: "Giriş Yap" + "Kaydol" görünür
-        // false → giriş yapılmış: sadece "Cihazım" görünür
+        // false → giriş yapılmış: sağ üstte "Çıkış Yap", sekmelerde "Cihazım" görünür
         function setHeaderAuthButtons(show) {
             const login = document.getElementById('headerLoginBtn');
             const register = document.getElementById('headerRegisterBtn');
-            const device = document.getElementById('headerDeviceBtn');
+            const logout = document.getElementById('headerLogoutBtn');
+            const deviceTab = document.getElementById('deviceTabBtn');
             if (login) login.style.display = show ? 'inline-flex' : 'none';
             if (register) register.style.display = show ? 'inline-flex' : 'none';
-            if (device) device.style.display = show ? 'none' : 'inline-flex';
+            if (logout) logout.style.display = show ? 'none' : 'inline-flex';
+            if (deviceTab) deviceTab.style.display = show ? 'none' : 'inline-flex';
         }
 
-        // Giriş/Kayıt/Cihazım modalını açar.
-        // view: 'login' | 'register' | 'forgot' | 'reset' | 'device' | 'force'
+        // Giriş/Kayıt/Şifre modalını açar.
+        // view: 'login' | 'register' | 'forgot' | 'reset' | 'force'
         function openAccountModal(view) {
             const modal = document.getElementById('accountModal');
             if (!modal) return;
@@ -1748,7 +1749,6 @@
                 register: 'accountRegisterBox',
                 forgot: 'accountLoginBox',
                 reset: 'resetPasswordBox',
-                device: 'accountDashboardBox',
                 force: 'accountForceChangeBox',
             };
             Object.values(panels).forEach(id => {
@@ -1889,10 +1889,15 @@
             localStorage.removeItem('fireeye_user');
             const statusEl = document.getElementById('mqttStatus');
             const dataEl = document.getElementById('mqttData');
+            const muteBtn = document.getElementById('mqttMuteBtn');
             if (statusEl) statusEl.textContent = 'Bağlanıyor...';
             if (dataEl) dataEl.textContent = '';
+            if (muteBtn) muteBtn.style.display = 'none';
+            logoutAdmin(true);
             setHeaderAuthButtons(true);
-            openAccountModal('login');
+            closeAccountModal();
+            // Cihazım sekmesi açıksa İndir sekmesine geri dön.
+            activateTab('download');
         }
 
         function showForceChange(email) {
@@ -1930,12 +1935,10 @@
 
         function showAccountDashboard(user) {
             setHeaderAuthButtons(false);
-            document.getElementById('accountLoginBox').style.display = 'none';
-            document.getElementById('accountRegisterBox').style.display = 'none';
-            document.getElementById('resetPasswordBox').style.display = 'none';
-            document.getElementById('accountForceChangeBox').style.display = 'none';
-            document.getElementById('accountDashboardBox').style.display = 'block';
-            document.getElementById('accountEmailLabel').textContent = user.email;
+            closeAccountModal();
+            const label = document.getElementById('accountEmailLabel');
+            if (label) label.textContent = user.email;
+            activateTab('device');
             startDeviceReading(user.mqttTopic);
         }
 
@@ -2095,11 +2098,18 @@
             }
         }
 
-        function switchTab(evt, tabId) {
+        // Bir sekmeyi (pane) ve ilgili sekme butonunu programatik olarak açar.
+        function activateTab(tabId) {
             document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.tab-trigger').forEach(t => t.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            evt.currentTarget.classList.add('active');
+            const pane = document.getElementById(tabId);
+            if (pane) pane.classList.add('active');
+            const btn = document.querySelector('.tab-trigger[onclick*="\'' + tabId + '\'"]');
+            if (btn) btn.classList.add('active');
+        }
+
+        function switchTab(evt, tabId) {
+            activateTab(tabId);
             // Küçük ekranlarda (telefon) yeni sekme içeriği ekranın altında kalmasın diye
             // sekme çubuğunu görünür alana kaydır.
             document.querySelector('.nav-tabs').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2141,7 +2151,7 @@
             loadUsers();
         }
 
-        function logoutAdmin() {
+        function logoutAdmin(silent) {
             localStorage.removeItem('fireeye_admin');
             sessionStorage.removeItem('fireeye_admin_token');
             document.body.classList.remove('admin-mode');
@@ -2151,7 +2161,7 @@
             document.getElementById('adminUserPanelBox').style.display = 'none';
             renderComments();
             renderScreenshots();
-            alert('Admin modundan çıkıldı.');
+            if (!silent) alert('Admin modundan çıkıldı.');
         }
 
         function startDownloadSimulation() {

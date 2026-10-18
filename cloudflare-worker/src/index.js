@@ -17,16 +17,32 @@ function trDate() {
     return `${d.getDate()} ${aylar[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-function isAdmin(request, env) {
+async function isAdmin(request, env) {
     const header = request.headers.get('Authorization') || '';
-    if (!header.startsWith('Basic ')) return false;
-    const decoded = atob(header.slice(6));
-    const sep = decoded.indexOf(':');
-    const user = decoded.slice(0, sep);
-    const pass = decoded.slice(sep + 1);
-    const expectedUser = env.ADMIN_USER || 'TechnoStudios11';
-    const expectedPass = env.ADMIN_PASS || 'giradmine';
-    return user === expectedUser && pass === expectedPass;
+
+    // 1) Basic auth (eski yöntem — ADMIN_USER / ADMIN_PASS ile)
+    if (header.startsWith('Basic ')) {
+        let decoded = '';
+        try { decoded = atob(header.slice(6)); } catch (e) { return false; }
+        const sep = decoded.indexOf(':');
+        const user = decoded.slice(0, sep);
+        const pass = decoded.slice(sep + 1);
+        const expectedUser = env.ADMIN_USER || 'TechnoStudios11';
+        const expectedPass = env.ADMIN_PASS || 'giradmine';
+        if (user === expectedUser && pass === expectedPass) return true;
+    }
+
+    // 2) Oturum token'ı (site arayüzünün kullandığı yöntem):
+    //    giriş yapan hesabın e-postası ADMIN_USER ile aynıysa admin sayılır.
+    if (header.startsWith('Bearer ') && env.ADMIN_USER && env.SESSION_SECRET) {
+        const session = await getSessionUser(request, env);
+        if (session && session.uid) {
+            const row = await env.DB.prepare('SELECT email FROM users WHERE id = ?').bind(session.uid).first();
+            if (row && row.email === env.ADMIN_USER) return true;
+        }
+    }
+
+    return false;
 }
 
 // --- Base64url yardımcıları (kullanıcı oturum token'ları ve şifre hash'leri için) ---
@@ -539,7 +555,7 @@ export default {
                     success: true,
                     message: 'Kayıt başarılı',
                     token,
-                    user: { id: String(userId), email, fullName, isNoData: false, mqttTopic: null },
+                    user: { id: String(userId), email, fullName, isNoData: false, mqttTopic: null, isAdmin: (email === env.ADMIN_USER) },
                 });
             }
 
