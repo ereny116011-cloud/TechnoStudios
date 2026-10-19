@@ -874,6 +874,12 @@
         .oauth-gsi-wrap { position: relative; width: 100%; }
         .oauth-gsi-hit { position: absolute; inset: 0; opacity: 0; overflow: hidden; cursor: pointer; }
         .oauth-gsi-hit * { width: 100% !important; height: 100% !important; }
+        /* Google katmanı tıklamayı yakaladığı için hover'ı kapsayıcıdan görsel butona taşı */
+        .oauth-gsi-wrap:hover .oauth-btn,
+        .oauth-gsi-wrap:focus-within .oauth-btn {
+            border-color: var(--text-secondary);
+            box-shadow: 0 8px 20px -12px var(--accent);
+        }
         @media (max-width: 420px) { .oauth-row { flex-direction: column; } }
 
         .google-btn {
