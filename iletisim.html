@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İletişim | TechnoStudios</title>
+    <meta name="description" content="TechnoStudios ile iletişime geçin: destek talebi, kurs kaydı, iş birliği ve diğer sorular.">
+    <link rel="canonical" href="https://www.technoweb.win/iletisim.html">
+    <meta name="robots" content="index,follow">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="TechnoStudios">
+    <meta property="og:title" content="İletişim | TechnoStudios">
+    <meta property="og:description" content="Destek talebi, kurs kaydı ve iş birliği için bize ulaşın.">
+    <meta property="og:url" content="https://www.technoweb.win/iletisim.html">
+    <meta property="og:image" content="https://www.technoweb.win/technostudios_logo.jpg">
+    <meta name="theme-color" content="#0c0d10">
+    <link rel="icon" type="image/jpeg" href="technostudios_logo.jpg">
+    <link rel="stylesheet" href="site-pages.css">
+</head>
+<body>
+    <header class="site-bar">
+        <a class="site-brand" href="./"><img src="technostudios_logo.jpg" alt="TechnoStudios"><span>TechnoStudios</span></a>
+        <div class="site-bar-actions">
+            <a class="btn-ghost" href="./">Ana sayfa</a>
+            <a class="btn-ghost" href="fireeye/">FireEye</a>
+            <button class="btn-ghost" id="ts-theme-btn" onclick="toggleTsTheme(this)">Açık tema</button>
+        </div>
+    </header>
+
+    <main class="page">
+        <p class="page-kicker">Bize ulaşın</p>
+        <h1>İletişim</h1>
+        <p class="page-updated">Sorularınızı, destek taleplerinizi ve iş birliği önerilerinizi buradan iletebilirsiniz.</p>
+
+        <div class="contact-cards">
+            <div class="contact-card">
+                <div class="k">E-posta</div>
+                <div class="v">technostudios11@gmail.com</div>
+            </div>
+            <div class="contact-card">
+                <div class="k">Destek saatleri</div>
+                <div class="v">Hafta içi 09.00 – 18.00</div>
+            </div>
+        </div>
+
+        <form id="contactForm" class="form-grid" novalidate>
+            <div class="row-2">
+                <div class="field">
+                    <label for="c-name">Ad Soyad</label>
+                    <input id="c-name" name="name" type="text" autocomplete="name" maxlength="80" required>
+                </div>
+                <div class="field">
+                    <label for="c-email">E-posta</label>
+                    <input id="c-email" name="email" type="email" autocomplete="email" maxlength="120" required>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="c-subject">Konu</label>
+                <select id="c-subject" name="subject">
+                    <option value="destek">FireEye destek talebi</option>
+                    <option value="kurs">Eğitim / kurs kaydı</option>
+                    <option value="isbirligi">İş birliği / teklif</option>
+                    <option value="hata">Hata bildirimi</option>
+                    <option value="diger">Diğer</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="c-message">Mesajınız</label>
+                <textarea id="c-message" name="message" maxlength="4000" placeholder="Kısaca durumu ve talebinizi yazın." required></textarea>
+            </div>
+
+            <!-- basit bot tuzağı: gerçek kullanıcılar görmez -->
+            <input type="text" name="website" id="c-website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;">
+
+            <label style="display:flex;gap:10px;align-items:flex-start;font-size:0.85rem;color:var(--text-secondary);">
+                <input type="checkbox" id="c-consent" required style="margin-top:4px;">
+                <span>Mesajımın talebimi yanıtlamak amacıyla işlenmesine ve <a href="gizlilik.html">Gizlilik Politikası</a> kapsamında değerlendirilmesine onay veriyorum.</span>
+            </label>
+
+            <div>
+                <button type="submit" class="btn-primary" id="c-submit">Mesajı Gönder</button>
+            </div>
+            <p class="form-note">Gönderdiğiniz bilgiler yalnızca talebinizi yanıtlamak için kullanılır.</p>
+        </form>
+
+        <div class="form-status" id="c-status" role="status" aria-live="polite"></div>
+
+        <div class="legal-links">
+            <a href="gizlilik.html">Gizlilik Politikası</a>
+            <a href="kvkk.html">KVKK Aydınlatma Metni</a>
+            <a href="kullanim-sartlari.html">Kullanım Şartları</a>
+            <a href="cerez-politikasi.html">Çerez Politikası</a>
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <span>© <span id="ts-year">2026</span> TechnoStudios · Tüm hakları saklıdır.</span>
+        <span><a href="gizlilik.html">Gizlilik</a> · <a href="kvkk.html">KVKK</a> · <a href="kullanim-sartlari.html">Kullanım Şartları</a> · <a href="cerez-politikasi.html">Çerezler</a> · <a href="iletisim.html">İletişim</a></span>
+    </footer>
+
+    <script src="site-pages.js"></script>
+    <script>
+        (function () {
+            var WORKER_BASE = 'https://fireeye-api.ereny116011.workers.dev';
+            var form = document.getElementById('contactForm');
+            var status = document.getElementById('c-status');
+            var submit = document.getElementById('c-submit');
+
+            function setStatus(kind, text) {
+                status.className = 'form-status ' + kind;
+                status.textContent = text;
+            }
+
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                var name = document.getElementById('c-name').value.trim();
+                var email = document.getElementById('c-email').value.trim();
+                var subject = document.getElementById('c-subject').value;
+                var message = document.getElementById('c-message').value.trim();
+                var consent = document.getElementById('c-consent').checked;
+                var honeypot = document.getElementById('c-website').value;
+
+                if (!name || !email || !message) { setStatus('err', 'Lütfen ad, e-posta ve mesaj alanlarını doldurun.'); return; }
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setStatus('err', 'Geçerli bir e-posta adresi girin.'); return; }
+                if (!consent) { setStatus('err', 'Göndermek için onay kutusunu işaretleyin.'); return; }
+
+                submit.disabled = true;
+                setStatus('ok', 'Gönderiliyor...');
+
+                try {
+                    var res = await fetch(WORKER_BASE + '/contact', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: name, email: email, subject: subject, message: message, website: honeypot })
+                    });
+                    var data = await res.json().catch(function () { return {}; });
+                    if (res.ok && data.success) {
+                        form.reset();
+                        setStatus('ok', 'Mesajınız iletildi. En kısa sürede size dönüş yapacağız.');
+                    } else {
+                        setStatus('err', data.message || 'Gönderilemedi. Lütfen daha sonra tekrar deneyin.');
+                    }
+                } catch (err) {
+                    setStatus('err', 'Bağlantı hatası. İnternet bağlantınızı kontrol edip tekrar deneyin.');
+                } finally {
+                    submit.disabled = false;
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

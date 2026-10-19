@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /cloudflare-worker/
 
 Sitemap: https://www.technoweb.win/sitemap.xml

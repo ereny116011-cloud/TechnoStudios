@@ -99,6 +99,76 @@ async function sha256Hex(text) {
     return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// İstek sahibinin IP adresini (Cloudflare başlıklarından) çıkarır.
+function clientIp(request) {
+    return request.headers.get('CF-Connecting-IP')
+        || (request.headers.get('X-Forwarded-For') || '').split(',')[0].trim()
+        || 'unknown';
+}
+
+// Basit kayan pencere oran sınırlama. D1 üzerinde tutulur; tüm örneklerde ortaktır.
+// Tablo yoksa isteği engellemez (güvenli varsayılan: izin ver).
+async function checkRateLimit(env, key, limit, windowSec) {
+    const now = Math.floor(Date.now() / 1000);
+    try {
+        const row = await env.DB.prepare('SELECT count, window_start FROM rate_limits WHERE key = ?').bind(key).first();
+        if (!row || (now - row.window_start) >= windowSec) {
+            await env.DB.prepare(
+                'INSERT INTO rate_limits (key, count, window_start) VALUES (?, 1, ?) ' +
+                'ON CONFLICT(key) DO UPDATE SET count = 1, window_start = excluded.window_start'
+            ).bind(key, now).run();
+            return { allowed: true };
+        }
+        if (row.count >= limit) {
+            return { allowed: false, retryAfter: Math.max(1, windowSec - (now - row.window_start)) };
+        }
+        await env.DB.prepare('UPDATE rate_limits SET count = count + 1 WHERE key = ?').bind(key).run();
+        return { allowed: true };
+    } catch (e) {
+        return { allowed: true };
+    }
+}
+
+// Kullanıcıya doğrulama (ve hoş geldin) e-postası üretir ve gönderir.
+async function issueVerificationEmail(request, env, user, redirectBase) {
+    const token = base64UrlEncode(crypto.getRandomValues(new Uint8Array(32)));
+    const tokenHash = await sha256Hex(token);
+
+    await env.DB.prepare(
+        "UPDATE users SET verify_token_hash = ?, verify_expires_at = datetime('now', '+2 days') WHERE id = ?"
+    ).bind(tokenHash, user.id).run();
+
+    const origin = new URL(request.url).origin;
+    const back = redirectBase || env.SITE_URL || 'https://www.technoweb.win/fireeye/';
+    const verifyUrl = origin + '/verify-email?token=' + encodeURIComponent(token) + '&redirect=' + encodeURIComponent(back);
+    const firstName = (user.full_name || '').trim().split(/\s+/)[0] || '';
+
+    const sent = await sendEmail(env, user.email, 'FireEye — Hoş geldin, hesabını doğrula',
+        emailLayout({
+            preheader: firstName ? `${firstName}, FireEye ailesine hoş geldin. Son bir adım kaldı.` : 'FireEye ailesine hoş geldin. Son bir adım kaldı.',
+            icon: '&#128075;',
+            heading: 'Aramıza hoş geldin',
+            intro: 'FireEye hesabın oluşturuldu. Sistemi kullanmaya başlamadan önce e-posta adresini doğrulaman yeterli.',
+            greeting: firstName ? `Merhaba ${firstName},` : 'Merhaba,',
+            steps: [
+                { title: 'E-postanı doğrula', text: 'Aşağıdaki butona tıklayarak adresinin sana ait olduğunu onayla.' },
+                { title: 'Cihazını eşleştir', text: 'Hesabındaki cihaz kimliğini FireEye cihazına tanımla.' },
+                { title: 'İzlemeye başla', text: 'Sıcaklık ve duman verilerini canlı olarak takip et, alarmları yönet.' },
+            ],
+            buttonText: 'Hesabımı Doğrula',
+            buttonUrl: verifyUrl,
+            copyLabel: 'Buton çalışmazsa bu bağlantıyı kopyala',
+            copyValue: verifyUrl,
+            chips: ['2 gün geçerli', 'Tek kullanımlık'],
+            note: 'Bu hesabı sen oluşturmadıysan bu e-postayı yok sayabilirsin.',
+            signature: 'TechnoStudios Ekibi, sana iyi çalışmalar diler.',
+        }),
+        `Merhaba${firstName ? ' ' + firstName : ''},\n\nFireEye hesabın oluşturuldu. E-posta adresini doğrulamak için:\n${verifyUrl}\n\nBu bağlantı 2 gün geçerlidir.`
+    );
+
+    return { sent, verifyUrl };
+}
+
 // Resend ile e-posta gönderir. Domain doğrulanana kadar sadece Resend hesabını
 // açarken verdiğin e-postaya gönderebilirsin; doğruladıktan sonra herkese gider.
 // Başarılıysa true, başarısızsa false döner; hata fırlatmaz (çağıranın akışını bozmaz).
@@ -141,9 +211,29 @@ function escapeHtml(str) {
 // Modern, turuncu-kırmızı temalı e-posta şablonu.
 // Tablo tabanlı + inline CSS: Gmail, Outlook, Apple Mail, mobil istemcilerin hepsinde çalışır.
 // (E-postalarda JavaScript çalışmadığı için "kopyala" kutusu, tek dokunuşla tümünü seçilebilen bir alan olarak yapıldı.)
-function emailLayout({ preheader = '', icon = '', heading, intro, buttonText, buttonUrl, copyLabel, copyValue, chips = [], note = '' }) {
+function emailLayout({ preheader = '', icon = '', heading, intro, greeting = '', steps = [], buttonText, buttonUrl, copyLabel, copyValue, chips = [], note = '', signature = '' }) {
     const year = new Date().getFullYear();
     const FONT = "'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+
+    const greetingHtml = greeting
+        ? `<p style="margin:0 0 16px;font-family:${FONT};font-size:16px;line-height:1.7;color:#2a1c14;font-weight:600;">${escapeHtml(greeting)}</p>`
+        : '';
+
+    const stepsHtml = steps.length
+        ? `<div style="margin-top:26px;border:1px solid #ffe0cc;border-radius:16px;overflow:hidden;">${steps.map((s, i) =>
+            `<div style="padding:14px 16px;font-family:${FONT};${i ? 'border-top:1px solid #ffe9db;' : ''}background:${i % 2 ? '#fffaf6' : '#ffffff'};">
+               <span style="display:inline-block;width:22px;height:22px;line-height:22px;border-radius:50%;background:#ff4d00;color:#ffffff;font-size:12px;font-weight:800;text-align:center;margin-right:10px;">${i + 1}</span>
+               <span style="font-size:14.5px;font-weight:700;color:#3b241a;">${escapeHtml(s.title || '')}</span>
+               <div style="margin:5px 0 0 32px;font-size:13.5px;line-height:1.6;color:#7a6558;">${escapeHtml(s.text || '')}</div>
+             </div>`).join('')}</div>`
+        : '';
+
+    const signatureHtml = signature
+        ? `<div style="margin-top:30px;padding-top:18px;border-top:1px solid #f1e3d8;font-family:${FONT};font-size:14px;line-height:1.7;color:#5b4a40;">
+             <div style="font-weight:800;color:#1f1410;">${escapeHtml(signature)}</div>
+             <div style="color:#a0735c;">TechnoStudios &middot; FireEye</div>
+           </div>`
+        : '';
 
     const iconHtml = icon
         ? `<div style="font-size:44px;line-height:1;margin:0 0 14px;">${icon}</div>`
@@ -158,7 +248,7 @@ function emailLayout({ preheader = '', icon = '', heading, intro, buttonText, bu
     const buttonHtml = buttonUrl
         ? `<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:30px auto 0;"><tr>
              <td align="center" bgcolor="#ff4d00" style="border-radius:14px;background:#ff4d00;background-image:linear-gradient(135deg,#ff8a00 0%,#ff4d00 55%,#e11d2e 100%);box-shadow:0 10px 24px rgba(255,77,0,0.38);">
-               <a href="${escapeHtml(buttonUrl)}" target="_blank" style="display:inline-block;padding:17px 40px;font-family:${FONT};font-size:16px;font-weight:800;color:#ffffff;text-decoration:none;border-radius:14px;letter-spacing:0.2px;">${escapeHtml(buttonText)} &rarr;</a>
+               <a href="${escapeHtml(buttonUrl)}" target="_blank" class="fe-btn" style="display:inline-block;padding:17px 40px;font-family:${FONT};font-size:16px;font-weight:800;color:#ffffff;text-decoration:none;border-radius:14px;letter-spacing:0.2px;">${escapeHtml(buttonText)} &rarr;</a>
              </td></tr></table>`
         : '';
 
@@ -175,17 +265,26 @@ function emailLayout({ preheader = '', icon = '', heading, intro, buttonText, bu
         : '';
 
     return `<!DOCTYPE html>
-<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><title>FireEye</title></head>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><title>FireEye</title>
+<style>
+  .fe-btn { transition: filter .15s ease, transform .15s ease; }
+  .fe-btn:hover { filter: brightness(1.08); }
+  .fe-shine { background-size: 200% 200%; animation: fe-shine 7s ease infinite; }
+  @keyframes fe-shine { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+  a { text-decoration: none; }
+</style>
+</head>
 <body style="margin:0;padding:0;background:#fdf0e8;">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${escapeHtml(preheader)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#fdf0e8" style="background:#fdf0e8;"><tr><td align="center" style="padding:32px 14px;">
   <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:22px;overflow:hidden;box-shadow:0 18px 50px rgba(194,65,12,0.18);">
-    <tr><td align="center" bgcolor="#ff4d00" style="background:#ff4d00;background-image:linear-gradient(135deg,#ff8a00 0%,#ff4d00 50%,#c1121f 100%);padding:38px 24px 32px;">
+    <tr><td align="center" bgcolor="#ff4d00" class="fe-shine" style="background:#ff4d00;background-image:linear-gradient(135deg,#ff8a00 0%,#ff4d00 50%,#c1121f 100%);padding:38px 24px 32px;">
       <div style="display:inline-block;width:68px;height:68px;line-height:68px;border-radius:50%;background:rgba(255,255,255,0.22);font-size:34px;text-align:center;">&#128293;</div>
       <div style="font-family:${FONT};font-size:28px;font-weight:800;color:#ffffff;margin-top:14px;letter-spacing:-0.4px;">FireEye</div>
       <div style="font-family:${FONT};font-size:13px;color:rgba(255,255,255,0.88);margin-top:5px;">Akıllı yangın algılama &amp; erken uyarı sistemi</div>
     </td></tr>
     <tr><td style="padding:38px 36px 34px;font-family:${FONT};">
+      ${greetingHtml}
       <div style="text-align:center;">
         ${iconHtml}
         <h1 style="margin:0;font-family:${FONT};font-size:26px;line-height:1.25;font-weight:800;color:#1f1410;">${escapeHtml(heading)}</h1>
@@ -194,7 +293,9 @@ function emailLayout({ preheader = '', icon = '', heading, intro, buttonText, bu
       ${buttonHtml}
       ${chipsHtml}
       ${copyHtml}
+      ${stepsHtml}
       ${noteHtml}
+      ${signatureHtml}
     </td></tr>
     <tr><td style="height:5px;line-height:5px;font-size:0;background:#ff4d00;background-image:linear-gradient(90deg,#ff8a00,#ff4d00,#c1121f);">&nbsp;</td></tr>
     <tr><td align="center" style="background:#fffaf6;padding:22px 24px 26px;font-family:${FONT};">
@@ -495,11 +596,108 @@ export default {
             }
 
             // --- /login --- (uygulama ve site aynı uç noktayı kullanır) ---
+            // --- /contact --- (herkese açık iletişim formu: kaydeder ve destek adresine e-posta atar)
+            if (url.pathname === '/contact' && request.method === 'POST') {
+                const ip = clientIp(request);
+                const rl = await checkRateLimit(env, 'contact:' + ip, 5, 3600);
+                if (!rl.allowed) {
+                    return json({ success: false, message: 'Çok fazla istek gönderdiniz. Lütfen bir süre sonra tekrar deneyin.' }, 429);
+                }
+
+                const body = await request.json().catch(() => ({}));
+                const name = (body.name || '').trim().slice(0, 80);
+                const email = (body.email || '').trim().toLowerCase().slice(0, 120);
+                const subject = (body.subject || 'diger').trim().slice(0, 60);
+                const message = (body.message || '').trim().slice(0, 4000);
+                const honeypot = (body.website || '').trim();
+
+                // Bot tuzağı doldurulmuşsa sessizce başarı dön (botu bilgilendirmeden yut).
+                if (honeypot) return json({ success: true, message: 'Mesajınız iletildi.' });
+                if (!name || !email || !message) return json({ success: false, message: 'Ad, e-posta ve mesaj alanları gerekli.' }, 400);
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ success: false, message: 'Geçerli bir e-posta adresi girin.' }, 400);
+
+                const subjectLabels = {
+                    destek: 'FireEye destek talebi',
+                    kurs: 'Eğitim / kurs kaydı',
+                    isbirligi: 'İş birliği / teklif',
+                    hata: 'Hata bildirimi',
+                    diger: 'Diğer',
+                };
+                const subjectLabel = subjectLabels[subject] || subjectLabels.diger;
+
+                await env.DB.prepare(
+                    'INSERT INTO contact_messages (name, email, subject, message, ip, user_agent) VALUES (?, ?, ?, ?, ?, ?)'
+                ).bind(name, email, subjectLabel, message, ip, (request.headers.get('User-Agent') || '').slice(0, 300)).run();
+
+                const support = env.SUPPORT_EMAIL || 'technostudios11@gmail.com';
+                await sendEmail(env, support, '[İletişim] ' + subjectLabel + ' — ' + name,
+                    emailLayout({
+                        preheader: name + ' (' + email + ') sitedeki iletişim formundan mesaj gönderdi.',
+                        icon: '&#128233;',
+                        heading: 'Yeni iletişim mesajı',
+                        intro: name + ' adlı ziyaretçi, iletişim formu üzerinden bir mesaj bıraktı.',
+                        greeting: 'Merhaba ekibi,',
+                        chips: [subjectLabel, email],
+                        copyLabel: 'Mesaj',
+                        copyValue: message,
+                        signature: name,
+                        note: 'Bu mesajı yanıtlamak için doğrudan bu e-postayı yanıtlayabilirsin: <b>' + escapeHtml(email) + '</b>',
+                    }),
+                    'Yeni iletişim mesajı\n\nAd: ' + name + '\nE-posta: ' + email + '\nKonu: ' + subjectLabel + '\n\n' + message
+                );
+
+                return json({ success: true, message: 'Mesajınız iletildi.' });
+            }
+
+            // --- /verify-email --- (e-postadaki bağlantı: hesabı doğrulanmış işaretler ve siteye döner)
+            if (url.pathname === '/verify-email' && request.method === 'GET') {
+                const token = (url.searchParams.get('token') || '').trim();
+                const backBase = githubSafeRedirect(url.searchParams.get('redirect'));
+                const back = (qs) => Response.redirect(backBase + (backBase.includes('?') ? '&' : '?') + qs, 302);
+                if (!token) return back('verify=invalid');
+
+                const tokenHash = await sha256Hex(token);
+                const user = await env.DB.prepare(
+                    "SELECT id FROM users WHERE verify_token_hash = ? AND verify_expires_at > datetime('now')"
+                ).bind(tokenHash).first();
+                if (!user) return back('verify=expired');
+
+                await env.DB.prepare(
+                    'UPDATE users SET email_verified = 1, verify_token_hash = NULL, verify_expires_at = NULL WHERE id = ?'
+                ).bind(user.id).run();
+                return back('verify=ok');
+            }
+
+            // --- /resend-verification --- (giriş yapmış kullanıcı doğrulama e-postasını yeniden ister)
+            if (url.pathname === '/resend-verification' && request.method === 'POST') {
+                const session = await getSessionUser(request, env);
+                if (!session || !session.uid) return json({ success: false, message: 'Oturum bulunamadı.' }, 401);
+
+                const rl = await checkRateLimit(env, 'resend:' + session.uid, 3, 3600);
+                if (!rl.allowed) return json({ success: false, message: 'Çok fazla istek. Lütfen daha sonra tekrar deneyin.' }, 429);
+
+                const user = await env.DB.prepare(
+                    'SELECT id, email, full_name, email_verified FROM users WHERE id = ?'
+                ).bind(session.uid).first();
+                if (!user) return json({ success: false, message: 'Hesap bulunamadı.' }, 404);
+                if (user.email_verified) return json({ success: true, message: 'E-posta zaten doğrulanmış.' });
+
+                const body = await request.json().catch(() => ({}));
+                await issueVerificationEmail(request, env, user, (body && body.redirect) || '');
+                return json({ success: true, message: 'Doğrulama e-postası gönderildi.' });
+            }
+
+            // --- /login --- (e-posta + şifre ile giriş; yönetici girişi de buradan yapılır)
             if (url.pathname === '/login' && request.method === 'POST') {
                 const body = await request.json().catch(() => ({}));
                 const email = (body.email || '').trim().toLowerCase();
                 const password = body.password || '';
                 if (!email || !password) return json({ success: false, message: 'E-posta ve şifre gerekli.' }, 400);
+
+                const rl = await checkRateLimit(env, 'login:' + clientIp(request), 12, 600);
+                if (!rl.allowed) {
+                    return json({ success: false, message: 'Çok fazla giriş denemesi. Lütfen birkaç dakika sonra tekrar deneyin.' }, 429);
+                }
 
                 // Yönetici girişi: ADMIN_USER / ADMIN_PASS gizli değerleriyle, normal giriş ekranından yapılır.
                 const adminUser = (env.ADMIN_USER || 'TechnoStudios11').trim().toLowerCase();
@@ -519,7 +717,7 @@ export default {
                 if (!env.SESSION_SECRET) return json({ success: false, message: 'Sunucu yapılandırma hatası.' }, 500);
 
                 const user = await env.DB.prepare(
-                    'SELECT id, email, full_name, password_hash, password_salt, mqtt_topic, is_no_data FROM users WHERE email = ?'
+                    'SELECT id, email, full_name, password_hash, password_salt, mqtt_topic, is_no_data, email_verified FROM users WHERE email = ?'
                 ).bind(email).first();
 
                 if (!user || !(await verifyPassword(password, user.password_hash, user.password_salt))) {
@@ -538,6 +736,7 @@ export default {
                         email: user.email,
                         fullName: user.full_name || '',
                         isNoData: !!user.is_no_data,
+                        emailVerified: !!user.email_verified,
                         mqttTopic: user.mqtt_topic || null,
                     },
                 });
@@ -547,31 +746,43 @@ export default {
             if (url.pathname === '/register' && request.method === 'POST') {
                 if (!env.SESSION_SECRET) return json({ success: false, message: 'Sunucu yapılandırma hatası.' }, 500);
 
+                const rl = await checkRateLimit(env, 'register:' + clientIp(request), 6, 3600);
+                if (!rl.allowed) {
+                    return json({ success: false, message: 'Çok fazla kayıt denemesi. Lütfen daha sonra tekrar deneyin.' }, 429);
+                }
+
                 const body = await request.json().catch(() => ({}));
                 const email = (body.email || '').trim().toLowerCase();
                 const password = body.password || '';
                 const fullName = (body.fullName || '').trim();
                 if (!email || !password) return json({ success: false, message: 'E-posta ve şifre gerekli.' }, 400);
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ success: false, message: 'Geçerli bir e-posta adresi girin.' }, 400);
+                if (password.length < 6) return json({ success: false, message: 'Şifre en az 6 karakter olmalı.' }, 400);
 
                 const { hash, salt } = await hashPassword(password);
                 let userId;
                 try {
                     const ins = await env.DB.prepare(
-                        'INSERT INTO users (email, password_hash, password_salt, full_name, is_no_data) VALUES (?, ?, ?, ?, 0)'
+                        'INSERT INTO users (email, password_hash, password_salt, full_name, is_no_data, email_verified) VALUES (?, ?, ?, ?, 0, 0)'
                     ).bind(email, hash, salt, fullName).run();
                     userId = ins.meta.last_row_id;
                 } catch (e) {
                     return json({ success: false, message: 'Bu e-posta ile zaten bir hesap var.' }, 400);
                 }
 
+                // Hoş geldin + e-posta doğrulama maili (Resend yapılandırılmamışsa sessizce geçer).
+                try {
+                    await issueVerificationEmail(request, env, { id: userId, email, full_name: fullName }, body.redirect || '');
+                } catch (e) { console.error('Doğrulama e-postası hatası:', e && e.message); }
+
                 const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30;
                 const token = await signSession({ uid: userId, exp }, env.SESSION_SECRET);
 
                 return json({
                     success: true,
-                    message: 'Kayıt başarılı',
+                    message: 'Kayıt başarılı. E-postana bir doğrulama bağlantısı gönderdik.',
                     token,
-                    user: { id: String(userId), email, fullName, isNoData: false, mqttTopic: null },
+                    user: { id: String(userId), email, fullName, isNoData: false, emailVerified: false, mqttTopic: null },
                 });
             }
 
@@ -605,7 +816,7 @@ export default {
                 if (!email) return json({ success: false, message: 'Google hesabından e-posta alınamadı.' }, 400);
 
                 let user = await env.DB.prepare(
-                    'SELECT id, email, full_name, mqtt_topic, is_no_data FROM users WHERE email = ?'
+                    'SELECT id, email, full_name, mqtt_topic, is_no_data, email_verified FROM users WHERE email = ?'
                 ).bind(email).first();
 
                 if (!user) {
@@ -631,6 +842,7 @@ export default {
                         email: user.email,
                         fullName: user.full_name || '',
                         isNoData: !!user.is_no_data,
+                        emailVerified: !!user.email_verified,
                         mqttTopic: user.mqtt_topic || null,
                     },
                 });
@@ -660,7 +872,7 @@ export default {
                 if (!email) return json({ success: false, message: 'Microsoft hesabından e-posta alınamadı.' }, 400);
 
                 let user = await env.DB.prepare(
-                    'SELECT id, email, full_name, mqtt_topic, is_no_data FROM users WHERE email = ?'
+                    'SELECT id, email, full_name, mqtt_topic, is_no_data, email_verified FROM users WHERE email = ?'
                 ).bind(email).first();
 
                 if (!user) {
@@ -686,6 +898,7 @@ export default {
                         email: user.email,
                         fullName: user.full_name || '',
                         isNoData: !!user.is_no_data,
+                        emailVerified: !!user.email_verified,
                         mqttTopic: user.mqtt_topic || null,
                     },
                 });
@@ -696,7 +909,7 @@ export default {
                 const session = await getSessionUser(request, env);
                 if (!session || !session.uid) return json({ success: false, message: 'Oturum bulunamadı.' }, 401);
                 const user = await env.DB.prepare(
-                    'SELECT id, email, full_name, mqtt_topic, is_no_data FROM users WHERE id = ?'
+                    'SELECT id, email, full_name, mqtt_topic, is_no_data, email_verified FROM users WHERE id = ?'
                 ).bind(session.uid).first();
                 if (!user) return json({ success: false, message: 'Hesap bulunamadı.' }, 404);
                 return json({
@@ -706,6 +919,7 @@ export default {
                         email: user.email,
                         fullName: user.full_name || '',
                         isNoData: !!user.is_no_data,
+                        emailVerified: !!user.email_verified,
                         mqttTopic: user.mqtt_topic || null,
                     },
                 });
@@ -769,7 +983,7 @@ export default {
                 const fullName = (ghUser.name || ghUser.login || '').trim();
 
                 let dbUser = await env.DB.prepare(
-                    'SELECT id, email, full_name, mqtt_topic, is_no_data FROM users WHERE email = ?'
+                    'SELECT id, email, full_name, mqtt_topic, is_no_data, email_verified FROM users WHERE email = ?'
                 ).bind(email).first();
 
                 if (!dbUser) {
@@ -851,6 +1065,11 @@ export default {
                 const email = (body.email || '').trim().toLowerCase();
                 const resetBaseUrl = (body.resetBaseUrl || '').trim();
                 if (!email) return json({ success: false, message: 'E-posta gerekli.' }, 400);
+
+                const rl = await checkRateLimit(env, 'forgot:' + clientIp(request), 5, 3600);
+                if (!rl.allowed) {
+                    return json({ success: true, message: 'Eğer bu e-posta ile bir hesap varsa, sıfırlama bağlantısı gönderildi.' });
+                }
                 if (!/^https?:\/\//.test(resetBaseUrl) || resetBaseUrl.length > 500) {
                     return json({ success: false, message: 'Geçersiz sayfa adresi.' }, 400);
                 }
@@ -900,6 +1119,11 @@ export default {
                 const token = (body.token || '').trim();
                 const newPassword = body.newPassword || '';
                 if (!token || !newPassword) return json({ success: false, message: 'Token ve yeni şifre gerekli.' }, 400);
+
+                const rl = await checkRateLimit(env, 'reset:' + clientIp(request), 10, 3600);
+                if (!rl.allowed) {
+                    return json({ success: false, message: 'Çok fazla deneme. Lütfen daha sonra tekrar deneyin.' }, 429);
+                }
                 if (newPassword.length < 6) return json({ success: false, message: 'Şifre en az 6 karakter olmalı.' }, 400);
 
                 const tokenHash = await sha256Hex(token);
@@ -1027,11 +1251,27 @@ export default {
             }
 
             // --- /device/command --- (uygulama/site bir komut kuyruğa koyar, örn. "kapat") ---
+            // Yetki: cihaz sırrı VEYA cihazın sahibi olan giriş yapmış kullanıcı.
             if (url.pathname === '/device/command' && request.method === 'POST') {
                 const body = await request.json().catch(() => ({}));
                 const deviceKey = (body.device_key || '').trim();
                 const command = (body.command || '').trim();
                 if (!deviceKey || !command) return json({ error: 'device_key ve command gerekli.' }, 400);
+
+                const deviceSecret = request.headers.get('X-Device-Secret') || '';
+                const expectedSecret = env.DEVICE_SECRET || 'fireeye-device-2026';
+                let authorized = deviceSecret === expectedSecret;
+
+                if (!authorized) {
+                    const session = await getSessionUser(request, env);
+                    if (session && session.uid) {
+                        const owner = await env.DB.prepare(
+                            'SELECT id FROM users WHERE id = ? AND mqtt_topic = ?'
+                        ).bind(session.uid, deviceKey).first();
+                        authorized = !!owner;
+                    }
+                }
+                if (!authorized) return json({ error: 'Yetkisiz.' }, 401);
 
                 await env.DB.prepare(
                     'INSERT INTO device_commands (device_key, command, updated_at) VALUES (?, ?, datetime("now")) ' +

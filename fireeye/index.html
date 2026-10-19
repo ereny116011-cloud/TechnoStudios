@@ -4,6 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FireEye // TechnoStudios</title>
+    <meta name="description" content="FireEye; akıllı yangın algılama ve erken uyarı sistemi. Ortam sıcaklığı ve duman verisini anlık izleyin, cihazınızı yönetin.">
+    <meta name="keywords" content="FireEye, yangın algılama, erken uyarı, duman sensörü, sıcaklık sensörü, IoT, ESP32, TechnoStudios">
+    <meta name="author" content="TechnoStudios">
+    <meta name="robots" content="index,follow">
+    <meta name="theme-color" content="#0c0d0f">
+    <link rel="canonical" href="https://www.technoweb.win/fireeye/">
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="TechnoStudios">
+    <meta property="og:title" content="FireEye — Akıllı Yangın Algılama ve Erken Uyarı Sistemi">
+    <meta property="og:description" content="Ortam sıcaklığı ve duman verisini anlık izleyin, alarmları yönetin ve cihazınızı uzaktan kontrol edin.">
+    <meta property="og:url" content="https://www.technoweb.win/fireeye/">
+    <meta property="og:image" content="https://www.technoweb.win/fireeye/logo-dark.png">
+    <meta property="og:locale" content="tr_TR">
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="FireEye — Akıllı Yangın Algılama ve Erken Uyarı Sistemi">
+    <meta name="twitter:description" content="Ortam sıcaklığı ve duman verisini anlık izleyin, alarmları yönetin ve cihazınızı uzaktan kontrol edin.">
+    <meta name="twitter:image" content="https://www.technoweb.win/fireeye/logo-dark.png">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "FireEye",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Android, Web",
+      "description": "Akıllı yangın algılama ve erken uyarı sistemi. Ortam sıcaklığı ve duman verisini anlık izler.",
+      "url": "https://www.technoweb.win/fireeye/",
+      "publisher": { "@type": "Organization", "name": "TechnoStudios", "url": "https://www.technoweb.win/" },
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "TRY" }
+    }
+    </script>
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23e2603f'%3E%3Cpath d='M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.29 1.14-3.168.45-.558 1.36-.33 1.36.368 0 .842.27 1.704.76 2.298z'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -903,6 +935,76 @@
         .footer-github:hover { color: var(--accent); }
         .footer-github svg { width: 15px; height: 15px; fill: currentColor; }
 
+        /* Cihazım — canlı sensör kartları, grafik ve doğrulama uyarısı */
+        .verify-banner {
+            display: flex; align-items: center; justify-content: space-between; gap: 14px;
+            flex-wrap: wrap;
+            margin: 0 0 18px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid var(--warning-border);
+            background: var(--warning-bg);
+        }
+        .verify-banner-text { display: flex; flex-direction: column; gap: 3px; font-size: 0.88rem; }
+        .verify-banner-text strong { color: var(--warning-text); }
+        .verify-banner-text span { color: var(--text-secondary); }
+
+        .sensor-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 16px 0 6px;
+        }
+        @media (max-width: 560px) { .sensor-stats { grid-template-columns: 1fr; } }
+
+        .sensor-stat {
+            display: flex; flex-direction: column; gap: 6px;
+            padding: 16px;
+            border-radius: 14px;
+            border: 1px solid var(--line);
+            background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.005));
+        }
+        body.light .sensor-stat { background: linear-gradient(180deg, #ffffff, #faf9f6); }
+        .sensor-stat .k { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-secondary); }
+        .sensor-stat .v { font-size: 1.65rem; font-weight: 800; letter-spacing: -0.02em; color: var(--text-primary); }
+
+        .chart-wrap {
+            margin-top: 20px;
+            padding: 18px;
+            border-radius: 16px;
+            border: 1px solid var(--line);
+            background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.004));
+        }
+        body.light .chart-wrap { background: linear-gradient(180deg, #ffffff, #faf9f6); }
+        .chart-legend {
+            display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+            font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 12px;
+        }
+        .chart-legend .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+        .dot-temp { background: #e2603f; }
+        .dot-hum { background: #4aa3e2; }
+        .chart-hint { margin-left: auto; font-family: var(--mono); font-size: 0.68rem; color: var(--text-muted, var(--text-secondary)); }
+        #sensorChart { width: 100%; height: 220px; display: block; }
+
+        .fe-toast {
+            position: fixed; left: 50%; bottom: 28px; z-index: 300;
+            transform: translateX(-50%) translateY(18px);
+            max-width: min(92vw, 440px);
+            padding: 13px 18px; border-radius: 12px;
+            background: rgba(20, 21, 24, 0.96);
+            border: 1px solid var(--line);
+            color: var(--text-primary);
+            font-size: 0.88rem; line-height: 1.5;
+            box-shadow: 0 22px 55px -22px rgba(0, 0, 0, 0.85);
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            backdrop-filter: blur(10px);
+        }
+        body.light .fe-toast { background: rgba(255, 255, 255, 0.97); }
+        .fe-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .fe-toast.ok { border-color: var(--success-border); }
+        .fe-toast.err { border-color: var(--danger-border); }
+
         @media (max-width: 560px) {
             footer { flex-direction: column; align-items: flex-start; }
         }
@@ -1147,9 +1249,10 @@
         <a href="../" class="back-home">&larr; Geri Dön</a>
         <div class="header-actions">
             <button id="adminStatusIndicator" class="util-btn" style="display:none; border-color: var(--accent); color: var(--accent);" onclick="logoutAdmin()">Admin Modu (Çıkış)</button>
-            <button id="headerLoginBtn" class="util-btn" onclick="openAccountModal('login')">Giriş Yap</button>
-            <button id="headerRegisterBtn" class="util-btn" onclick="openAccountModal('register')" style="border-color: var(--accent); color: var(--accent);">Kaydol</button>
-            <button id="headerLogoutBtn" class="util-btn" onclick="handleUserLogout()" style="display:none; border-color: var(--accent); color: var(--accent);">Çıkış Yap</button>
+            <button id="headerLoginBtn" class="util-btn" onclick="openAccountModal('login')" data-i18n="login">Giriş Yap</button>
+            <button id="headerRegisterBtn" class="util-btn" onclick="openAccountModal('register')" style="border-color: var(--accent); color: var(--accent);" data-i18n="register">Kaydol</button>
+            <button id="headerLogoutBtn" class="util-btn" onclick="handleUserLogout()" style="display:none; border-color: var(--accent); color: var(--accent);" data-i18n="logout">Çıkış Yap</button>
+            <button class="util-btn" onclick="toggleFeLang()" id="langBtn" title="Dil / Language" aria-label="Dil / Language">TR</button>
             <button class="util-btn theme-toggle-btn" onclick="cycleThemeMode()" id="themeBtn" title="Tema Modu" aria-label="Tema Modu"></button>
         </div>
     </header>
@@ -1169,14 +1272,14 @@
         </div>
 
         <div class="nav-tabs">
-            <button class="tab-trigger active" onclick="switchTab(event, 'download')">İndir</button>
-            <button class="tab-trigger" onclick="switchTab(event, 'features')">Özellikler</button>
-            <button class="tab-trigger" onclick="switchTab(event, 'screenshots')">Ekran Görüntüleri</button>
-            <button class="tab-trigger" onclick="switchTab(event, 'security')">Güvenlik Raporu</button>
-            <button class="tab-trigger" onclick="switchTab(event, 'reviews')">Değerlendirmeler</button>
-            <button class="tab-trigger" onclick="switchTab(event, 'faq')">SSS</button>
-            <button class="tab-trigger" onclick="switchTab(event, 'changelog')">Sürüm Notları</button>
-            <button id="deviceTabBtn" class="tab-trigger" onclick="switchTab(event, 'device')" style="display:none;">Cihazım</button>
+            <button class="tab-trigger active" onclick="switchTab(event, 'download')" data-i18n="tabDownload">İndir</button>
+            <button class="tab-trigger" onclick="switchTab(event, 'features')" data-i18n="tabFeatures">Özellikler</button>
+            <button class="tab-trigger" onclick="switchTab(event, 'screenshots')" data-i18n="tabScreenshots">Ekran Görüntüleri</button>
+            <button class="tab-trigger" onclick="switchTab(event, 'security')" data-i18n="tabSecurity">Güvenlik Raporu</button>
+            <button class="tab-trigger" onclick="switchTab(event, 'reviews')" data-i18n="tabReviews">Değerlendirmeler</button>
+            <button class="tab-trigger" onclick="switchTab(event, 'faq')" data-i18n="tabFaq">SSS</button>
+            <button class="tab-trigger" onclick="switchTab(event, 'changelog')" data-i18n="tabChangelog">Sürüm Notları</button>
+            <button id="deviceTabBtn" class="tab-trigger" onclick="switchTab(event, 'device')" style="display:none;" data-i18n="tabDevice">Cihazım</button>
         </div>
 
         <!-- İndir Sekmesi -->
@@ -1369,14 +1472,39 @@
 
         <!-- Cihazım Sekmesi -->
         <div id="device" class="tab-pane">
-            <div class="account-panel" style="max-width: 720px; margin: 0 auto;">
-                <h3 class="account-panel-title">Cihazım</h3>
-                <p class="account-panel-sub">Hoş geldin, <span id="accountEmailLabel"></span></p>
+            <div class="account-panel" style="max-width: 880px; margin: 0 auto;">
+                <h3 class="account-panel-title" data-i18n="deviceTitle">Cihazım</h3>
+                <p class="account-panel-sub"><span data-i18n="welcome">Hoş geldin</span>, <span id="accountEmailLabel"></span></p>
+
+                <div id="verifyBanner" class="verify-banner" style="display:none;">
+                    <div class="verify-banner-text">
+                        <strong data-i18n="verifyTitle">E-posta adresin doğrulanmadı.</strong>
+                        <span data-i18n="verifySub">Doğrulama bağlantısını e-postana gönderdik. Gelmediyse yeniden gönderebilirsin.</span>
+                    </div>
+                    <button id="resendVerifyBtn" class="util-btn" onclick="resendVerification()" data-i18n="verifyResend">Yeniden Gönder</button>
+                </div>
+
                 <div class="security-container">
-                    <p style="color: var(--text-secondary); margin-bottom: 10px;">FireEye Cihaz Durumu (Canlı)</p>
+                    <p style="color: var(--text-secondary); margin-bottom: 10px;" data-i18n="deviceStatusTitle">FireEye Cihaz Durumu (Canlı)</p>
                     <p id="mqttStatus" style="font-weight: 700;">Bağlanıyor...</p>
+
+                    <div class="sensor-stats" id="sensorStats" style="display:none;">
+                        <div class="sensor-stat"><span class="k" data-i18n="temperature">Sıcaklık</span><span class="v" id="statSicaklik">&mdash;</span></div>
+                        <div class="sensor-stat"><span class="k" data-i18n="humidity">Nem</span><span class="v" id="statNem">&mdash;</span></div>
+                        <div class="sensor-stat"><span class="k" data-i18n="state">Durum</span><span class="v" id="statDurum">&mdash;</span></div>
+                    </div>
+
+                    <div class="chart-wrap" id="chartWrap" style="display:none;">
+                        <div class="chart-legend">
+                            <span><i class="dot dot-temp"></i><span data-i18n="temperature">Sıcaklık</span> (&deg;C)</span>
+                            <span><i class="dot dot-hum"></i><span data-i18n="humidity">Nem</span> (%)</span>
+                            <span class="chart-hint" data-i18n="chartHint">Son 60 ölçüm</span>
+                        </div>
+                        <canvas id="sensorChart"></canvas>
+                    </div>
+
                     <pre id="mqttData" style="white-space: pre-wrap; word-break: break-word; margin-top: 10px; font-size: 0.85rem; color: var(--text-secondary);"></pre>
-                    <button id="mqttMuteBtn" class="main-cta" style="display: none; margin-top: 14px; background: var(--danger);">Alarmı Sustur</button>
+                    <button id="mqttMuteBtn" class="main-cta" style="display: none; margin-top: 14px; background: var(--danger);" data-i18n="muteAlarm">Alarmı Sustur</button>
                 </div>
             </div>
         </div>
@@ -1524,6 +1652,9 @@
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>
             GitHub
         </a>
+        <a href="../gizlilik.html" class="footer-github">Gizlilik</a>
+        <a href="../kullanim-sartlari.html" class="footer-github">Kullanım Şartları</a>
+        <a href="../iletisim.html" class="footer-github">İletişim</a>
     </footer>
 
     <script>
@@ -2064,6 +2195,8 @@
             closeAccountModal();
             const label = document.getElementById('accountEmailLabel');
             if (label) label.textContent = user.email;
+            const banner = document.getElementById('verifyBanner');
+            if (banner) banner.style.display = (user.emailVerified === false) ? 'flex' : 'none';
             activateTab('device');
             startDeviceReading(user.mqttTopic);
         }
@@ -2080,6 +2213,106 @@
             return result;
         }
 
+        // --- Cihazım: canlı sensör grafiği (kütüphanesiz, hafif canvas) ---
+        const sensorSeries = { sicaklik: [], nem: [] };
+        const CHART_MAX = 60;
+
+        function pushSensorPoint(sicaklik, nem) {
+            const t = Date.now();
+            if (typeof sicaklik === 'number' && isFinite(sicaklik)) sensorSeries.sicaklik.push({ t, v: sicaklik });
+            if (typeof nem === 'number' && isFinite(nem)) sensorSeries.nem.push({ t, v: nem });
+            if (sensorSeries.sicaklik.length > CHART_MAX) sensorSeries.sicaklik.shift();
+            if (sensorSeries.nem.length > CHART_MAX) sensorSeries.nem.shift();
+        }
+
+        function drawSensorChart() {
+            const canvas = document.getElementById('sensorChart');
+            if (!canvas) return;
+            const light = document.body.classList.contains('light');
+            const cssW = canvas.clientWidth || 600;
+            const cssH = 220;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = Math.round(cssW * dpr);
+            canvas.height = Math.round(cssH * dpr);
+            const ctx = canvas.getContext('2d');
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, cssW, cssH);
+
+            const gridColor = light ? 'rgba(20,18,12,0.08)' : 'rgba(255,255,255,0.07)';
+            const axisText = light ? '#8a877e' : '#6b7178';
+            const padL = 34, padR = 16, padT = 12, padB = 20;
+            const plotW = cssW - padL - padR;
+            const plotH = cssH - padT - padB;
+
+            ctx.strokeStyle = gridColor;
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 4; i++) {
+                const y = padT + (plotH / 4) * i;
+                ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + plotW, y); ctx.stroke();
+            }
+
+            const count = Math.max(sensorSeries.sicaklik.length, sensorSeries.nem.length);
+            if (count === 0) return;
+
+            const series = [
+                { data: sensorSeries.sicaklik, color: '#e2603f' },
+                { data: sensorSeries.nem, color: '#4aa3e2' },
+            ];
+
+            series.forEach(s => {
+                if (!s.data.length) return;
+                const xFor = (i) => padL + (count === 1 ? plotW / 2 : (i / (count - 1)) * plotW);
+                const yFor = (v) => padT + plotH - (Math.max(0, Math.min(100, v)) / 100) * plotH;
+
+                ctx.strokeStyle = s.color;
+                ctx.lineWidth = 2;
+                ctx.lineJoin = 'round';
+                ctx.beginPath();
+                s.data.forEach((p, i) => {
+                    const x = xFor(i), y = yFor(p.v);
+                    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+
+                ctx.lineTo(xFor(s.data.length - 1), padT + plotH);
+                ctx.lineTo(xFor(0), padT + plotH);
+                ctx.closePath();
+                ctx.fillStyle = s.color + '22';
+                ctx.fill();
+            });
+
+            ctx.fillStyle = axisText;
+            ctx.font = '10px JetBrains Mono, monospace';
+            ctx.textAlign = 'right';
+            [0, 50, 100].forEach(v => {
+                const y = padT + plotH - (v / 100) * plotH;
+                ctx.fillText(String(v), padL - 6, y + 3);
+            });
+        }
+
+        function updateSensorUI(parsed) {
+            const st = document.getElementById('sensorStats');
+            const wrap = document.getElementById('chartWrap');
+            const sic = parsed.sicaklik != null ? parseFloat(parsed.sicaklik) : NaN;
+            const nem = parsed.nem != null ? parseFloat(parsed.nem) : NaN;
+
+            const sEl = document.getElementById('statSicaklik');
+            const nEl = document.getElementById('statNem');
+            const dEl = document.getElementById('statDurum');
+            if (sEl) sEl.textContent = isFinite(sic) ? sic.toFixed(1) + ' °C' : '—';
+            if (nEl) nEl.textContent = isFinite(nem) ? '%' + nem.toFixed(0) : '—';
+            if (dEl) {
+                const alarm = (parsed.durum || '').toUpperCase().indexOf('ALARM') >= 0;
+                dEl.textContent = parsed.durum || '—';
+                dEl.style.color = alarm ? 'var(--danger)' : 'var(--text-primary)';
+            }
+
+            pushSensorPoint(sic, nem);
+            if (st) st.style.display = 'grid';
+            if (wrap) wrap.style.display = 'block';
+            drawSensorChart();
+        }
+
         async function fetchDeviceReading(deviceKey) {
             const statusEl = document.getElementById('mqttStatus');
             const dataEl = document.getElementById('mqttData');
@@ -2093,6 +2326,7 @@
                 const data = await res.json();
                 const parsed = parseVeriPayload(data.payload);
                 statusEl.textContent = 'Bağlı — son güncelleme: ' + data.updated_at;
+                updateSensorUI(parsed);
                 dataEl.textContent =
                     (parsed.sicaklik ? 'Sıcaklık: ' + parsed.sicaklik + '°C\n' : '') +
                     (parsed.nem ? 'Nem: %' + parsed.nem + '\n' : '') +
@@ -2100,6 +2334,38 @@
                     '\n(ham veri: ' + data.payload + ')';
             } catch (err) {
                 statusEl.textContent = 'Sunucuya ulaşılamadı.';
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            if (document.getElementById('chartWrap') && document.getElementById('chartWrap').style.display !== 'none') {
+                drawSensorChart();
+            }
+        });
+
+        async function resendVerification() {
+            const stored = JSON.parse(localStorage.getItem('fireeye_user') || '{}');
+            if (!stored.token) return;
+            const btn = document.getElementById('resendVerifyBtn');
+            if (btn) { btn.disabled = true; }
+            try {
+                const res = await fetch(WORKER_BASE + '/resend-verification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + stored.token },
+                    body: JSON.stringify({ redirect: location.origin + location.pathname })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('Doğrulama e-postası gönderildi. Gelen kutunu (ve spam klasörünü) kontrol et.', 'ok');
+                    const banner = document.getElementById('verifyBanner');
+                    if (banner) banner.style.display = 'none';
+                } else {
+                    showToast(data.message || 'Gönderilemedi.', 'err');
+                }
+            } catch (e) {
+                showToast('Bağlantı hatası, tekrar dene.', 'err');
+            } finally {
+                if (btn) { btn.disabled = false; }
             }
         }
 
@@ -2119,12 +2385,21 @@
             muteBtn.style.display = 'inline-flex';
             muteBtn.onclick = async () => {
                 try {
-                    await fetch(WORKER_BASE + '/device/command', {
+                    const stored = JSON.parse(localStorage.getItem('fireeye_user') || '{}');
+                    const headers = { 'Content-Type': 'application/json' };
+                    if (stored.token) headers['Authorization'] = 'Bearer ' + stored.token;
+                    const res = await fetch(WORKER_BASE + '/device/command', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: headers,
                         body: JSON.stringify({ device_key: deviceKey, command: 'kapat' })
                     });
-                } catch (err) { /* sessiz geç */ }
+                    if (res.ok) {
+                        showToast('Susturma komutu cihaza iletildi.', 'ok');
+                    } else {
+                        const d = await res.json().catch(() => ({}));
+                        showToast(d.error || 'Komut gönderilemedi.', 'err');
+                    }
+                } catch (err) { showToast('Bağlantı hatası, komut gönderilemedi.', 'err'); }
             };
 
             fetchDeviceReading(deviceKey);
@@ -2748,6 +3023,84 @@
                 el.style.setProperty('--my', (e.clientY - r.top) + 'px');
             });
         });
+    </script>
+
+    <div id="feToast" class="fe-toast" role="status" aria-live="polite"></div>
+
+    <script>
+        // Basit bildirim (toast) — e-posta doğrulama, komut ve dil geri bildirimi için.
+        let feToastTimer = null;
+        function showToast(message, kind) {
+            const el = document.getElementById('feToast');
+            if (!el) { return; }
+            el.textContent = message;
+            el.className = 'fe-toast show' + (kind ? ' ' + kind : '');
+            clearTimeout(feToastTimer);
+            feToastTimer = setTimeout(() => { el.className = 'fe-toast'; }, 4200);
+        }
+
+        // --- Çoklu dil (TR/EN) ---
+        const FE_I18N = {
+            tr: {
+                login: 'Giriş Yap', register: 'Kaydol', logout: 'Çıkış Yap', theme: 'Tema Modu', lang: 'Dil',
+                tabDownload: 'İndir', tabFeatures: 'Özellikler', tabScreenshots: 'Ekran Görüntüleri', tabSecurity: 'Güvenlik Raporu',
+                tabReviews: 'Değerlendirmeler', tabFaq: 'SSS', tabChangelog: 'Sürüm Notları', tabDevice: 'Cihazım',
+                deviceTitle: 'Cihazım', welcome: 'Hoş geldin',
+                verifyTitle: 'E-posta adresin doğrulanmadı.',
+                verifySub: 'Doğrulama bağlantısını e-postana gönderdik. Gelmediyse yeniden gönderebilirsin.',
+                verifyResend: 'Yeniden Gönder',
+                deviceStatusTitle: 'FireEye Cihaz Durumu (Canlı)',
+                temperature: 'Sıcaklık', humidity: 'Nem', state: 'Durum',
+                chartHint: 'Son 60 ölçüm', muteAlarm: 'Alarmı Sustur'
+            },
+            en: {
+                login: 'Sign In', register: 'Sign Up', logout: 'Sign Out', theme: 'Theme', lang: 'Language',
+                tabDownload: 'Download', tabFeatures: 'Features', tabScreenshots: 'Screenshots', tabSecurity: 'Security Report',
+                tabReviews: 'Reviews', tabFaq: 'FAQ', tabChangelog: 'Changelog', tabDevice: 'My Device',
+                deviceTitle: 'My Device', welcome: 'Welcome',
+                verifyTitle: 'Your email address is not verified.',
+                verifySub: 'We sent a verification link to your email. You can resend it if it did not arrive.',
+                verifyResend: 'Resend',
+                deviceStatusTitle: 'FireEye Device Status (Live)',
+                temperature: 'Temperature', humidity: 'Humidity', state: 'Status',
+                chartHint: 'Last 60 readings', muteAlarm: 'Mute Alarm'
+            }
+        };
+
+        function currentFeLang() {
+            return localStorage.getItem('ts-lang') === 'en' ? 'en' : 'tr';
+        }
+
+        function applyFeLang(lang) {
+            const dict = FE_I18N[lang] || FE_I18N.tr;
+            document.documentElement.lang = lang;
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (dict[key] != null) el.textContent = dict[key];
+            });
+            const btn = document.getElementById('langBtn');
+            if (btn) btn.textContent = (lang === 'en') ? 'EN' : 'TR';
+            try { localStorage.setItem('ts-lang', lang); } catch (e) {}
+        }
+
+        function toggleFeLang() {
+            applyFeLang(currentFeLang() === 'en' ? 'tr' : 'en');
+        }
+
+        applyFeLang(currentFeLang());
+
+        // E-posta doğrulama dönüşü: ?verify=ok|expired|invalid
+        (function () {
+            const v = new URLSearchParams(location.search).get('verify');
+            if (!v) return;
+            const msgs = {
+                ok: ['E-postan doğrulandı. Teşekkürler!', 'ok'],
+                expired: ['Doğrulama bağlantısının süresi dolmuş. Yeniden gönder.', 'err'],
+                invalid: ['Doğrulama bağlantısı geçersiz.', 'err']
+            };
+            const m = msgs[v];
+            if (m) setTimeout(() => showToast(m[0], m[1]), 600);
+        })();
     </script>
 </body>
 </html>
