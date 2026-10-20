@@ -1252,7 +1252,7 @@
     </div>
 
     <header>
-        <a href="../" class="back-home">&larr; Geri Dön</a>
+        <a href="../" class="back-home" data-i18n="backHome">&larr; Geri Dön</a>
         <div class="header-actions">
             <button id="adminStatusIndicator" class="util-btn" style="display:none; border-color: var(--accent); color: var(--accent);" onclick="logoutAdmin()">Admin Modu (Çıkış)</button>
             <button id="headerLoginBtn" class="util-btn" onclick="openAccountModal('login')" data-i18n="login">Giriş Yap</button>
@@ -1267,13 +1267,13 @@
         <!-- Alev & Buhar Efektli Hero Kartı -->
         <div class="project-hero">
             <div class="hero-content">
-                <div class="status-pill" id="statusPillVersion">v1.0 Kararlı Sürüm</div>
+                <div class="status-pill" id="statusPillVersion" data-i18n="statusPill">v1.0 Kararlı Sürüm</div>
                 <h1 class="visually-hidden">FireEye</h1>
                 <div class="hero-logo">
                     <img class="hero-logo-img hero-logo-light" src="logo-light.png" alt="FireEye logosu">
                     <img class="hero-logo-img hero-logo-dark" src="logo-dark.png" alt="">
                 </div>
-                <p class="subtitle">Akıllı yangın algılama ve erken uyarı sistemi. Alanında özelleştirilmiş güvenlik katmanı.</p>
+                <p class="subtitle" data-i18n="heroSubtitle">Yangın algılama ve erken uyarı sistemi.</p>
             </div>
         </div>
 
@@ -1292,19 +1292,19 @@
         <div id="download" class="tab-pane active">
             <div class="download-box">
                 <div class="download-info">
-                    <h3>FireEye Android Uygulaması</h3>
-                    <p>Android 8.0 ve üzeri kurumsal cihazlar için optimize edildi.</p>
+                    <h3 data-i18n="downloadTitle">FireEye Android Uygulaması</h3>
+                    <p data-i18n="downloadSub">Android 8.0 ve üzeri cihazlarda çalışır.</p>
                 </div>
-                <button class="main-cta" onclick="startDownloadSimulation()" id="downloadBtnLabel">APK İndir (v1.0)</button>
+                <button class="main-cta" onclick="startDownloadSimulation()" id="downloadBtnLabel" data-i18n="downloadBtn">APK İndir (v1.0)</button>
             </div>
 
             <div class="ios-warning-banner">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v5"/><path d="M12 7.6h.01"/></svg>
-                <span><strong>Not:</strong> Bu uygulama Android tabanlı sistemler için geliştirilmiştir. iOS (iPhone / iPad) cihazlarda çalışmaz.</span>
+                <span data-i18n-html="iosNote"><strong>Not:</strong> Bu uygulama Android tabanlı sistemler için geliştirilmiştir. iOS (iPhone / iPad) cihazlarda çalışmaz.</span>
             </div>
 
             <div id="downloadProgressContainer">
-                <p id="downloadStatusText" style="font-size: 0.85rem; color: var(--text-secondary);">APK paketi derleniyor...</p>
+                <p id="downloadStatusText" style="font-size: 0.85rem; color: var(--text-secondary);" data-i18n="downloadStatus">APK paketi derleniyor...</p>
                 <div class="progress-bar-bg">
                     <div id="progressBarFill" class="progress-bar-fill"></div>
                 </div>
@@ -1313,13 +1313,13 @@
             <div id="postDownloadFeedbackArea">
                 <div class="success-banner-msg">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M8 12.5l2.6 2.6L16 9.5"/></svg>
-                    <span>Uygulama başarıyla indirildi. Teşekkürler.</span>
+                    <span data-i18n="downloadDone">Uygulama başarıyla indirildi. Teşekkürler.</span>
                 </div>
-                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 15px;">FireEye'ı denedikten sonra deneyimini diğer kullanıcılarla paylaşmak ister misin?</p>
+                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 15px;" data-i18n="feedbackAsk">FireEye'ı denedikten sonra deneyimini diğer kullanıcılarla paylaşmak ister misin?</p>
 
                 <form id="postDownloadForm" onsubmit="handleNewComment(event)">
                     <div class="form-group">
-                        <label>Puanınız</label>
+                        <label data-i18n="ratingLabel">Puanınız</label>
                         <div class="star-rating-picker">
                             <input type="radio" id="pstar5" name="rating" value="5" checked /><label for="pstar5" title="5 Yıldız">&#9733;</label>
                             <input type="radio" id="pstar4" name="rating" value="4" /><label for="pstar4" title="4 Yıldız">&#9733;</label>
@@ -1329,18 +1329,18 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="postUserName">Adınız / Kurum</label>
-                        <input type="text" id="postUserName" class="form-control" placeholder="Örn: Ahmet Yılmaz" required>
+                        <label for="postUserName" data-i18n="nameLabel">Adınız / Kurum</label>
+                        <input type="text" id="postUserName" class="form-control" placeholder="Örn: Ahmet Yılmaz" data-i18n-placeholder="namePlaceholder" required>
                     </div>
                     <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
                         <input type="checkbox" id="postAnonymous" style="width: auto;" onchange="document.getElementById('postUserName').required = !this.checked;">
-                        <label for="postAnonymous" style="margin: 0; cursor: pointer;">Anonim olarak gönder</label>
+                        <label for="postAnonymous" style="margin: 0; cursor: pointer;" data-i18n="anonymousLabel">Anonim olarak gönder</label>
                     </div>
                     <div class="form-group">
-                        <label for="postUserComment">Görüşleriniz</label>
-                        <textarea id="postUserComment" class="form-control" rows="3" placeholder="FireEye hakkında ne düşünüyorsun?" required></textarea>
+                        <label for="postUserComment" data-i18n="commentLabel">Görüşleriniz</label>
+                        <textarea id="postUserComment" class="form-control" rows="3" placeholder="FireEye hakkında ne düşünüyorsun?" data-i18n-placeholder="commentPlaceholder" required></textarea>
                     </div>
-                    <button type="submit" class="main-cta" style="width: 100%;">Değerlendirmeyi Yayınla</button>
+                    <button type="submit" class="main-cta" style="width: 100%;" data-i18n="publishReview">Değerlendirmeyi Yayınla</button>
                 </form>
             </div>
         </div>
@@ -1350,23 +1350,23 @@
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
-                    <h4>Anlık Sensör Takibi</h4>
-                    <p>Sıcaklık ve duman verilerini milisaniyelik hassasiyetle işler.</p>
+                    <h4 data-i18n="feat1Title">Anlık Sensör Takibi</h4>
+                    <p data-i18n="feat1Desc">Sıcaklık ve duman verilerini milisaniyelik hassasiyetle işler.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-                    <h4>Acil Durum SMS</h4>
-                    <p>Tehlike anında kayıtlı kişilere otomatik konum gönderir.</p>
+                    <h4 data-i18n="feat2Title">Acil Durum SMS</h4>
+                    <p data-i18n="feat2Desc">Tehlike anında kayıtlı kişilere otomatik konum gönderir.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg></div>
-                    <h4>Bulut Altyapısı</h4>
-                    <p>Geçmiş raporlarınızı güvenli bulut depolamada saklar.</p>
+                    <h4 data-i18n="feat3Title">Bulut Altyapısı</h4>
+                    <p data-i18n="feat3Desc">Geçmiş raporlarınızı güvenli bulut depolamada saklar.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></div>
-                    <h4>Hızlı Yapılandırma</h4>
-                    <p>Karmaşık ayarlar olmadan saniyeler içinde aktifleşir.</p>
+                    <h4 data-i18n="feat4Title">Hızlı Yapılandırma</h4>
+                    <p data-i18n="feat4Desc">Karmaşık ayarlar olmadan saniyeler içinde aktifleşir.</p>
                 </div>
             </div>
         </div>
@@ -1374,17 +1374,17 @@
         <!-- Ekran Görüntüleri Sekmesi -->
         <div id="screenshots" class="tab-pane">
             <div id="adminScreenshotBox">
-                <h3>Admin Paneli: Ekran Görüntüsü Ekle</h3>
+                <h3 data-i18n="shotAdminTitle">Admin Paneli: Ekran Görüntüsü Ekle</h3>
                 <form onsubmit="handleNewScreenshot(event)">
                     <div class="form-group">
-                        <label>Görsel Seç</label>
+                        <label data-i18n="shotFileLabel">Görsel Seç</label>
                         <input type="file" id="adminScreenshotFile" class="form-control" accept="image/*" required>
                     </div>
                     <div class="form-group">
-                        <label>Açıklama (opsiyonel)</label>
-                        <input type="text" id="adminScreenshotCaption" class="form-control" placeholder="Örn: Ana ekran görünümü">
+                        <label data-i18n="shotCaptionLabel">Açıklama (opsiyonel)</label>
+                        <input type="text" id="adminScreenshotCaption" class="form-control" placeholder="Örn: Ana ekran görünümü" data-i18n-placeholder="shotCaptionPlaceholder">
                     </div>
-                    <button type="submit" class="main-cta">Ekran Görüntüsünü Yükle</button>
+                    <button type="submit" class="main-cta" data-i18n="shotUpload">Ekran Görüntüsünü Yükle</button>
                 </form>
             </div>
 
@@ -1395,8 +1395,8 @@
         <div id="security" class="tab-pane">
             <div class="security-container">
                 <div class="security-info">
-                    <span class="clean-badge">&#10003; VirusTotal: 0/67 Temiz Raporu</span>
-                    <a href="https://github.com/ereny116011-cloud/TechnoStudios/blob/main/testsonuc.png" target="_blank" class="vt-link">Detaylar &rarr;</a>
+                    <span class="clean-badge" data-i18n="vtBadge">&#10003; VirusTotal: 0/67 Temiz Raporu</span>
+                    <a href="https://github.com/ereny116011-cloud/TechnoStudios/blob/main/testsonuc.png" target="_blank" class="vt-link" data-i18n="vtDetails">Detaylar &rarr;</a>
                 </div>
                 <div class="preview-img-wrap">
                     <img src="https://raw.githubusercontent.com/ereny116011-cloud/TechnoStudios/main/testsonuc.png" alt="VirusTotal Raporu">
@@ -1412,10 +1412,10 @@
                         <div class="avg-score" id="avgScoreText">0.0</div>
                         <div>
                             <div class="stars-display" id="avgStarsText">&#9734;&#9734;&#9734;&#9734;&#9734;</div>
-                            <div class="total-reviews-count" id="totalCountText">Henüz değerlendirme yok</div>
+                            <div class="total-reviews-count" id="totalCountText" data-i18n="noReviews">Henüz değerlendirme yok</div>
                         </div>
                     </div>
-                    <button class="util-btn" onclick="switchTabToDownload()">Uygulamayı İndir</button>
+                    <button class="util-btn" onclick="switchTabToDownload()" data-i18n="downloadAppBtn">Uygulamayı İndir</button>
                 </div>
 
                 <div class="comments-list" id="commentsListContainer"></div>
@@ -1426,24 +1426,24 @@
         <div id="faq" class="tab-pane">
             <div class="faq-list">
                 <details class="faq-item" open>
-                    <summary>FireEye hangi cihazlarda çalışır?</summary>
-                    <p>Android 8.0 ve üzeri tüm cihazlarda sorunsuz çalışır. iOS (iPhone/iPad) desteği şu an bulunmuyor.</p>
+                    <summary data-i18n="faq1q">FireEye hangi cihazlarda çalışır?</summary>
+                    <p data-i18n="faq1a">Android 8.0 ve üzeri tüm cihazlarda sorunsuz çalışır. iOS (iPhone/iPad) desteği şu an bulunmuyor.</p>
                 </details>
                 <details class="faq-item">
-                    <summary>Uygulama hangi izinlere ihtiyaç duyuyor?</summary>
-                    <p>Sıcaklık/duman sensör verilerine erişim, konum ve acil durum SMS gönderimi için kısa mesaj izni gerekir. Hiçbir veri izniniz olmadan üçüncü taraflarla paylaşılmaz.</p>
+                    <summary data-i18n="faq2q">Uygulama hangi izinlere ihtiyaç duyuyor?</summary>
+                    <p data-i18n="faq2a">Sıcaklık/duman sensör verilerine erişim, konum ve acil durum SMS gönderimi için kısa mesaj izni gerekir. Hiçbir veri izniniz olmadan üçüncü taraflarla paylaşılmaz.</p>
                 </details>
                 <details class="faq-item">
-                    <summary>İnternet bağlantım olmadan çalışır mı?</summary>
-                    <p>Sensör takibi ve yerel uyarılar internetsiz de çalışır. Bulut yedekleme ve acil durum SMS bildirimleri için internet veya mobil şebeke bağlantısı gereklidir.</p>
+                    <summary data-i18n="faq3q">İnternet bağlantım olmadan çalışır mı?</summary>
+                    <p data-i18n="faq3a">Sensör takibi ve yerel uyarılar internetsiz de çalışır. Bulut yedekleme ve acil durum SMS bildirimleri için internet veya mobil şebeke bağlantısı gereklidir.</p>
                 </details>
                 <details class="faq-item">
-                    <summary>Kurulum dosyası güvenli mi?</summary>
-                    <p>Evet, her sürüm yayınlanmadan önce VirusTotal üzerinden taranır. Güncel tarama sonucunu "Güvenlik Raporu" sekmesinde bulabilirsiniz.</p>
+                    <summary data-i18n="faq4q">Kurulum dosyası güvenli mi?</summary>
+                    <p data-i18n="faq4a">Evet, her sürüm yayınlanmadan önce VirusTotal üzerinden taranır. Güncel tarama sonucunu "Güvenlik Raporu" sekmesinde bulabilirsiniz.</p>
                 </details>
                 <details class="faq-item">
-                    <summary>Bir sorun yaşarsam nasıl destek alabilirim?</summary>
-                    <p>Karşılaştığınız sorunları GitHub sayfamız üzerinden bize iletebilir veya "Değerlendirmeler" sekmesinden geri bildirim bırakabilirsiniz.</p>
+                    <summary data-i18n="faq5q">Bir sorun yaşarsam nasıl destek alabilirim?</summary>
+                    <p data-i18n="faq5a">Karşılaştığınız sorunları GitHub sayfamız üzerinden bize iletebilir veya "Değerlendirmeler" sekmesinden geri bildirim bırakabilirsiniz.</p>
                 </details>
             </div>
         </div>
@@ -1451,27 +1451,27 @@
         <!-- Sürüm Notları Sekmesi -->
         <div id="changelog" class="tab-pane">
             <div id="adminPanelBox">
-                <h3>Admin Paneli: Yeni Sürüm Ekle</h3>
+                <h3 data-i18n="clAdminTitle">Admin Paneli: Yeni Sürüm Ekle</h3>
                 <form onsubmit="handleNewChangelog(event)">
                     <div class="form-group">
-                        <label>Sürüm Numarası (Örn: v1.1)</label>
+                        <label data-i18n="clVersionLabel">Sürüm Numarası (Örn: v1.1)</label>
                         <input type="text" id="adminVersionInput" class="form-control" placeholder="v1.1" required>
                     </div>
                     <div class="form-group">
-                        <label>Değişiklikler ve Özellikler</label>
-                        <textarea id="adminChangelogDesc" class="form-control" rows="4" placeholder="- Yeni sensör entegrasyonu eklendi.&#10;- Arayüz optimizasyonları yapıldı." required></textarea>
+                        <label data-i18n="clChangesLabel">Değişiklikler ve Özellikler</label>
+                        <textarea id="adminChangelogDesc" class="form-control" rows="4" placeholder="- Yeni sensör entegrasyonu eklendi.&#10;- Arayüz optimizasyonları yapıldı." data-i18n-placeholder="clChangesPlaceholder" required></textarea>
                     </div>
                     <div class="form-group">
-                        <label>APK Dosyası (isteğe bağlı — tarayıcından doğrudan GitHub'a yüklenir, ~2GB'a kadar)</label>
+                        <label data-i18n="clApkLabel">APK Dosyası (isteğe bağlı — tarayıcından doğrudan GitHub'a yüklenir, ~2GB'a kadar)</label>
                         <input type="file" id="adminReleaseFile" class="form-control" accept=".apk">
                         <p id="adminReleaseStatus" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 6px;"></p>
                     </div>
-                    <button type="submit" class="main-cta">Yeni Sürümü Yayınla</button>
+                    <button type="submit" class="main-cta" data-i18n="clPublish">Yeni Sürümü Yayınla</button>
                 </form>
             </div>
 
             <div class="changelog-section">
-                <h3 style="margin-bottom: 20px; font-size: 1.2rem;">Sürüm Geçmişi ve Yenilikler</h3>
+                <h3 style="margin-bottom: 20px; font-size: 1.2rem;" data-i18n="clHistoryTitle">Sürüm Geçmişi ve Yenilikler</h3>
                 <div class="changelog-list" id="changelogListContainer"></div>
             </div>
         </div>
@@ -2590,7 +2590,7 @@
                 if(progress >= 100) {
                     progress = 100;
                     clearInterval(interval);
-                    statusText.textContent = "İndirme Tamamlandı!";
+                    statusText.textContent = feText('downloadComplete');
                     playClickSound(800, 0.15, 'sine');
                     window.location.href = WORKER_BASE + "/release/latest/download";
                     setTimeout(() => {
@@ -2600,7 +2600,7 @@
                         btn.style.opacity = '1';
                     }, 500);
                 } else {
-                    statusText.textContent = `APK paketi indiriliyor... %${progress}`;
+                    statusText.textContent = feText('downloadInProgress') + ` %${progress}`;
                 }
                 progressBar.style.width = `${progress}%`;
             }, 150);
@@ -2611,9 +2611,9 @@
             container.innerHTML = '';
 
             if (comments.length === 0) {
-                container.innerHTML = `<p style="text-align: center; color: var(--text-secondary); font-size: 0.9rem; padding: 20px;">Henüz hiç değerlendirme yapılmamış.</p>`;
+                container.innerHTML = `<p style="text-align: center; color: var(--text-secondary); font-size: 0.9rem; padding: 20px;">${feText('noReviewsShort')}</p>`;
                 document.getElementById('avgScoreText').textContent = "0.0";
-                document.getElementById('totalCountText').textContent = "Henüz değerlendirme yok";
+                document.getElementById('totalCountText').textContent = feText('noReviews');
                 document.getElementById('avgStarsText').innerHTML = '&#9734;&#9734;&#9734;&#9734;&#9734;';
                 return;
             }
@@ -2637,14 +2637,14 @@
                     </div>
                     <div class="comment-stars">${starsHtml}</div>
                     <p class="comment-text">${escapeHtml(c.text)}</p>
-                    <button class="admin-delete-btn" onclick="deleteComment(${c.id})">Sil</button>
+                    <button class="admin-delete-btn" onclick="deleteComment(${c.id})">${feText('reviewDelete')}</button>
                 `;
                 container.appendChild(card);
             });
 
             const avg = (totalScore / comments.length).toFixed(1);
             document.getElementById('avgScoreText').textContent = avg;
-            document.getElementById('totalCountText').textContent = `${comments.length} Değerlendirme`;
+            document.getElementById('totalCountText').textContent = `${comments.length} ${feText(comments.length === 1 ? 'reviewCountOne' : 'reviewCount')}`;
             
             let avgStars = '';
             const roundedAvg = Math.round(avg);
@@ -2712,7 +2712,7 @@
                         <span class="changelog-date">${escapeHtml(ch.date)}</span>
                     </div>
                     <p class="changelog-desc">${escapeHtml(ch.text)}</p>
-                    <button class="admin-delete-btn" onclick="deleteChangelog(${ch.id})">Sil</button>
+                    <button class="admin-delete-btn" onclick="deleteChangelog(${ch.id})">${feText('reviewDelete')}</button>
                 `;
                 container.appendChild(card);
             });
@@ -2723,8 +2723,8 @@
             const latest = changelogs[0].version;
             const pill = document.getElementById('statusPillVersion');
             const btn = document.getElementById('downloadBtnLabel');
-            if (pill) pill.textContent = latest + ' Kararlı Sürüm';
-            if (btn) btn.textContent = 'APK İndir (' + latest + ')';
+            if (pill) pill.textContent = latest + ' ' + feText('stableSuffix');
+            if (btn) btn.textContent = feText('downloadBtnPrefix') + ' (' + latest + ')';
         }
 
         const GITHUB_OWNER = 'ereny116011-cloud';
@@ -2858,7 +2858,7 @@
             container.innerHTML = '';
 
             if (screenshots.length === 0) {
-                container.innerHTML = `<p class="screenshot-empty">Henüz ekran görüntüsü eklenmedi.</p>`;
+                container.innerHTML = `<p class="screenshot-empty">${feText('shotEmpty')}</p>`;
                 return;
             }
 
@@ -3057,7 +3057,75 @@
                 verifyResend: 'Yeniden Gönder',
                 deviceStatusTitle: 'FireEye Cihaz Durumu (Canlı)',
                 temperature: 'Sıcaklık', humidity: 'Nem', state: 'Durum',
-                chartHint: 'Son 60 ölçüm', muteAlarm: 'Alarmı Sustur'
+                chartHint: 'Son 60 ölçüm', muteAlarm: 'Alarmı Sustur',
+
+                downloadTitle: 'FireEye Android Uygulaması',
+                downloadSub: 'Android 8.0 ve üzeri cihazlarda çalışır.',
+                downloadBtn: 'APK İndir (v1.0)',
+                iosNote: '<strong>Not:</strong> Bu uygulama Android tabanlı sistemler için geliştirilmiştir. iOS (iPhone / iPad) cihazlarda çalışmaz.',
+                downloadStatus: 'APK paketi derleniyor...',
+                downloadDone: 'Uygulama başarıyla indirildi. Teşekkürler.',
+                feedbackAsk: "FireEye'ı denedikten sonra deneyimini diğer kullanıcılarla paylaşmak ister misin?",
+                ratingLabel: 'Puanınız',
+                nameLabel: 'Adınız / Kurum',
+                namePlaceholder: 'Örn: Ahmet Yılmaz',
+                anonymousLabel: 'Anonim olarak gönder',
+                commentLabel: 'Görüşleriniz',
+                commentPlaceholder: 'FireEye hakkında ne düşünüyorsun?',
+                publishReview: 'Değerlendirmeyi Yayınla',
+
+                feat1Title: 'Anlık Sensör Takibi',
+                feat1Desc: 'Sıcaklık ve duman verilerini milisaniyelik hassasiyetle işler.',
+                feat2Title: 'Acil Durum SMS',
+                feat2Desc: 'Tehlike anında kayıtlı kişilere otomatik konum gönderir.',
+                feat3Title: 'Bulut Altyapısı',
+                feat3Desc: 'Geçmiş raporlarınızı güvenli bulut depolamada saklar.',
+                feat4Title: 'Hızlı Yapılandırma',
+                feat4Desc: 'Karmaşık ayarlar olmadan saniyeler içinde aktifleşir.',
+
+                shotAdminTitle: 'Admin Paneli: Ekran Görüntüsü Ekle',
+                shotFileLabel: 'Görsel Seç',
+                shotCaptionLabel: 'Açıklama (opsiyonel)',
+                shotCaptionPlaceholder: 'Örn: Ana ekran görünümü',
+                shotUpload: 'Ekran Görüntüsünü Yükle',
+                shotEmpty: 'Henüz ekran görüntüsü eklenmedi.',
+
+                vtBadge: '✓ VirusTotal: 0/67 Temiz Raporu',
+                vtDetails: 'Detaylar →',
+
+                noReviews: 'Henüz değerlendirme yok',
+                noReviewsShort: 'Henüz hiç değerlendirme yapılmamış.',
+                reviewCount: 'Değerlendirme',
+                reviewCountOne: 'Değerlendirme',
+                downloadAppBtn: 'Uygulamayı İndir',
+                reviewDelete: 'Sil',
+
+                faq1q: 'FireEye hangi cihazlarda çalışır?',
+                faq1a: 'Android 8.0 ve üzeri tüm cihazlarda sorunsuz çalışır. iOS (iPhone/iPad) desteği şu an bulunmuyor.',
+                faq2q: 'Uygulama hangi izinlere ihtiyaç duyuyor?',
+                faq2a: 'Sıcaklık/duman sensör verilerine erişim, konum ve acil durum SMS gönderimi için kısa mesaj izni gerekir. Hiçbir veri izniniz olmadan üçüncü taraflarla paylaşılmaz.',
+                faq3q: 'İnternet bağlantım olmadan çalışır mı?',
+                faq3a: 'Sensör takibi ve yerel uyarılar internetsiz de çalışır. Bulut yedekleme ve acil durum SMS bildirimleri için internet veya mobil şebeke bağlantısı gereklidir.',
+                faq4q: 'Kurulum dosyası güvenli mi?',
+                faq4a: 'Evet, her sürüm yayınlanmadan önce VirusTotal üzerinden taranır. Güncel tarama sonucunu "Güvenlik Raporu" sekmesinde bulabilirsiniz.',
+                faq5q: 'Bir sorun yaşarsam nasıl destek alabilirim?',
+                faq5a: 'Karşılaştığınız sorunları GitHub sayfamız üzerinden bize iletebilir veya "Değerlendirmeler" sekmesinden geri bildirim bırakabilirsiniz.',
+
+                clAdminTitle: 'Admin Paneli: Yeni Sürüm Ekle',
+                clVersionLabel: 'Sürüm Numarası (Örn: v1.1)',
+                clChangesLabel: 'Değişiklikler ve Özellikler',
+                clChangesPlaceholder: '- Yeni sensör entegrasyonu eklendi.\n- Arayüz optimizasyonları yapıldı.',
+                clApkLabel: "APK Dosyası (isteğe bağlı — tarayıcından doğrudan GitHub'a yüklenir, ~2GB'a kadar)",
+                clPublish: 'Yeni Sürümü Yayınla',
+                clHistoryTitle: 'Sürüm Geçmişi ve Yenilikler',
+                downloadPreparing: 'APK paketi derleniyor...',
+                downloadInProgress: 'APK paketi indiriliyor...',
+                downloadComplete: 'İndirme Tamamlandı!',
+                backHome: '← Geri Dön',
+                statusPill: 'v1.0 Kararlı Sürüm',
+                heroSubtitle: 'Yangın algılama ve erken uyarı sistemi.',
+                stableSuffix: 'Kararlı Sürüm',
+                downloadBtnPrefix: 'APK İndir'
             },
             en: {
                 login: 'Sign In', register: 'Sign Up', logout: 'Sign Out', theme: 'Theme', lang: 'Language',
@@ -3069,9 +3137,82 @@
                 verifyResend: 'Resend',
                 deviceStatusTitle: 'FireEye Device Status (Live)',
                 temperature: 'Temperature', humidity: 'Humidity', state: 'Status',
-                chartHint: 'Last 60 readings', muteAlarm: 'Mute Alarm'
+                chartHint: 'Last 60 readings', muteAlarm: 'Mute Alarm',
+
+                downloadTitle: 'FireEye for Android',
+                downloadSub: 'Runs on Android 8.0 and later.',
+                downloadBtn: 'Download APK (v1.0)',
+                iosNote: '<strong>Note:</strong> This app is built for Android. It does not run on iOS (iPhone / iPad).',
+                downloadStatus: 'Compiling the APK package...',
+                downloadDone: 'Download complete. Thanks.',
+                feedbackAsk: 'Want to share your experience with other users after trying FireEye?',
+                ratingLabel: 'Your rating',
+                nameLabel: 'Your name / Organization',
+                namePlaceholder: 'e.g. Jane Doe',
+                anonymousLabel: 'Submit anonymously',
+                commentLabel: 'Your feedback',
+                commentPlaceholder: 'What do you think about FireEye?',
+                publishReview: 'Publish Review',
+
+                feat1Title: 'Live Sensor Tracking',
+                feat1Desc: 'Processes temperature and smoke data in milliseconds.',
+                feat2Title: 'Emergency SMS',
+                feat2Desc: 'Automatically sends your location to saved contacts in an emergency.',
+                feat3Title: 'Cloud Storage',
+                feat3Desc: 'Keeps your past reports in secure cloud storage.',
+                feat4Title: 'Quick Setup',
+                feat4Desc: 'Up and running in seconds, no complicated settings.',
+
+                shotAdminTitle: 'Admin: Add Screenshot',
+                shotFileLabel: 'Choose image',
+                shotCaptionLabel: 'Caption (optional)',
+                shotCaptionPlaceholder: 'e.g. Home screen',
+                shotUpload: 'Upload Screenshot',
+                shotEmpty: 'No screenshots yet.',
+
+                vtBadge: '✓ VirusTotal: 0/67 Clean',
+                vtDetails: 'Details →',
+
+                noReviews: 'No reviews yet',
+                noReviewsShort: 'No reviews have been written yet.',
+                reviewCount: 'Reviews',
+                reviewCountOne: 'Review',
+                downloadAppBtn: 'Download App',
+                reviewDelete: 'Delete',
+
+                faq1q: 'Which devices does FireEye run on?',
+                faq1a: 'It runs on any device with Android 8.0 or later. There is no iOS (iPhone/iPad) support yet.',
+                faq2q: 'Which permissions does the app need?',
+                faq2a: 'Access to temperature/smoke sensor data, location, and SMS permission for emergency messages. No data is shared with third parties without your permission.',
+                faq3q: 'Does it work without an internet connection?',
+                faq3a: 'Sensor tracking and local alerts work offline. Cloud backup and emergency SMS notifications need an internet or mobile network connection.',
+                faq4q: 'Is the installer safe?',
+                faq4a: 'Yes. Every release is scanned on VirusTotal before it is published. You can find the latest scan in the "Security Report" tab.',
+                faq5q: 'How can I get support if something goes wrong?',
+                faq5a: 'You can reach us through our GitHub page or leave feedback in the "Reviews" tab.',
+
+                clAdminTitle: 'Admin: Add Release',
+                clVersionLabel: 'Version number (e.g. v1.1)',
+                clChangesLabel: 'Changes and features',
+                clChangesPlaceholder: '- Added new sensor integration.\n- Improved the interface.',
+                clApkLabel: 'APK file (optional — uploaded straight to GitHub from your browser, up to ~2GB)',
+                clPublish: 'Publish New Release',
+                clHistoryTitle: 'Release History',
+                downloadPreparing: 'Compiling the APK package...',
+                downloadInProgress: 'Downloading the APK...',
+                downloadComplete: 'Download complete!',
+                backHome: '← Back',
+                statusPill: 'v1.0 Stable',
+                heroSubtitle: 'Fire detection and early warning system.',
+                stableSuffix: 'Stable',
+                downloadBtnPrefix: 'Download APK'
             }
         };
+
+        function feText(key) {
+            const dict = FE_I18N[currentFeLang()] || FE_I18N.tr;
+            return dict[key] != null ? dict[key] : (FE_I18N.tr[key] != null ? FE_I18N.tr[key] : key);
+        }
 
         function currentFeLang() {
             return localStorage.getItem('ts-lang') === 'en' ? 'en' : 'tr';
@@ -3084,9 +3225,21 @@
                 const key = el.getAttribute('data-i18n');
                 if (dict[key] != null) el.textContent = dict[key];
             });
+            document.querySelectorAll('[data-i18n-html]').forEach(el => {
+                const key = el.getAttribute('data-i18n-html');
+                if (dict[key] != null) el.innerHTML = dict[key];
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (dict[key] != null) el.setAttribute('placeholder', dict[key]);
+            });
             const btn = document.getElementById('langBtn');
             if (btn) btn.textContent = (lang === 'en') ? 'EN' : 'TR';
             try { localStorage.setItem('ts-lang', lang); } catch (e) {}
+            if (typeof renderComments === 'function') renderComments();
+            if (typeof renderScreenshots === 'function') renderScreenshots();
+            if (typeof renderChangelogs === 'function') renderChangelogs();
+            if (typeof updateVersionDisplay === 'function') updateVersionDisplay();
         }
 
         function toggleFeLang() {
