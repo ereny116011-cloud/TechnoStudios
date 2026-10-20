@@ -462,6 +462,15 @@
             padding: 30px;
         }
 
+        .reviews-translate-row {
+            display: flex;
+            justify-content: center;
+            margin-top: 18px;
+        }
+        .reviews-translate-row .util-btn { height: 34px; font-size: 0.78rem; }
+        .reviews-translate-row .util-btn:disabled { opacity: 0.6; cursor: default; }
+        .comment-text.is-translated { font-style: italic; }
+
         .reviews-header {
             display: flex;
             justify-content: space-between;
@@ -1419,6 +1428,9 @@
                 </div>
 
                 <div class="comments-list" id="commentsListContainer"></div>
+                <div class="reviews-translate-row" id="reviewsTranslateRow" style="display:none;">
+                    <button type="button" id="translateReviewsBtn" class="util-btn" onclick="toggleReviewTranslation()" data-i18n="translateReviews">Yorumları Çevir</button>
+                </div>
             </div>
         </div>
 
@@ -2609,6 +2621,72 @@
             }, 150);
         }
 
+        let reviewsTranslated = false;
+        let reviewsTranslating = false;
+        const reviewTranslationCache = new Map();
+
+        function updateReviewTranslateButton() {
+            const row = document.getElementById('reviewsTranslateRow');
+            const btn = document.getElementById('translateReviewsBtn');
+            if (!row || !btn) return;
+            const show = currentFeLang() === 'en' && comments.length > 0;
+            row.style.display = show ? 'flex' : 'none';
+            btn.disabled = reviewsTranslating;
+            btn.textContent = reviewsTranslating
+                ? feText('translatingReviews')
+                : (reviewsTranslated ? feText('showOriginalReviews') : feText('translateReviews'));
+        }
+
+        async function translateReviewText(text) {
+            const key = String(text || '').trim();
+            if (!key) return '';
+            if (reviewTranslationCache.has(key)) return reviewTranslationCache.get(key);
+            // Birincil: Google'ın genel çeviri uç noktası
+            try {
+                const res = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=' + encodeURIComponent(key));
+                if (res.ok) {
+                    const j = await res.json();
+                    const out = (j && j[0] ? j[0].map(p => (p && p[0]) ? p[0] : '').join('') : '').trim();
+                    if (out) return out;
+                }
+            } catch (e) {}
+            // Yedek: MyMemory
+            try {
+                const res = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(key) + '&langpair=tr|en');
+                if (res.ok) {
+                    const j = await res.json();
+                    const out = j && j.responseData ? String(j.responseData.translatedText || '').trim() : '';
+                    if (out) return out;
+                }
+            } catch (e) {}
+            return key;
+        }
+
+        async function toggleReviewTranslation() {
+            if (reviewsTranslating) return;
+            if (reviewsTranslated) {
+                reviewsTranslated = false;
+                renderComments();
+                return;
+            }
+            if (!comments.length) return;
+
+            reviewsTranslating = true;
+            updateReviewTranslateButton();
+            try {
+                for (const c of comments) {
+                    const raw = String(c.text || '').trim();
+                    if (!raw || reviewTranslationCache.has(raw)) continue;
+                    const translated = await translateReviewText(raw);
+                    if (translated && translated !== raw) reviewTranslationCache.set(raw, translated);
+                }
+                reviewsTranslated = true;
+            } finally {
+                reviewsTranslating = false;
+                renderComments();
+            }
+        }
+
         function renderComments() {
             const container = document.getElementById('commentsListContainer');
             container.innerHTML = '';
@@ -2618,6 +2696,7 @@
                 document.getElementById('avgScoreText').textContent = "0.0";
                 document.getElementById('totalCountText').textContent = feText('noReviews');
                 document.getElementById('avgStarsText').innerHTML = '&#9734;&#9734;&#9734;&#9734;&#9734;';
+                updateReviewTranslateButton();
                 return;
             }
 
@@ -2631,6 +2710,10 @@
                     starsHtml += i <= c.rating ? '★' : '☆';
                 }
 
+                const rawText = String(c.text || '');
+                const translated = reviewsTranslated ? reviewTranslationCache.get(rawText.trim()) : null;
+                const displayText = translated || rawText;
+
                 const card = document.createElement('div');
                 card.className = 'comment-card';
                 card.innerHTML = `
@@ -2639,7 +2722,7 @@
                         <span class="comment-date">${escapeHtml(c.date)}</span>
                     </div>
                     <div class="comment-stars">${starsHtml}</div>
-                    <p class="comment-text">${escapeHtml(c.text)}</p>
+                    <p class="comment-text${translated ? ' is-translated' : ''}">${escapeHtml(displayText)}</p>
                     <button class="admin-delete-btn" onclick="deleteComment(${c.id})">${feText('reviewDelete')}</button>
                 `;
                 container.appendChild(card);
@@ -2655,6 +2738,7 @@
                 avgStars += i <= roundedAvg ? '★' : '☆';
             }
             document.getElementById('avgStarsText').innerHTML = avgStars;
+            updateReviewTranslateButton();
         }
 
         async function handleNewComment(e) {
@@ -3102,6 +3186,9 @@
                 reviewCountOne: 'Değerlendirme',
                 downloadAppBtn: 'Uygulamayı İndir',
                 reviewDelete: 'Sil',
+                translateReviews: 'Yorumları Çevir',
+                showOriginalReviews: 'Orijinali Göster',
+                translatingReviews: 'Çevriliyor...',
 
                 faq1q: 'FireEye hangi cihazlarda çalışır?',
                 faq1a: 'Android 8.0 ve üzeri tüm cihazlarda sorunsuz çalışır. iOS (iPhone/iPad) desteği şu an bulunmuyor.',
@@ -3322,6 +3409,9 @@
                 reviewCountOne: 'Review',
                 downloadAppBtn: 'Download App',
                 reviewDelete: 'Delete',
+                translateReviews: 'Translate reviews',
+                showOriginalReviews: 'Show original',
+                translatingReviews: 'Translating...',
 
                 faq1q: 'Which devices does FireEye run on?',
                 faq1a: 'It runs on any device with Android 8.0 or later. There is no iOS (iPhone/iPad) support yet.',
@@ -3585,6 +3675,7 @@
             if (themeBtn) { themeBtn.title = dict.themeTitle; themeBtn.setAttribute('aria-label', dict.themeTitle); }
             if (typeof refreshOAuthButtons === 'function' && langChanged) refreshOAuthButtons();
             try { localStorage.setItem('ts-lang', lang); } catch (e) {}
+            if (lang !== 'en') reviewsTranslated = false;
             if (typeof renderComments === 'function') renderComments();
             if (typeof renderScreenshots === 'function') renderScreenshots();
             if (typeof renderChangelogs === 'function') renderChangelogs();
