@@ -717,7 +717,7 @@ export default {
                 if (!env.SESSION_SECRET) return json({ success: false, message: 'Sunucu yapılandırma hatası.' }, 500);
 
                 const user = await env.DB.prepare(
-                    'SELECT id, email, full_name, password_hash, password_salt, mqtt_topic, is_no_data, email_verified FROM users WHERE email = ?'
+                    'SELECT id, email, full_name, password_hash, password_salt, mqtt_topic, mqtt_host, mqtt_user, mqtt_pass, is_no_data, email_verified FROM users WHERE email = ?'
                 ).bind(email).first();
 
                 if (!user || !(await verifyPassword(password, user.password_hash, user.password_salt))) {
@@ -738,6 +738,9 @@ export default {
                         isNoData: !!user.is_no_data,
                         emailVerified: !!user.email_verified,
                         mqttTopic: user.mqtt_topic || null,
+                        mqttHost: user.mqtt_host || null,
+                        mqttUser: user.mqtt_user || null,
+                        mqttPass: user.mqtt_pass || null,
                     },
                 });
             }
@@ -816,7 +819,7 @@ export default {
                 if (!email) return json({ success: false, message: 'Google hesabından e-posta alınamadı.' }, 400);
 
                 let user = await env.DB.prepare(
-                    'SELECT id, email, full_name, mqtt_topic, is_no_data, email_verified FROM users WHERE email = ?'
+                    'SELECT id, email, full_name, mqtt_topic, mqtt_host, mqtt_user, mqtt_pass, is_no_data, email_verified FROM users WHERE email = ?'
                 ).bind(email).first();
 
                 if (!user) {
@@ -826,7 +829,7 @@ export default {
                         'INSERT INTO users (email, password_hash, password_salt, full_name, is_no_data) VALUES (?, ?, ?, ?, 0)'
                     ).bind(email, hash, salt, fullName).run();
                     user = await env.DB.prepare(
-                        'SELECT id, email, full_name, mqtt_topic, is_no_data FROM users WHERE id = ?'
+                        'SELECT id, email, full_name, mqtt_topic, mqtt_host, mqtt_user, mqtt_pass, is_no_data FROM users WHERE id = ?'
                     ).bind(ins.meta.last_row_id).first();
                 }
 
@@ -844,6 +847,9 @@ export default {
                         isNoData: !!user.is_no_data,
                         emailVerified: !!user.email_verified,
                         mqttTopic: user.mqtt_topic || null,
+                        mqttHost: user.mqtt_host || null,
+                        mqttUser: user.mqtt_user || null,
+                        mqttPass: user.mqtt_pass || null,
                     },
                 });
             }
@@ -872,7 +878,7 @@ export default {
                 if (!email) return json({ success: false, message: 'Microsoft hesabından e-posta alınamadı.' }, 400);
 
                 let user = await env.DB.prepare(
-                    'SELECT id, email, full_name, mqtt_topic, is_no_data, email_verified FROM users WHERE email = ?'
+                    'SELECT id, email, full_name, mqtt_topic, mqtt_host, mqtt_user, mqtt_pass, is_no_data, email_verified FROM users WHERE email = ?'
                 ).bind(email).first();
 
                 if (!user) {
@@ -882,7 +888,7 @@ export default {
                         'INSERT INTO users (email, password_hash, password_salt, full_name, is_no_data) VALUES (?, ?, ?, ?, 0)'
                     ).bind(email, hash, salt, fullName).run();
                     user = await env.DB.prepare(
-                        'SELECT id, email, full_name, mqtt_topic, is_no_data FROM users WHERE id = ?'
+                        'SELECT id, email, full_name, mqtt_topic, mqtt_host, mqtt_user, mqtt_pass, is_no_data FROM users WHERE id = ?'
                     ).bind(ins.meta.last_row_id).first();
                 }
 
@@ -900,6 +906,9 @@ export default {
                         isNoData: !!user.is_no_data,
                         emailVerified: !!user.email_verified,
                         mqttTopic: user.mqtt_topic || null,
+                        mqttHost: user.mqtt_host || null,
+                        mqttUser: user.mqtt_user || null,
+                        mqttPass: user.mqtt_pass || null,
                     },
                 });
             }
@@ -909,7 +918,7 @@ export default {
                 const session = await getSessionUser(request, env);
                 if (!session || !session.uid) return json({ success: false, message: 'Oturum bulunamadı.' }, 401);
                 const user = await env.DB.prepare(
-                    'SELECT id, email, full_name, mqtt_topic, is_no_data, email_verified FROM users WHERE id = ?'
+                    'SELECT id, email, full_name, mqtt_topic, mqtt_host, mqtt_user, mqtt_pass, is_no_data, email_verified FROM users WHERE id = ?'
                 ).bind(session.uid).first();
                 if (!user) return json({ success: false, message: 'Hesap bulunamadı.' }, 404);
                 return json({
@@ -921,6 +930,9 @@ export default {
                         isNoData: !!user.is_no_data,
                         emailVerified: !!user.email_verified,
                         mqttTopic: user.mqtt_topic || null,
+                        mqttHost: user.mqtt_host || null,
+                        mqttUser: user.mqtt_user || null,
+                        mqttPass: user.mqtt_pass || null,
                     },
                 });
             }
@@ -983,7 +995,7 @@ export default {
                 const fullName = (ghUser.name || ghUser.login || '').trim();
 
                 let dbUser = await env.DB.prepare(
-                    'SELECT id, email, full_name, mqtt_topic, is_no_data, email_verified FROM users WHERE email = ?'
+                    'SELECT id, email, full_name, mqtt_topic, mqtt_host, mqtt_user, mqtt_pass, is_no_data, email_verified FROM users WHERE email = ?'
                 ).bind(email).first();
 
                 if (!dbUser) {
@@ -992,7 +1004,7 @@ export default {
                         'INSERT INTO users (email, password_hash, password_salt, full_name, is_no_data) VALUES (?, ?, ?, ?, 0)'
                     ).bind(email, hash, salt, fullName).run();
                     dbUser = await env.DB.prepare(
-                        'SELECT id, email, full_name, mqtt_topic, is_no_data FROM users WHERE id = ?'
+                        'SELECT id, email, full_name, mqtt_topic, mqtt_host, mqtt_user, mqtt_pass, is_no_data FROM users WHERE id = ?'
                     ).bind(ins.meta.last_row_id).first();
                 }
 
@@ -1013,15 +1025,21 @@ export default {
                 const password = body.password || '';
                 const fullName = (body.fullName || '').trim();
                 const mqttTopic = (body.mqttTopic || '').trim();
+                const mqttHost = (body.mqttHost || '').trim();
+                const mqttUser = (body.mqttUser || '').trim();
+                const mqttPass = body.mqttPass || '';
 
                 if (!email || !password) return json({ success: false, message: 'E-posta ve şifre gerekli.' }, 400);
+                if (!mqttTopic || !mqttHost || !mqttUser || !mqttPass) {
+                    return json({ success: false, message: 'Cihaz için MQTT broker, kullanıcı, şifre ve topic girilmeli.' }, 400);
+                }
 
                 const { hash, salt } = await hashPassword(password);
                 try {
                     const ins = await env.DB.prepare(
-                        'INSERT INTO users (email, password_hash, password_salt, full_name, mqtt_topic, is_no_data) VALUES (?, ?, ?, ?, ?, 1)'
-                    ).bind(email, hash, salt, fullName, mqttTopic).run();
-                    return json({ success: true, message: 'Kullanıcı oluşturuldu', user: { id: String(ins.meta.last_row_id), email, fullName, isNoData: true, mqttTopic } });
+                        'INSERT INTO users (email, password_hash, password_salt, full_name, mqtt_topic, mqtt_host, mqtt_user, mqtt_pass, is_no_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)'
+                    ).bind(email, hash, salt, fullName, mqttTopic, mqttHost, mqttUser, mqttPass).run();
+                    return json({ success: true, message: 'Kullanıcı oluşturuldu', user: { id: String(ins.meta.last_row_id), email, fullName, isNoData: true, mqttTopic, mqttHost, mqttUser, mqttPass } });
                 } catch (e) {
                     return json({ success: false, message: 'Bu e-posta ile zaten bir hesap var.' }, 400);
                 }
@@ -1036,7 +1054,7 @@ export default {
 
                 if (request.method === 'GET') {
                     const { results } = await env.DB
-                        .prepare('SELECT id, email, full_name, mqtt_topic, is_no_data, reset_requested, reset_requested_at, created_at FROM users ORDER BY reset_requested DESC, id DESC')
+                        .prepare('SELECT id, email, full_name, mqtt_topic, mqtt_host, mqtt_user, mqtt_pass, is_no_data, reset_requested, reset_requested_at, created_at FROM users ORDER BY reset_requested DESC, id DESC')
                         .all();
                     return json(results.map(r => ({
                         id: r.id,

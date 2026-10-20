@@ -1581,9 +1581,21 @@
                         </div>
                         <div class="form-group">
                             <label data-i18n="deviceIdLabel">Cihaz Kimliği (MQTT Topic)</label>
-                            <input type="text" id="newUserTopic" class="form-control" placeholder="fireeye/device1">
-                            <small style="color: var(--text-secondary);" data-i18n="deviceIdHint">Firmware'deki MQTT_TOPIC ile birebir aynı olmalı (örn. fireeye/device1). Site bu konu üzerinden cihaza komut gönderir ve telemetriyi dinler.</small>
+                            <input type="text" id="newUserTopic" class="form-control" placeholder="fireeye/device1" required>
                         </div>
+                        <div class="form-group">
+                            <label data-i18n="mqttBrokerLabel">MQTT Broker</label>
+                            <input type="text" id="newUserMqttHost" class="form-control" placeholder="xxxx.s1.eu.hivemq.cloud" required>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="mqttUserLabel">MQTT Kullanıcı Adı</label>
+                            <input type="text" id="newUserMqttUser" class="form-control" placeholder="fireeye" required>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="mqttPassLabel">MQTT Şifresi</label>
+                            <input type="text" id="newUserMqttPass" class="form-control" placeholder="MQTT şifresi" data-i18n-placeholder="mqttPassPlaceholder" required>
+                        </div>
+                        <small style="color: var(--text-secondary); margin-top: -4px;" data-i18n="mqttCredentialsHint">Firmware'deki MQTT_BROKER, MQTT_USER, MQTT_PASS ve MQTT_TOPIC değerlerini buraya gir. Site WebSocket için otomatik olarak 8884 portunu kullanır.</small>
                         <button type="submit" class="main-cta" data-i18n="createAccountBtn">Hesabı Oluştur</button>
                     </form>
 
@@ -1714,12 +1726,18 @@
         // adresi (https://fireeye-api.SENIN-ALT-ADIN.workers.dev) buraya yapıştır.
         const WORKER_BASE = 'https://fireeye-api.ereny116011.workers.dev';
 
-        // --- HiveMQ MQTT (firmware ile aynı kümeye WebSocket üzerinden bağlanır) ---
-        // Firmware: aae7f89566734cfea0414869a009c590.s1.eu.hivemq.cloud:8883 (TLS TCP)
-        // Tarayıcı: aynı küme, 8884 portu (TLS WebSocket). Protokol: "APP|komut" / "DEV|mesaj"
-        const MQTT_WS_URL = 'wss://aae7f89566734cfea0414869a009c590.s1.eu.hivemq.cloud:8884/mqtt';
-        const MQTT_USERNAME = 'fireeye';
-        const MQTT_PASSWORD = 'TechnoStudios11.';
+        // MQTT bağlantı bilgileri hesap bazlıdır (admin, hesap açarken firmware'deki
+        // MQTT_BROKER / MQTT_USER / MQTT_PASS / MQTT_TOPIC değerlerini girer).
+        // Tarayıcı aynı kümeye TLS WebSocket (8884/mqtt) üzerinden bağlanır.
+        function buildMqttWsUrl(host) {
+            let h = String(host || '').trim();
+            if (!h) return '';
+            if (/^wss?:\/\//i.test(h)) return h;
+            h = h.replace(/^mqtts?:\/\//i, '').replace(/^https?:\/\//i, '');
+            h = h.split('/')[0];
+            h = h.split(':')[0];
+            return 'wss://' + h + ':8884/mqtt';
+        }
 
         // Google ile Giriş — Google Cloud Console > OAuth istemci kimliği.
         // Worker tarafında da aynı değeri GOOGLE_CLIENT_ID gizli değişkenine yaz.
@@ -2262,7 +2280,12 @@
             const banner = document.getElementById('verifyBanner');
             if (banner) banner.style.display = (user.emailVerified === false) ? 'flex' : 'none';
             activateTab('device');
-            startDeviceReading(user.mqttTopic);
+            startDeviceReading({
+                topic: user.mqttTopic,
+                host: user.mqttHost,
+                user: user.mqttUser,
+                pass: user.mqttPass
+            });
         }
 
         // Cihazın gönderdiği mesajları ayrıştırır.
@@ -2511,10 +2534,16 @@
             if (statusEl) statusEl.textContent = feText('deviceConnected') + new Date().toLocaleTimeString();
         }
 
-        function startDeviceReading(deviceKey) {
+        function startDeviceReading(device) {
             const statusEl = document.getElementById('mqttStatus');
             const muteBtn = document.getElementById('mqttMuteBtn');
             const controls = document.getElementById('deviceControls');
+
+            const deviceKey = (device && device.topic) ? String(device.topic).trim() : '';
+            const deviceHost = (device && device.host) ? String(device.host).trim() : '';
+            const deviceUser = (device && device.user) ? String(device.user).trim() : '';
+            const devicePass = (device && device.pass) ? String(device.pass) : '';
+            const wsUrl = buildMqttWsUrl(deviceHost);
 
             if (deviceDataInterval) { clearInterval(deviceDataInterval); deviceDataInterval = null; }
             disconnectDeviceMqtt();
@@ -2524,6 +2553,13 @@
 
             if (!deviceKey) {
                 statusEl.textContent = feText('deviceNone');
+                muteBtn.style.display = 'none';
+                controls.style.display = 'none';
+                return;
+            }
+
+            if (!wsUrl || !deviceUser || !devicePass) {
+                statusEl.textContent = feText('deviceConfigMissing');
                 muteBtn.style.display = 'none';
                 controls.style.display = 'none';
                 return;
@@ -2545,10 +2581,10 @@
 
             deviceMqttTopic = deviceKey;
             const clientId = 'fireeye-web-' + Math.random().toString(16).slice(2, 10);
-            const client = mqtt.connect(MQTT_WS_URL, {
+            const client = mqtt.connect(wsUrl, {
                 clientId: clientId,
-                username: MQTT_USERNAME,
-                password: MQTT_PASSWORD,
+                username: deviceUser,
+                password: devicePass,
                 clean: true,
                 keepalive: 30,
                 reconnectPeriod: 4000,
@@ -2613,12 +2649,15 @@
             const password = document.getElementById('newUserPassword').value;
             const fullName = document.getElementById('newUserFullName').value.trim();
             const mqttTopic = document.getElementById('newUserTopic').value.trim();
+            const mqttHost = document.getElementById('newUserMqttHost').value.trim();
+            const mqttUser = document.getElementById('newUserMqttUser').value.trim();
+            const mqttPass = document.getElementById('newUserMqttPass').value;
 
             try {
                 const res = await fetch(WORKER_BASE + '/admin/create-user', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': getAdminAuthHeader() },
-                    body: JSON.stringify({ email, password, fullName, mqttTopic })
+                    body: JSON.stringify({ email, password, fullName, mqttTopic, mqttHost, mqttUser, mqttPass })
                 });
                 const data = await res.json();
                 if (!data.success) throw new Error(data.message || feText('userCreateFailed') + ' ');
@@ -3432,6 +3471,12 @@
                 tempPasswordLabel: 'Geçici Şifre',
                 deviceIdLabel: 'Cihaz Kimliği (MQTT Topic)',
                 deviceIdHint: "Firmware'deki MQTT_TOPIC ile birebir aynı olmalı (örn. fireeye/device1). Site bu konu üzerinden cihaza komut gönderir ve telemetriyi dinler.",
+                mqttBrokerLabel: 'MQTT Broker',
+                mqttUserLabel: 'MQTT Kullanıcı Adı',
+                mqttPassLabel: 'MQTT Şifresi',
+                mqttPassPlaceholder: 'MQTT şifresi',
+                mqttCredentialsHint: "Firmware'deki MQTT_BROKER, MQTT_USER, MQTT_PASS ve MQTT_TOPIC değerlerini buraya gir. Site WebSocket için otomatik olarak 8884 portunu kullanır.",
+                deviceConfigMissing: 'Cihaz bağlantı bilgileri eksik. Admin, hesap oluştururken MQTT broker, kullanıcı, şifre ve topic girmeli.',
                 createAccountBtn: 'Hesabı Oluştur',
                 registeredAccounts: 'Kayıtlı Hesaplar',
                 screenshotAlt: 'Ekran Görüntüsü',
@@ -3682,6 +3727,12 @@
                 tempPasswordLabel: 'Temporary Password',
                 deviceIdLabel: 'Device ID (MQTT Topic)',
                 deviceIdHint: 'Must exactly match MQTT_TOPIC in the firmware (e.g. fireeye/device1). The site sends commands and listens for telemetry on this topic.',
+                mqttBrokerLabel: 'MQTT Broker',
+                mqttUserLabel: 'MQTT Username',
+                mqttPassLabel: 'MQTT Password',
+                mqttPassPlaceholder: 'MQTT password',
+                mqttCredentialsHint: 'Enter the MQTT_BROKER, MQTT_USER, MQTT_PASS and MQTT_TOPIC values from the firmware. The site automatically uses port 8884 for WebSocket.',
+                deviceConfigMissing: 'Device connection info is missing. The admin must enter the MQTT broker, username, password and topic when creating the account.',
                 createAccountBtn: 'Create Account',
                 registeredAccounts: 'Registered Accounts',
                 screenshotAlt: 'Screenshot',
