@@ -1007,6 +1007,16 @@
         .chart-legend .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
         .dot-temp { background: #e2603f; }
         .dot-hum { background: #4aa3e2; }
+        .dot-gas { background: #58c98a; }
+        .telemetry-toggle {
+            display: inline-flex; align-items: center; gap: 8px;
+            margin-top: 16px; padding: 0; border: 0; background: none;
+            color: var(--text-secondary); font: inherit; font-size: 0.8rem;
+            letter-spacing: 0.02em; cursor: pointer;
+        }
+        .telemetry-toggle:hover { color: var(--text-primary); }
+        .telemetry-chev { transition: transform 0.15s ease; }
+        .telemetry-toggle.open .telemetry-chev { transform: rotate(90deg); }
         .chart-hint { margin-left: auto; font-family: var(--mono); font-size: 0.68rem; color: var(--text-muted, var(--text-secondary)); }
         #sensorChart { width: 100%; height: 220px; display: block; }
 
@@ -1529,12 +1539,17 @@
                         <div class="chart-legend">
                             <span><i class="dot dot-temp"></i><span data-i18n="temperature">Sıcaklık</span> (&deg;C)</span>
                             <span><i class="dot dot-hum"></i><span data-i18n="humidity">Nem</span> (%)</span>
+                            <span><i class="dot dot-gas"></i><span data-i18n="gasLevel">Gaz (ADC)</span></span>
                             <span class="chart-hint" data-i18n="chartHint">Son 60 ölçüm</span>
                         </div>
                         <canvas id="sensorChart"></canvas>
                     </div>
 
-                    <pre id="mqttData" style="white-space: pre-wrap; word-break: break-word; margin-top: 10px; font-size: 0.85rem; color: var(--text-secondary);"></pre>
+                    <button type="button" id="telemetryToggle" class="telemetry-toggle" onclick="toggleTelemetry()" aria-expanded="false" aria-controls="mqttData">
+                        <svg class="telemetry-chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <span data-i18n="telemetryTitle">Telemetri</span>
+                    </button>
+                    <pre id="mqttData" style="display:none; white-space: pre-wrap; word-break: break-word; margin-top: 10px; font-size: 0.85rem; color: var(--text-secondary);"></pre>
                     <button id="mqttMuteBtn" class="main-cta" style="display: none; margin-top: 14px; background: var(--danger);" data-i18n="muteAlarm">Alarmı Sustur</button>
 
                     <div id="deviceControls" style="display: none; margin-top: 18px; border-top: 1px solid var(--line); padding-top: 16px;">
@@ -2364,20 +2379,48 @@
         }
 
         // --- Cihazım: canlı sensör grafiği (kütüphanesiz, hafif canvas) ---
-        const sensorSeries = { sicaklik: [], nem: [] };
+        const sensorSeries = { sicaklik: [], nem: [], gaz: [] };
         const CHART_MAX = 60;
+        let chartHoverX = null;
 
-        function pushSensorPoint(sicaklik, nem) {
+        function pushSensorPoint(sicaklik, nem, gaz) {
             const t = Date.now();
             if (typeof sicaklik === 'number' && isFinite(sicaklik)) sensorSeries.sicaklik.push({ t, v: sicaklik });
             if (typeof nem === 'number' && isFinite(nem)) sensorSeries.nem.push({ t, v: nem });
-            if (sensorSeries.sicaklik.length > CHART_MAX) sensorSeries.sicaklik.shift();
-            if (sensorSeries.nem.length > CHART_MAX) sensorSeries.nem.shift();
+            if (typeof gaz === 'number' && isFinite(gaz)) sensorSeries.gaz.push({ t, v: gaz });
+            Object.keys(sensorSeries).forEach(k => {
+                if (sensorSeries[k].length > CHART_MAX) sensorSeries[k].shift();
+            });
+        }
+
+        function toggleTelemetry() {
+            const btn = document.getElementById('telemetryToggle');
+            const pre = document.getElementById('mqttData');
+            if (!btn || !pre) return;
+            const open = btn.getAttribute('aria-expanded') !== 'true';
+            btn.setAttribute('aria-expanded', String(open));
+            btn.classList.toggle('open', open);
+            pre.style.display = open ? 'block' : 'none';
+        }
+
+        function setupChartHover(canvas) {
+            if (!canvas || canvas.dataset.hoverReady) return;
+            canvas.dataset.hoverReady = '1';
+            canvas.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                chartHoverX = e.clientX - rect.left;
+                drawSensorChart();
+            });
+            canvas.addEventListener('mouseleave', () => {
+                chartHoverX = null;
+                drawSensorChart();
+            });
         }
 
         function drawSensorChart() {
             const canvas = document.getElementById('sensorChart');
             if (!canvas) return;
+            setupChartHover(canvas);
             const light = document.body.classList.contains('light');
             const cssW = canvas.clientWidth || 600;
             const cssH = 220;
@@ -2390,7 +2433,9 @@
 
             const gridColor = light ? 'rgba(20,18,12,0.08)' : 'rgba(255,255,255,0.07)';
             const axisText = light ? '#8a877e' : '#6b7178';
-            const padL = 34, padR = 16, padT = 12, padB = 20;
+            const tooltipBg = light ? 'rgba(255,255,255,0.97)' : 'rgba(14,16,19,0.95)';
+            const tooltipBorder = light ? 'rgba(20,18,12,0.14)' : 'rgba(255,255,255,0.14)';
+            const padL = 36, padR = 48, padT = 14, padB = 22;
             const plotW = cssW - padL - padR;
             const plotH = cssH - padT - padB;
 
@@ -2401,42 +2446,126 @@
                 ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + plotW, y); ctx.stroke();
             }
 
-            const count = Math.max(sensorSeries.sicaklik.length, sensorSeries.nem.length);
-            if (count === 0) return;
+            const all = [].concat(sensorSeries.sicaklik, sensorSeries.nem, sensorSeries.gaz);
+            if (!all.length) return;
+
+            const tMin = Math.min.apply(null, all.map(p => p.t));
+            const tMax = Math.max.apply(null, all.map(p => p.t));
+            const xFor = (t) => padL + (tMax === tMin ? plotW / 2 : ((t - tMin) / (tMax - tMin)) * plotW);
+            const yForPct = (v) => padT + plotH - (Math.max(0, Math.min(100, v)) / 100) * plotH;
+
+            const gasVals = sensorSeries.gaz.map(p => p.v);
+            const gasMax = Math.max(1, deviceLive.esik || 0, ...gasVals, 1);
+            const yForGas = (v) => padT + plotH - (Math.max(0, Math.min(gasMax, v)) / gasMax) * plotH;
+
+            // Eşik çizgisi
+            if (deviceLive.esik != null && isFinite(deviceLive.esik)) {
+                const y = yForGas(deviceLive.esik);
+                ctx.save();
+                ctx.setLineDash([4, 4]);
+                ctx.strokeStyle = light ? 'rgba(200,60,40,0.45)' : 'rgba(226,96,63,0.5)';
+                ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + plotW, y); ctx.stroke();
+                ctx.restore();
+            }
 
             const series = [
-                { data: sensorSeries.sicaklik, color: '#e2603f' },
-                { data: sensorSeries.nem, color: '#4aa3e2' },
+                { data: sensorSeries.sicaklik, color: '#e2603f', yFor: yForPct, fill: true },
+                { data: sensorSeries.nem, color: '#4aa3e2', yFor: yForPct, fill: true },
+                { data: sensorSeries.gaz, color: '#58c98a', yFor: yForGas, fill: false },
             ];
 
             series.forEach(s => {
                 if (!s.data.length) return;
-                const xFor = (i) => padL + (count === 1 ? plotW / 2 : (i / (count - 1)) * plotW);
-                const yFor = (v) => padT + plotH - (Math.max(0, Math.min(100, v)) / 100) * plotH;
-
                 ctx.strokeStyle = s.color;
                 ctx.lineWidth = 2;
                 ctx.lineJoin = 'round';
                 ctx.beginPath();
                 s.data.forEach((p, i) => {
-                    const x = xFor(i), y = yFor(p.v);
+                    const x = xFor(p.t), y = s.yFor(p.v);
                     if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
                 });
                 ctx.stroke();
-
-                ctx.lineTo(xFor(s.data.length - 1), padT + plotH);
-                ctx.lineTo(xFor(0), padT + plotH);
-                ctx.closePath();
-                ctx.fillStyle = s.color + '22';
-                ctx.fill();
+                if (s.fill && s.data.length > 1) {
+                    ctx.lineTo(xFor(s.data[s.data.length - 1].t), padT + plotH);
+                    ctx.lineTo(xFor(s.data[0].t), padT + plotH);
+                    ctx.closePath();
+                    ctx.fillStyle = s.color + '22';
+                    ctx.fill();
+                }
             });
 
+            // Sol eksen: sıcaklık/nem (0-100), sağ eksen: gaz (0-gasMax)
             ctx.fillStyle = axisText;
             ctx.font = '10px JetBrains Mono, monospace';
             ctx.textAlign = 'right';
-            [0, 50, 100].forEach(v => {
+            [0, 25, 50, 75, 100].forEach(v => {
                 const y = padT + plotH - (v / 100) * plotH;
                 ctx.fillText(String(v), padL - 6, y + 3);
+            });
+            ctx.textAlign = 'left';
+            [0, 0.25, 0.5, 0.75, 1].forEach(frac => {
+                const y = padT + plotH - frac * plotH;
+                ctx.fillText(String(Math.round(gasMax * frac)), padL + plotW + 6, y + 3);
+            });
+
+            // Hover: imlecin zamanına en yakın örnekler
+            if (chartHoverX == null) return;
+            const hx = Math.max(padL, Math.min(padL + plotW, chartHoverX));
+            const ht = tMax === tMin ? tMin : tMin + ((hx - padL) / plotW) * (tMax - tMin);
+            const nearest = (arr) => {
+                if (!arr.length) return null;
+                let best = arr[0];
+                for (let i = 1; i < arr.length; i++) {
+                    if (Math.abs(arr[i].t - ht) < Math.abs(best.t - ht)) best = arr[i];
+                }
+                return best;
+            };
+            const ps = nearest(sensorSeries.sicaklik);
+            const pn = nearest(sensorSeries.nem);
+            const pg = nearest(sensorSeries.gaz);
+
+            ctx.save();
+            ctx.setLineDash([3, 3]);
+            ctx.strokeStyle = light ? 'rgba(20,18,12,0.35)' : 'rgba(255,255,255,0.35)';
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(hx, padT); ctx.lineTo(hx, padT + plotH); ctx.stroke();
+            ctx.restore();
+
+            [[ps, yForPct, '#e2603f'], [pn, yForPct, '#4aa3e2'], [pg, yForGas, '#58c98a']].forEach(item => {
+                const p = item[0];
+                if (!p) return;
+                ctx.fillStyle = item[2];
+                ctx.beginPath(); ctx.arc(xFor(p.t), item[1](p.v), 3, 0, Math.PI * 2); ctx.fill();
+            });
+
+            const lines = [];
+            if (ps) lines.push(feText('temperature') + ': ' + ps.v.toFixed(1) + ' °C');
+            if (pn) lines.push(feText('humidity') + ': %' + pn.v.toFixed(0));
+            if (pg) lines.push(feText('gasLevel') + ': ' + pg.v);
+            if (!lines.length) return;
+            const head = new Date((ps || pn || pg).t).toLocaleTimeString();
+            const allLines = [head].concat(lines);
+            ctx.font = '11px JetBrains Mono, monospace';
+            let boxW = 0;
+            allLines.forEach(l => { boxW = Math.max(boxW, ctx.measureText(l).width); });
+            boxW += 16;
+            const boxH = allLines.length * 16 + 10;
+            let bx = hx + 10;
+            if (bx + boxW > padL + plotW + padR - 2) bx = hx - boxW - 10;
+            bx = Math.max(2, bx);
+            const by = padT + 2;
+            ctx.fillStyle = tooltipBg;
+            ctx.strokeStyle = tooltipBorder;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            if (typeof ctx.roundRect === 'function') ctx.roundRect(bx, by, boxW, boxH, 7);
+            else ctx.rect(bx, by, boxW, boxH);
+            ctx.fill();
+            ctx.stroke();
+            ctx.textAlign = 'left';
+            allLines.forEach((l, i) => {
+                ctx.fillStyle = i === 0 ? axisText : (light ? '#26251f' : '#e8eaed');
+                ctx.fillText(l, bx + 8, by + 16 + i * 16);
             });
         }
 
@@ -2479,9 +2608,9 @@
                 dEl.style.color = alarm ? 'var(--danger)' : 'var(--text-primary)';
             }
 
-            // Grafiğe sadece sıcaklık/nem içeren telemetri mesajları işlensin
-            if (parsed.sicaklik != null || parsed.nem != null) {
-                pushSensorPoint(sic, nem);
+            // Grafiğe sıcaklık/nem/gaz içeren telemetri mesajları işlensin
+            if (parsed.sicaklik != null || parsed.nem != null || parsed.gaz != null) {
+                pushSensorPoint(sic, nem, gaz);
             }
             if (st) st.style.display = 'grid';
             if (wrap) wrap.style.display = 'block';
@@ -2584,8 +2713,10 @@
             if (deviceDataInterval) { clearInterval(deviceDataInterval); deviceDataInterval = null; }
             disconnectDeviceMqtt();
 
-            // eski canlı veriyi temizle
+            // eski canlı veriyi ve grafik geçmişini temizle
             Object.keys(deviceLive).forEach(k => { deviceLive[k] = null; });
+            Object.keys(sensorSeries).forEach(k => { sensorSeries[k].length = 0; });
+            chartHoverX = null;
 
             if (!deviceKey) {
                 statusEl.textContent = feText('deviceNone');
@@ -3415,7 +3546,7 @@
                 verifyResend: 'Yeniden Gönder',
                 deviceStatusTitle: 'FireEye Cihaz Durumu (Canlı)',
                 temperature: 'Sıcaklık', humidity: 'Nem', state: 'Durum',
-                chartHint: 'Son 60 ölçüm', muteAlarm: 'Alarmı Sustur',
+                chartHint: 'Son 60 ölçüm', muteAlarm: 'Alarmı Sustur', telemetryTitle: 'Telemetri',
 
                 downloadTitle: 'FireEye Android Uygulaması',
                 downloadSub: 'Android 8.0 ve üzeri cihazlarda çalışır.',
@@ -3671,7 +3802,7 @@
                 verifyResend: 'Resend',
                 deviceStatusTitle: 'FireEye Device Status (Live)',
                 temperature: 'Temperature', humidity: 'Humidity', state: 'Status',
-                chartHint: 'Last 60 readings', muteAlarm: 'Mute Alarm',
+                chartHint: 'Last 60 readings', muteAlarm: 'Mute Alarm', telemetryTitle: 'Telemetry',
 
                 downloadTitle: 'FireEye for Android',
                 downloadSub: 'Runs on Android 8.0 and later.',
