@@ -2613,9 +2613,10 @@
             });
             client.on('message', (topic, payload) => {
                 if (topic !== deviceKey) return;
-                const raw = payload.toString();
-                if (!raw.startsWith('DEV|')) return;
-                handleDeviceMessage(raw.slice(4));
+                const raw = payload.toString().trim();
+                if (!raw) return;
+                // Firmware düz "TELEMETRI;..." yayınlar; eski "DEV|" öneki de desteklenir.
+                handleDeviceMessage(raw.startsWith('DEV|') ? raw.slice(4) : raw);
             });
             client.on('error', () => { if (deviceMqttClient === client) setDeviceStatus('mqttError'); });
             client.on('close', () => { if (deviceMqttClient === client) setDeviceStatus('mqttReconnecting'); });
