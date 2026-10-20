@@ -1101,11 +1101,11 @@
                 <span id="ftr-src">Kaynak Kod</span>
             </a>
             <span class="ftr-sep">&bull;</span>
-            <a href="gizlilik.html">Gizlilik</a>
+            <a href="gizlilik.html" id="ftr-privacy">Gizlilik</a>
             <span class="ftr-sep">&bull;</span>
-            <a href="kullanim-sartlari.html">Kullanım Şartları</a>
+            <a href="kullanim-sartlari.html" id="ftr-terms">Kullanım Şartları</a>
             <span class="ftr-sep">&bull;</span>
-            <a href="iletisim.html">İletişim</a>
+            <a href="iletisim.html" id="ftr-contact">İletişim</a>
         </footer>
     </div>
 
@@ -1159,7 +1159,10 @@
                 rankWin: "Şenlik 1.liği", rankNone: "Şenlik yok", inspect: "İncele",
                 cTas: "Tasarım", cRob: "Robotik ve Kodlama", cIot: "Elektronik Prg. & IoT", cIleri: "İleri Robotik", cMob: "Mobil Uygulama",
                 cSib: "Siber Güvenlik", cMalz: "Malzeme Bilimi", cEnerji: "Enerji Teknolojileri", cHav: "Havacılık & Uzay", cYz: "Yapay Zeka", cYaz: "Yazılım Teknolojileri",
-                close: "Kapat", ftrText: "© 2026 TechnoStudios. Tüm hakları saklıdır.", ftrSrc: "Kaynak Kod"
+                close: "Kapat", ftrText: "© 2026 TechnoStudios. Tüm hakları saklıdır.", ftrSrc: "Kaynak Kod",
+                ftrPrivacy: "Gizlilik", ftrTerms: "Kullanım Şartları", ftrContact: "İletişim",
+                modalTitleDefault: "Modül Adı", modalSubDefault: "Durum Bilgisi", modalDescDefault: "Açıklama",
+                modalWinSub: "Dönem Sonu Şenliği: 1.lik Derecesi", modalDoneSub: "Durum: Tamamlanan Eğitim Kuru"
             },
             en: {
                 theme: "Theme Mode", source: "Source Code",
@@ -1182,7 +1185,10 @@
                 rankWin: "1st Place Fest", rankNone: "No Festival", inspect: "Details",
                 cTas: "Design", cRob: "Robotics & Coding", cIot: "Electronic Prog. & IoT", cIleri: "Advanced Robotics", cMob: "Mobile App",
                 cSib: "Cyber Security", cMalz: "Materials Science", cEnerji: "Energy Technologies", cHav: "Aerospace", cYz: "Artificial Intelligence", cYaz: "Software Technologies",
-                close: "Close", ftrText: "© 2026 TechnoStudios. All rights reserved.", ftrSrc: "Source Code"
+                close: "Close", ftrText: "© 2026 TechnoStudios. All rights reserved.", ftrSrc: "Source Code",
+                ftrPrivacy: "Privacy", ftrTerms: "Terms of Use", ftrContact: "Contact",
+                modalTitleDefault: "Module Name", modalSubDefault: "Status Info", modalDescDefault: "Description",
+                modalWinSub: "End-of-Term Festival: 1st Place", modalDoneSub: "Status: Completed Course"
             },
             es: {
                 theme: "Modo Tema", source: "Código Fuente",
@@ -1205,7 +1211,10 @@
                 rankWin: "1er Lugar", rankNone: "Sin festival", inspect: "Detalles",
                 cTas: "Diseño", cRob: "Robótica y Código", cIot: "Electrónica e IoT", cIleri: "Robótica Avanzada", cMob: "Aplicación Móvil",
                 cSib: "Ciberseguridad", cMalz: "Ciencia de Materiales", cEnerji: "Tecnologías Energéticas", cHav: "Aeroespacial", cYz: "Inteligencia Artificial", cYaz: "Tecnologías de Software",
-                close: "Cerrar", ftrText: "© 2026 TechnoStudios. Todos los derechos reservados.", ftrSrc: "Código Fuente"
+                close: "Cerrar", ftrText: "© 2026 TechnoStudios. Todos los derechos reservados.", ftrSrc: "Código Fuente",
+                ftrPrivacy: "Privacidad", ftrTerms: "Términos de Uso", ftrContact: "Contacto",
+                modalTitleDefault: "Nombre del Módulo", modalSubDefault: "Información de Estado", modalDescDefault: "Descripción",
+                modalWinSub: "Festival de Fin de Período: 1er Lugar", modalDoneSub: "Estado: Curso Completado"
             }
         };
 
@@ -1266,6 +1275,18 @@
             document.getElementById('modal-close-btn').textContent = data.close;
             document.getElementById('ftr-text').textContent = data.ftrText;
             document.getElementById('ftr-src').textContent = data.ftrSrc;
+            const ftrPrivacy = document.getElementById('ftr-privacy');
+            const ftrTerms = document.getElementById('ftr-terms');
+            const ftrContact = document.getElementById('ftr-contact');
+            if (ftrPrivacy) ftrPrivacy.textContent = data.ftrPrivacy;
+            if (ftrTerms) ftrTerms.textContent = data.ftrTerms;
+            if (ftrContact) ftrContact.textContent = data.ftrContact;
+            const modalTitle = document.getElementById('modalTitle');
+            const modalSubtext = document.getElementById('modalSubtext');
+            const modalDesc = document.getElementById('modalDesc');
+            if (modalTitle) modalTitle.textContent = data.modalTitleDefault;
+            if (modalSubtext) modalSubtext.textContent = data.modalSubDefault;
+            if (modalDesc) modalDesc.textContent = data.modalDescDefault;
         }
 
         // Açılışta kayıtlı dil tercihini uygula (varsayılan: TR)
@@ -1319,16 +1340,79 @@
             } catch (e) {}
         })();
 
+        const courseDetails = {
+            'Tasarım': { titleKey: 'cTas', win: true, desc: {
+                tr: '3D CAD modelleme teknikleri, hızlı prototipleme ve dönem sonu şenliği birinciliği.',
+                en: '3D CAD modeling, rapid prototyping, and first place at the end-of-term festival.',
+                es: 'Modelado 3D CAD, prototipado rápido y primer lugar en el festival de fin de período.'
+            } },
+            'Robotik ve Kodlama': { titleKey: 'cRob', win: true, desc: {
+                tr: 'Mikrodenetleyici devreleri, sensör kalibrasyonu ve dönem sonu şenliği birinciliği.',
+                en: 'Microcontroller circuits, sensor calibration, and first place at the end-of-term festival.',
+                es: 'Circuitos de microcontroladores, calibración de sensores y primer lugar en el festival de fin de período.'
+            } },
+            'Elektronik Programlama ve Nesnelerin İnterneti': { titleKey: 'cIot', win: true, desc: {
+                tr: 'IoT ağ protokolleri, uzaktan veri işleme ve dönem sonu şenliği birinciliği.',
+                en: 'IoT network protocols, remote data processing, and first place at the end-of-term festival.',
+                es: 'Protocolos de red IoT, procesamiento remoto de datos y primer lugar en el festival de fin de período.'
+            } },
+            'İleri Robotik': { titleKey: 'cIleri', win: true, desc: {
+                tr: 'Endüstriyel mekanizmalar, gelişmiş hareket kontrolü ve dönem sonu şenliği birinciliği.',
+                en: 'Industrial mechanisms, advanced motion control, and first place at the end-of-term festival.',
+                es: 'Mecanismos industriales, control avanzado de movimiento y primer lugar en el festival de fin de período.'
+            } },
+            'Mobil Uygulama': { titleKey: 'cMob', win: true, desc: {
+                tr: 'Mobil kullanıcı arayüzü tasarımı, platform entegrasyonu ve dönem sonu şenliği birinciliği.',
+                en: 'Mobile UI design, platform integration, and first place at the end-of-term festival.',
+                es: 'Diseño de interfaz móvil, integración de plataformas y primer lugar en el festival de fin de período.'
+            } },
+            'Siber Güvenlik': { titleKey: 'cSib', win: false, desc: {
+                tr: 'Ağ güvenliği ve şifreleme algoritmaları eğitimi.',
+                en: 'Network security and encryption algorithms.',
+                es: 'Seguridad de redes y algoritmos de cifrado.'
+            } },
+            'Malzeme Bilimi': { titleKey: 'cMalz', win: false, desc: {
+                tr: 'Mühendislik projelerinde malzeme analizleri eğitimi.',
+                en: 'Materials analysis for engineering projects.',
+                es: 'Análisis de materiales para proyectos de ingeniería.'
+            } },
+            'Enerji Teknolojileri': { titleKey: 'cEnerji', win: false, desc: {
+                tr: 'Yenilenebilir enerji sistemleri entegrasyonu eğitimi.',
+                en: 'Renewable energy systems integration.',
+                es: 'Integración de sistemas de energía renovable.'
+            } },
+            'Havacılık ve Uzay': { titleKey: 'cHav', win: false, desc: {
+                tr: 'Aerodinamik prensipler ve roket sistemleri eğitimi.',
+                en: 'Aerodynamic principles and rocket systems.',
+                es: 'Principios aerodinámicos y sistemas de cohetes.'
+            } },
+            'Yapay Zeka': { titleKey: 'cYz', win: false, desc: {
+                tr: 'Temel makine öğrenmesi modelleri eğitimi.',
+                en: 'Fundamentals of machine learning models.',
+                es: 'Fundamentos de modelos de aprendizaje automático.'
+            } },
+            'Yazılım Teknolojileri': { titleKey: 'cYaz', win: false, desc: {
+                tr: 'Git/GitHub mimarisi ve temiz kod ilkeleri eğitimi.',
+                en: 'Git/GitHub architecture and clean code principles.',
+                es: 'Arquitectura Git/GitHub y principios de código limpio.'
+            } }
+        };
+
         function openSysModal(title, desc) {
-            document.getElementById('modalTitle').textContent = title;
-            document.getElementById('modalDesc').textContent = desc;
-            
-            if (title.includes('Tasarım') || title.includes('Robotik') || title.includes('İnterneti') || title.includes('Mobil') || title.includes('Design') || title.includes('App')) {
-                document.getElementById('modalSubtext').textContent = "Dönem Sonu Şenliği: 1.lik Derecesi";
-            } else {
-                document.getElementById('modalSubtext').textContent = "Durum: Tamamlanan Eğitim Kuru";
-            }
-            
+            let lang = 'tr';
+            try {
+                const saved = localStorage.getItem('ts-lang');
+                if (saved && i18n[saved]) lang = saved;
+            } catch (e) {}
+            const data = i18n[lang] || i18n.tr;
+            const course = courseDetails[title];
+            const shownTitle = course ? data[course.titleKey] : title;
+            const shownDesc = course ? (course.desc[lang] || course.desc.tr) : desc;
+
+            document.getElementById('modalTitle').textContent = shownTitle;
+            document.getElementById('modalDesc').textContent = shownDesc;
+            document.getElementById('modalSubtext').textContent = (course && course.win) ? data.modalWinSub : data.modalDoneSub;
+
             document.getElementById('sysModal').classList.add('active');
         }
 
