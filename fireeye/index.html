@@ -2046,22 +2046,47 @@
         // "DEV|" mesajlarını dinler, komutları "APP|" önekiyle yayınlar.
         let deviceDataInterval = null;
 
-        function restoreUserSession() {
+        async function restoreUserSession() {
             const raw = localStorage.getItem('fireeye_user');
             if (!raw) return;
+            let data;
             try {
-                const data = JSON.parse(raw);
-                if (data.user.isAdmin) {
-                    enableAdminMode();
-                    setHeaderAuthButtons(false);
-                    activateTab('accounts');
-                } else if (data.user.isNoData) {
-                    showForceChange(data.user.email);
-                } else {
-                    showAccountDashboard(data.user);
-                }
+                data = JSON.parse(raw);
             } catch (err) {
                 localStorage.removeItem('fireeye_user');
+                return;
+            }
+            if (!data || !data.token) {
+                localStorage.removeItem('fireeye_user');
+                return;
+            }
+
+            // Cihaz/MQTT bilgileri hesap açıldıktan sonra değişmiş olabilir;
+            // her açılışta sunucudan güncel hali alınır.
+            try {
+                const res = await fetch(WORKER_BASE + '/me', {
+                    headers: { 'Authorization': 'Bearer ' + data.token }
+                });
+                if (res.ok) {
+                    const j = await res.json();
+                    if (j && j.success && j.user) {
+                        data.user = j.user;
+                        localStorage.setItem('fireeye_user', JSON.stringify(data));
+                    }
+                } else if (res.status === 401) {
+                    localStorage.removeItem('fireeye_user');
+                    return;
+                }
+            } catch (err) {}
+
+            if (data.user.isAdmin) {
+                enableAdminMode();
+                setHeaderAuthButtons(false);
+                activateTab('accounts');
+            } else if (data.user.isNoData) {
+                showForceChange(data.user.email);
+            } else {
+                showAccountDashboard(data.user);
             }
         }
 
