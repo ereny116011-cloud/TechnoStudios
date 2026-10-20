@@ -983,6 +983,15 @@
         .sensor-stat .k { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-secondary); }
         .sensor-stat .v { font-size: 1.65rem; font-weight: 800; letter-spacing: -0.02em; color: var(--text-primary); }
 
+        .device-control-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .device-control-row .form-control { height: 38px; }
+
         .chart-wrap {
             margin-top: 20px;
             padding: 18px;
@@ -1039,6 +1048,7 @@
         }
     </style>
     <script src="https://alcdn.msauth.net/browser/2.38.1/js/msal-browser.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js" defer></script>
     <style id="linear-theme">
         /* ——— Linear / Vercel esintili katman ——— */
         :root {
@@ -1509,6 +1519,8 @@
                     <div class="sensor-stats" id="sensorStats" style="display:none;">
                         <div class="sensor-stat"><span class="k" data-i18n="temperature">Sıcaklık</span><span class="v" id="statSicaklik">&mdash;</span></div>
                         <div class="sensor-stat"><span class="k" data-i18n="humidity">Nem</span><span class="v" id="statNem">&mdash;</span></div>
+                        <div class="sensor-stat"><span class="k" data-i18n="gasLevel">Gaz (ADC)</span><span class="v" id="statGaz">&mdash;</span></div>
+                        <div class="sensor-stat"><span class="k" data-i18n="gasThreshold">Eşik</span><span class="v" id="statEsik">&mdash;</span></div>
                         <div class="sensor-stat"><span class="k" data-i18n="state">Durum</span><span class="v" id="statDurum">&mdash;</span></div>
                     </div>
 
@@ -1523,6 +1535,26 @@
 
                     <pre id="mqttData" style="white-space: pre-wrap; word-break: break-word; margin-top: 10px; font-size: 0.85rem; color: var(--text-secondary);"></pre>
                     <button id="mqttMuteBtn" class="main-cta" style="display: none; margin-top: 14px; background: var(--danger);" data-i18n="muteAlarm">Alarmı Sustur</button>
+
+                    <div id="deviceControls" style="display: none; margin-top: 18px; border-top: 1px solid var(--line); padding-top: 16px;">
+                        <p style="font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 10px;" data-i18n="deviceControlsTitle">Cihaz Kontrolleri</p>
+                        <div class="device-control-row">
+                            <button type="button" class="util-btn" onclick="requestDeviceStatus()" data-i18n="queryStatus">Durum Sorgula</button>
+                            <button type="button" class="util-btn" onclick="testDeviceBuzzer()" data-i18n="buzzerTest">Buzzer Testi</button>
+                        </div>
+                        <div class="device-control-row">
+                            <input type="number" id="gasThresholdInput" class="form-control" min="1" max="4095" placeholder="Eşik (1-4095)" data-i18n-placeholder="thresholdPlaceholder" style="max-width: 180px;">
+                            <button type="button" class="util-btn" onclick="setGasThreshold()" data-i18n="sendThreshold">Eşiği Gönder</button>
+                        </div>
+                        <details style="margin-top: 12px;">
+                            <summary style="cursor: pointer; color: var(--text-secondary); font-size: 0.85rem;" data-i18n="wifiProvisionTitle">Wi-Fi Bilgilerini Cihaza Gönder</summary>
+                            <div class="device-control-row" style="margin-top: 10px;">
+                                <input type="text" id="wifiSsidInput" class="form-control" placeholder="Wi-Fi adı (SSID)" data-i18n-placeholder="wifiSsidPlaceholder" style="max-width: 220px;">
+                                <input type="password" id="wifiPassInput" class="form-control" placeholder="Wi-Fi şifresi" data-i18n-placeholder="wifiPassPlaceholder" style="max-width: 220px;">
+                                <button type="button" class="util-btn" onclick="sendWifiCredentials()" data-i18n="sendToDevice">Cihaza Gönder</button>
+                            </div>
+                        </details>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1548,9 +1580,9 @@
                             <input type="text" id="newUserPassword" class="form-control" placeholder="Geçici Şifre" data-i18n-placeholder="tempPasswordLabel" required>
                         </div>
                         <div class="form-group">
-                            <label data-i18n="deviceIdLabel">Cihaz Kimliği</label>
-                            <input type="text" id="newUserTopic" class="form-control" placeholder="fireeye-musteri-01">
-                            <small style="color: var(--text-secondary);" data-i18n="deviceIdHint">Bu kod, sattığın cihazın firmware'ine de aynen yazılmalı.</small>
+                            <label data-i18n="deviceIdLabel">Cihaz Kimliği (MQTT Topic)</label>
+                            <input type="text" id="newUserTopic" class="form-control" placeholder="fireeye/device1">
+                            <small style="color: var(--text-secondary);" data-i18n="deviceIdHint">Firmware'deki MQTT_TOPIC ile birebir aynı olmalı (örn. fireeye/device1). Site bu konu üzerinden cihaza komut gönderir ve telemetriyi dinler.</small>
                         </div>
                         <button type="submit" class="main-cta" data-i18n="createAccountBtn">Hesabı Oluştur</button>
                     </form>
@@ -1681,6 +1713,13 @@
         // Worker'ı deploy ettikten sonra "wrangler deploy" çıktısında verilen
         // adresi (https://fireeye-api.SENIN-ALT-ADIN.workers.dev) buraya yapıştır.
         const WORKER_BASE = 'https://fireeye-api.ereny116011.workers.dev';
+
+        // --- HiveMQ MQTT (firmware ile aynı kümeye WebSocket üzerinden bağlanır) ---
+        // Firmware: aae7f89566734cfea0414869a009c590.s1.eu.hivemq.cloud:8883 (TLS TCP)
+        // Tarayıcı: aynı küme, 8884 portu (TLS WebSocket). Protokol: "APP|komut" / "DEV|mesaj"
+        const MQTT_WS_URL = 'wss://aae7f89566734cfea0414869a009c590.s1.eu.hivemq.cloud:8884/mqtt';
+        const MQTT_USERNAME = 'fireeye';
+        const MQTT_PASSWORD = 'TechnoStudios11.';
 
         // Google ile Giriş — Google Cloud Console > OAuth istemci kimliği.
         // Worker tarafında da aynı değeri GOOGLE_CLIENT_ID gizli değişkenine yaz.
@@ -1981,7 +2020,8 @@
 
         // --- Kullanıcı hesabı girişi (kayıt yok, admin oluşturur) + hesaba tanımlı cihazı canlı okuma ---
         // Uygulama ile TAMAMEN aynı API sözleşmesi: /login, /admin/create-user, /user/update-credentials.
-        // Cihaz artık MQTT/HiveMQ kullanmıyor; doğrudan Worker'a HTTP ile veri gönderiyor.
+        // Cihaz HiveMQ üzerinden yayın yapar; site aynı kümeye WebSocket (8884) ile bağlanıp
+        // "DEV|" mesajlarını dinler, komutları "APP|" önekiyle yayınlar.
         let deviceDataInterval = null;
 
         function restoreUserSession() {
@@ -2164,13 +2204,16 @@
 
         function handleUserLogout() {
             if (deviceDataInterval) { clearInterval(deviceDataInterval); deviceDataInterval = null; }
+            disconnectDeviceMqtt();
             localStorage.removeItem('fireeye_user');
             const statusEl = document.getElementById('mqttStatus');
             const dataEl = document.getElementById('mqttData');
             const muteBtn = document.getElementById('mqttMuteBtn');
+            const controls = document.getElementById('deviceControls');
             if (statusEl) statusEl.textContent = feText('connecting');
             if (dataEl) dataEl.textContent = '';
             if (muteBtn) muteBtn.style.display = 'none';
+            if (controls) controls.style.display = 'none';
             logoutAdmin(true);
             setHeaderAuthButtons(true);
             closeAccountModal();
@@ -2222,15 +2265,42 @@
             startDeviceReading(user.mqttTopic);
         }
 
-        // Cihazın gönderdiği veri formatını (SICAKLIK:.., NEM:.., DURUM:..) ayrıştırır.
+        // Cihazın gönderdiği mesajları ayrıştırır.
+        // Yeni format (telemetri): TELEMETRI;SICAKLIK=23.4;NEM=41.0;GAZ=1234;ESIK=4000;DURUM=NORMAL;ISINIYOR=0
+        // Tekil mesajlar: SICAKLIK:23.4 | NEM:41.0 | DURUM:NORMAL | ESIK:4000;GAZ:1234 | ALARM:GAZ | ALARM_SUSTURULDU ...
         function parseVeriPayload(payload) {
             const result = {};
-            payload.split(',').map(s => s.trim()).forEach(part => {
-                if (part.startsWith('SICAKLIK:')) result.sicaklik = part.slice(9);
-                else if (part.startsWith('NEM:')) result.nem = part.slice(4);
+            const text = String(payload || '').trim();
+
+            if (text.startsWith('TELEMETRI;')) {
+                text.slice(10).split(';').forEach(part => {
+                    const idx = part.indexOf('=');
+                    if (idx < 0) return;
+                    const key = part.slice(0, idx).trim().toUpperCase();
+                    const val = part.slice(idx + 1).trim();
+                    if (key === 'SICAKLIK') result.sicaklik = val.replace(',', '.');
+                    else if (key === 'NEM') result.nem = val.replace(',', '.');
+                    else if (key === 'GAZ') result.gaz = val;
+                    else if (key === 'ESIK') result.esik = val;
+                    else if (key === 'DURUM') result.durum = val;
+                    else if (key === 'ISINIYOR') result.isiniyor = (val === '1');
+                });
+                return result;
+            }
+
+            text.split(/[;,]/).map(s => s.trim()).forEach(part => {
+                if (part.startsWith('SICAKLIK:')) result.sicaklik = part.slice(9).replace(',', '.');
+                else if (part.startsWith('NEM:')) result.nem = part.slice(4).replace(',', '.');
+                else if (part.startsWith('GAZ:')) result.gaz = part.slice(4);
+                else if (part.startsWith('ESIK:')) result.esik = part.slice(5);
                 else if (part.startsWith('DURUM:')) result.durum = part.slice(6).split(':')[0];
-                else if (part === 'ALARM:GAZ') result.durum = 'ALARM';
             });
+
+            if (text === 'ALARM:GAZ') result.durum = 'ALARM';
+            else if (text === 'ALARM_SUSTURULDU') result.durum = 'GERI_SAYIM';
+            else if (text === 'DURUM:GAZ_HALA_YUKSEK') result.durum = 'ALARM';
+            else if (text === 'DURUM:NORMAL') result.durum = 'NORMAL';
+
             return result;
         }
 
@@ -2311,58 +2381,199 @@
             });
         }
 
+        // Canlı cihaz verisi (kısmi mesajlar birleştirilir)
+        const deviceLive = { sicaklik: null, nem: null, gaz: null, esik: null, durum: null, isiniyor: null };
+
         function updateSensorUI(parsed) {
             const st = document.getElementById('sensorStats');
             const wrap = document.getElementById('chartWrap');
-            const sic = parsed.sicaklik != null ? parseFloat(parsed.sicaklik) : NaN;
-            const nem = parsed.nem != null ? parseFloat(parsed.nem) : NaN;
+
+            if (parsed.sicaklik != null && isFinite(parseFloat(parsed.sicaklik))) deviceLive.sicaklik = parseFloat(parsed.sicaklik);
+            if (parsed.nem != null && isFinite(parseFloat(parsed.nem))) deviceLive.nem = parseFloat(parsed.nem);
+            if (parsed.gaz != null && isFinite(parseInt(parsed.gaz, 10))) deviceLive.gaz = parseInt(parsed.gaz, 10);
+            if (parsed.esik != null && isFinite(parseInt(parsed.esik, 10))) deviceLive.esik = parseInt(parsed.esik, 10);
+            if (parsed.durum) deviceLive.durum = parsed.durum;
+            if (parsed.isiniyor != null) deviceLive.isiniyor = !!parsed.isiniyor;
+
+            const sic = deviceLive.sicaklik;
+            const nem = deviceLive.nem;
+            const gaz = deviceLive.gaz;
+            const esik = deviceLive.esik;
 
             const sEl = document.getElementById('statSicaklik');
             const nEl = document.getElementById('statNem');
+            const gEl = document.getElementById('statGaz');
+            const eEl = document.getElementById('statEsik');
             const dEl = document.getElementById('statDurum');
-            if (sEl) sEl.textContent = isFinite(sic) ? sic.toFixed(1) + ' °C' : '—';
-            if (nEl) nEl.textContent = isFinite(nem) ? '%' + nem.toFixed(0) : '—';
+            if (sEl) sEl.textContent = (sic != null && isFinite(sic)) ? sic.toFixed(1) + ' °C' : '—';
+            if (nEl) nEl.textContent = (nem != null && isFinite(nem)) ? '%' + nem.toFixed(0) : '—';
+            if (gEl) {
+                gEl.textContent = (gaz != null && isFinite(gaz)) ? String(gaz) : '—';
+                const over = (gaz != null && esik != null && gaz >= esik);
+                gEl.style.color = over ? 'var(--danger)' : 'var(--text-primary)';
+            }
+            if (eEl) eEl.textContent = (esik != null && isFinite(esik)) ? String(esik) : '—';
             if (dEl) {
-                const alarm = (parsed.durum || '').toUpperCase().indexOf('ALARM') >= 0;
-                dEl.textContent = parsed.durum || '—';
+                const durumText = (deviceLive.durum || '—') + (deviceLive.isiniyor ? ' • ' + feText('warmingUp') : '');
+                const alarm = (deviceLive.durum || '').toUpperCase().indexOf('ALARM') >= 0;
+                dEl.textContent = durumText;
                 dEl.style.color = alarm ? 'var(--danger)' : 'var(--text-primary)';
             }
 
-            pushSensorPoint(sic, nem);
+            // Grafiğe sadece sıcaklık/nem içeren telemetri mesajları işlensin
+            if (parsed.sicaklik != null || parsed.nem != null) {
+                pushSensorPoint(sic, nem);
+            }
             if (st) st.style.display = 'grid';
             if (wrap) wrap.style.display = 'block';
             drawSensorChart();
         }
 
-        async function fetchDeviceReading(deviceKey) {
-            const statusEl = document.getElementById('mqttStatus');
-            const dataEl = document.getElementById('mqttData');
+        // --- HiveMQ canlı bağlantısı (TLS WebSocket, firmware ile aynı kümeye) ---
+        let deviceMqttClient = null;
+        let deviceMqttTopic = null;
 
-            try {
-                const res = await fetch(WORKER_BASE + '/device/report?device_key=' + encodeURIComponent(deviceKey));
-                if (!res.ok) {
-                    statusEl.textContent = feText('deviceNoData');
-                    return;
-                }
-                const data = await res.json();
-                const parsed = parseVeriPayload(data.payload);
-                statusEl.textContent = feText('deviceConnected') + data.updated_at;
-                updateSensorUI(parsed);
-                dataEl.textContent =
-                    (parsed.sicaklik ? feText('temperature') + ': ' + parsed.sicaklik + '°C\n' : '') +
-                    (parsed.nem ? feText('humidity') + ': %' + parsed.nem + '\n' : '') +
-                    (parsed.durum ? feText('state') + ': ' + parsed.durum + '\n' : '') +
-                    '\n' + feText('rawData') + data.payload + ')';
-            } catch (err) {
-                statusEl.textContent = feText('serverUnreachable');
+        function disconnectDeviceMqtt() {
+            if (deviceMqttClient) {
+                try { deviceMqttClient.end(true); } catch (e) {}
+                deviceMqttClient = null;
             }
+            deviceMqttTopic = null;
         }
 
-        window.addEventListener('resize', () => {
-            if (document.getElementById('chartWrap') && document.getElementById('chartWrap').style.display !== 'none') {
-                drawSensorChart();
+        function setDeviceStatus(key) {
+            const statusEl = document.getElementById('mqttStatus');
+            if (statusEl) statusEl.textContent = feText(key);
+        }
+
+        function appendDeviceLog(msg) {
+            const dataEl = document.getElementById('mqttData');
+            if (!dataEl) return;
+            const stamp = new Date().toLocaleTimeString();
+            dataEl.textContent = '[' + stamp + '] ' + msg + '\n' + dataEl.textContent;
+            const lines = dataEl.textContent.split('\n');
+            if (lines.length > 40) dataEl.textContent = lines.slice(0, 40).join('\n');
+        }
+
+        function publishDeviceCommand(cmd) {
+            if (!deviceMqttClient || !deviceMqttClient.connected || !deviceMqttTopic) {
+                showToast(feText('mqttNotConnected'), 'err');
+                return false;
             }
-        });
+            deviceMqttClient.publish(deviceMqttTopic, 'APP|' + cmd);
+            appendDeviceLog('APP|' + cmd);
+            return true;
+        }
+
+        function requestDeviceStatus() {
+            if (publishDeviceCommand('durum')) showToast(feText('commandSent'), 'ok');
+        }
+
+        function testDeviceBuzzer() {
+            if (publishDeviceCommand('buzzer_test')) showToast(feText('commandSent'), 'ok');
+        }
+
+        function setGasThreshold() {
+            const input = document.getElementById('gasThresholdInput');
+            const val = parseInt(input && input.value, 10);
+            if (!(val >= 1 && val <= 4095)) { showToast(feText('thresholdInvalid'), 'err'); return; }
+            if (publishDeviceCommand('esik:' + val)) showToast(feText('commandSent'), 'ok');
+        }
+
+        function sendWifiCredentials() {
+            const ssidEl = document.getElementById('wifiSsidInput');
+            const passEl = document.getElementById('wifiPassInput');
+            const ssid = (ssidEl && ssidEl.value ? ssidEl.value : '').trim();
+            const pass = (passEl && passEl.value ? passEl.value : '');
+            if (!ssid || !pass) { showToast(feText('wifiMissing'), 'err'); return; }
+            if (!publishDeviceCommand('ssid:' + ssid)) return;
+            // Firmware "ssid:" ve "sifre:" komutlarını sırayla bekler
+            setTimeout(() => { publishDeviceCommand('sifre:' + pass); }, 400);
+            showToast(feText('wifiSent'), 'ok');
+        }
+
+        function handleDeviceMessage(msg) {
+            const parsed = parseVeriPayload(msg);
+            const hasData = parsed.sicaklik != null || parsed.nem != null || parsed.gaz != null || parsed.esik != null || !!parsed.durum;
+            if (hasData) updateSensorUI(parsed);
+
+            // Cihaz bildirimleri
+            const upper = msg.toUpperCase();
+            if (upper === 'ALARM:GAZ') showToast(feText('alarmDetected'), 'err');
+            else if (upper === 'ALARM_SUSTURULDU') showToast(feText('alarmSilenced'), 'ok');
+            else if (upper === 'MQTT:BAGLANDI') showToast(feText('deviceOnline'), 'ok');
+            else if (upper === 'WIFI:BAGLANDI') showToast(feText('wifiOk'), 'ok');
+            else if (upper === 'WIFI:HATA') showToast(feText('wifiFail'), 'err');
+            else if (upper === 'BUZZER:TEST_OK') showToast(feText('buzzerOk'), 'ok');
+
+            appendDeviceLog(msg);
+            const statusEl = document.getElementById('mqttStatus');
+            if (statusEl) statusEl.textContent = feText('deviceConnected') + new Date().toLocaleTimeString();
+        }
+
+        function startDeviceReading(deviceKey) {
+            const statusEl = document.getElementById('mqttStatus');
+            const muteBtn = document.getElementById('mqttMuteBtn');
+            const controls = document.getElementById('deviceControls');
+
+            if (deviceDataInterval) { clearInterval(deviceDataInterval); deviceDataInterval = null; }
+            disconnectDeviceMqtt();
+
+            // eski canlı veriyi temizle
+            Object.keys(deviceLive).forEach(k => { deviceLive[k] = null; });
+
+            if (!deviceKey) {
+                statusEl.textContent = feText('deviceNone');
+                muteBtn.style.display = 'none';
+                controls.style.display = 'none';
+                return;
+            }
+
+            if (typeof mqtt === 'undefined') {
+                statusEl.textContent = feText('mqttLibMissing');
+                muteBtn.style.display = 'none';
+                controls.style.display = 'none';
+                return;
+            }
+
+            statusEl.textContent = feText('connecting');
+            muteBtn.style.display = 'inline-flex';
+            controls.style.display = 'block';
+            muteBtn.onclick = () => {
+                if (publishDeviceCommand('kapat')) showToast(feText('commandSent'), 'ok');
+            };
+
+            deviceMqttTopic = deviceKey;
+            const clientId = 'fireeye-web-' + Math.random().toString(16).slice(2, 10);
+            const client = mqtt.connect(MQTT_WS_URL, {
+                clientId: clientId,
+                username: MQTT_USERNAME,
+                password: MQTT_PASSWORD,
+                clean: true,
+                keepalive: 30,
+                reconnectPeriod: 4000,
+                connectTimeout: 10000,
+            });
+            deviceMqttClient = client;
+
+            client.on('connect', () => {
+                setDeviceStatus('mqttConnectedWaiting');
+                client.subscribe(deviceKey, { qos: 0 }, (err) => {
+                    if (err) appendDeviceLog('SUB ERR: ' + (err && err.message ? err.message : err));
+                });
+                // bağlanır bağlanmaz cihazın mevcut durumunu sor
+                client.publish(deviceKey, 'APP|durum');
+            });
+            client.on('message', (topic, payload) => {
+                if (topic !== deviceKey) return;
+                const raw = payload.toString();
+                if (!raw.startsWith('DEV|')) return;
+                handleDeviceMessage(raw.slice(4));
+            });
+            client.on('error', () => { if (deviceMqttClient === client) setDeviceStatus('mqttError'); });
+            client.on('close', () => { if (deviceMqttClient === client) setDeviceStatus('mqttReconnecting'); });
+            client.on('reconnect', () => { if (deviceMqttClient === client) setDeviceStatus('mqttReconnecting'); });
+        }
 
         async function resendVerification() {
             const stored = JSON.parse(localStorage.getItem('fireeye_user') || '{}');
@@ -2390,42 +2601,11 @@
             }
         }
 
-        function startDeviceReading(deviceKey) {
-            const statusEl = document.getElementById('mqttStatus');
-            const muteBtn = document.getElementById('mqttMuteBtn');
-
-            if (deviceDataInterval) { clearInterval(deviceDataInterval); deviceDataInterval = null; }
-
-            if (!deviceKey) {
-                statusEl.textContent = feText('deviceNone');
-                muteBtn.style.display = 'none';
-                return;
+        window.addEventListener('resize', () => {
+            if (document.getElementById('chartWrap') && document.getElementById('chartWrap').style.display !== 'none') {
+                drawSensorChart();
             }
-
-            statusEl.textContent = feText('connecting');
-            muteBtn.style.display = 'inline-flex';
-            muteBtn.onclick = async () => {
-                try {
-                    const stored = JSON.parse(localStorage.getItem('fireeye_user') || '{}');
-                    const headers = { 'Content-Type': 'application/json' };
-                    if (stored.token) headers['Authorization'] = 'Bearer ' + stored.token;
-                    const res = await fetch(WORKER_BASE + '/device/command', {
-                        method: 'POST',
-                        headers: headers,
-                        body: JSON.stringify({ device_key: deviceKey, command: 'kapat' })
-                    });
-                    if (res.ok) {
-                        showToast(feText('muteSent'), 'ok');
-                    } else {
-                        const d = await res.json().catch(() => ({}));
-                        showToast(d.error || feText('commandFailed'), 'err');
-                    }
-                } catch (err) { showToast(feText('commandConnFailed'), 'err'); }
-            };
-
-            fetchDeviceReading(deviceKey);
-            deviceDataInterval = setInterval(() => fetchDeviceReading(deviceKey), 5000);
-        }
+        });
 
         async function handleCreateUser(e) {
             e.preventDefault();
@@ -3250,8 +3430,8 @@
                 forceSubmit: 'Bilgileri Güncelle',
                 adminAddUser: 'Admin Paneli: Hesap Ekle',
                 tempPasswordLabel: 'Geçici Şifre',
-                deviceIdLabel: 'Cihaz Kimliği',
-                deviceIdHint: "Bu kod, sattığın cihazın firmware'ine de aynen yazılmalı.",
+                deviceIdLabel: 'Cihaz Kimliği (MQTT Topic)',
+                deviceIdHint: "Firmware'deki MQTT_TOPIC ile birebir aynı olmalı (örn. fireeye/device1). Site bu konu üzerinden cihaza komut gönderir ve telemetriyi dinler.",
                 createAccountBtn: 'Hesabı Oluştur',
                 registeredAccounts: 'Kayıtlı Hesaplar',
                 screenshotAlt: 'Ekran Görüntüsü',
@@ -3325,6 +3505,33 @@
                 deviceNone: 'Bu hesaba tanımlı bir cihaz yok.',
                 connecting: 'Bağlanıyor...',
                 muteSent: 'Susturma komutu cihaza iletildi.',
+                gasLevel: 'Gaz (ADC)',
+                gasThreshold: 'Eşik',
+                warmingUp: 'Isınıyor',
+                deviceControlsTitle: 'Cihaz Kontrolleri',
+                queryStatus: 'Durum Sorgula',
+                buzzerTest: 'Buzzer Testi',
+                thresholdPlaceholder: 'Eşik (1-4095)',
+                sendThreshold: 'Eşiği Gönder',
+                wifiProvisionTitle: 'Wi-Fi Bilgilerini Cihaza Gönder',
+                wifiSsidPlaceholder: 'Wi-Fi adı (SSID)',
+                wifiPassPlaceholder: 'Wi-Fi şifresi',
+                sendToDevice: 'Cihaza Gönder',
+                mqttConnectedWaiting: 'Bağlandı — cihazdan veri bekleniyor...',
+                mqttReconnecting: 'Bağlantı koptu, yeniden bağlanılıyor...',
+                mqttError: 'MQTT bağlantı hatası.',
+                mqttLibMissing: 'MQTT kütüphanesi yüklenemedi. Sayfayı yenileyip tekrar dene.',
+                mqttNotConnected: 'Cihaz bağlantısı yok, komut gönderilemedi.',
+                commandSent: 'Komut cihaza gönderildi.',
+                thresholdInvalid: 'Eşik 1 ile 4095 arasında bir sayı olmalı.',
+                wifiMissing: 'Wi-Fi adı ve şifresi gerekli.',
+                wifiSent: 'Wi-Fi bilgileri cihaza gönderildi.',
+                alarmDetected: 'ALARM: Gaz/duman algılandı!',
+                alarmSilenced: 'Alarm susturuldu, geri sayım başladı.',
+                deviceOnline: 'Cihaz çevrimiçi.',
+                wifiOk: 'Cihaz Wi-Fi ağına bağlandı.',
+                wifiFail: 'Cihaz Wi-Fi ağına bağlanamadı.',
+                buzzerOk: 'Buzzer testi başarılı.',
                 commandFailed: 'Komut gönderilemedi.',
                 commandConnFailed: 'Bağlantı hatası, komut gönderilemedi.',
                 verifySent: 'Doğrulama e-postası gönderildi. Gelen kutunu (ve spam klasörünü) kontrol et.',
@@ -3473,8 +3680,8 @@
                 forceSubmit: 'Update Details',
                 adminAddUser: 'Admin: Add Account',
                 tempPasswordLabel: 'Temporary Password',
-                deviceIdLabel: 'Device ID',
-                deviceIdHint: 'This code must also be written to the firmware of the device you sell.',
+                deviceIdLabel: 'Device ID (MQTT Topic)',
+                deviceIdHint: 'Must exactly match MQTT_TOPIC in the firmware (e.g. fireeye/device1). The site sends commands and listens for telemetry on this topic.',
                 createAccountBtn: 'Create Account',
                 registeredAccounts: 'Registered Accounts',
                 screenshotAlt: 'Screenshot',
@@ -3548,6 +3755,33 @@
                 deviceNone: 'No device is linked to this account.',
                 connecting: 'Connecting...',
                 muteSent: 'Mute command sent to the device.',
+                gasLevel: 'Gas (ADC)',
+                gasThreshold: 'Threshold',
+                warmingUp: 'warming up',
+                deviceControlsTitle: 'Device Controls',
+                queryStatus: 'Query Status',
+                buzzerTest: 'Buzzer Test',
+                thresholdPlaceholder: 'Threshold (1-4095)',
+                sendThreshold: 'Send Threshold',
+                wifiProvisionTitle: 'Send Wi-Fi Credentials to Device',
+                wifiSsidPlaceholder: 'Wi-Fi name (SSID)',
+                wifiPassPlaceholder: 'Wi-Fi password',
+                sendToDevice: 'Send to Device',
+                mqttConnectedWaiting: 'Connected — waiting for device data...',
+                mqttReconnecting: 'Connection lost, reconnecting...',
+                mqttError: 'MQTT connection error.',
+                mqttLibMissing: 'Could not load the MQTT library. Refresh the page and try again.',
+                mqttNotConnected: 'No device connection, command not sent.',
+                commandSent: 'Command sent to the device.',
+                thresholdInvalid: 'The threshold must be a number between 1 and 4095.',
+                wifiMissing: 'Wi-Fi name and password are required.',
+                wifiSent: 'Wi-Fi credentials sent to the device.',
+                alarmDetected: 'ALARM: Gas/smoke detected!',
+                alarmSilenced: 'Alarm silenced, countdown started.',
+                deviceOnline: 'Device is online.',
+                wifiOk: 'Device connected to Wi-Fi.',
+                wifiFail: 'Device could not connect to Wi-Fi.',
+                buzzerOk: 'Buzzer test passed.',
                 commandFailed: 'Could not send the command.',
                 commandConnFailed: 'Connection error, could not send the command.',
                 verifySent: 'Verification email sent. Check your inbox (and spam folder).',
