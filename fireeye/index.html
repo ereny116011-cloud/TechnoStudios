@@ -1273,6 +1273,7 @@
     <header>
         <a href="../" class="back-home" data-i18n="backHome">&larr; Geri Dön</a>
         <div class="header-actions">
+            <button id="adminPanelBtn" class="util-btn" style="display:none; border-color: var(--accent); color: var(--accent);" onclick="openAccountModal('admin')" data-i18n="adminPanelBtn">Admin Paneli</button>
             <button id="adminStatusIndicator" class="util-btn" style="display:none; border-color: var(--accent); color: var(--accent);" onclick="logoutAdmin()" data-i18n="adminModeExit">Admin Modu (Çıkış)</button>
             <button id="headerLoginBtn" class="util-btn" onclick="openAccountModal('login')" data-i18n="login">Giriş Yap</button>
             <button id="headerRegisterBtn" class="util-btn" onclick="openAccountModal('register')" style="border-color: var(--accent); color: var(--accent);" data-i18n="register">Kaydol</button>
@@ -2047,7 +2048,11 @@
             if (!raw) return;
             try {
                 const data = JSON.parse(raw);
-                if (data.user.isNoData) {
+                if (data.user.isAdmin) {
+                    enableAdminMode();
+                    setHeaderAuthButtons(false);
+                    openAccountModal('admin');
+                } else if (data.user.isNoData) {
                     showForceChange(data.user.email);
                 } else {
                     showAccountDashboard(data.user);
@@ -2089,7 +2094,10 @@
                 if (el) el.style.display = 'none';
             });
 
-            const target = document.getElementById(panels[view] || 'accountLoginBox');
+            const adminBox = document.getElementById('adminUserPanelBox');
+            if (adminBox) adminBox.style.display = (view === 'admin') ? 'block' : 'none';
+
+            const target = view === 'admin' ? null : document.getElementById(panels[view] || 'accountLoginBox');
             if (target) target.style.display = 'block';
 
             const registerForm = document.getElementById('registerForm');
@@ -2140,6 +2148,9 @@
                     // Yönetici bilgileriyle girildi: admin uçları için Basic başlığını sakla.
                     sessionStorage.setItem('fireeye_admin_auth', 'Basic ' + btoa(email + ':' + password));
                     enableAdminMode();
+                    setHeaderAuthButtons(false);
+                    openAccountModal('admin');
+                    return;
                 }
 
                 if (data.user.isNoData) {
@@ -2656,7 +2667,7 @@
             try {
                 const res = await fetch(WORKER_BASE + '/admin/create-user', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': getAdminAuthHeader() },
+                    headers: Object.assign({ 'Content-Type': 'application/json' }, getAdminAuthHeader()),
                     body: JSON.stringify({ email, password, fullName, mqttTopic, mqttHost, mqttUser, mqttPass })
                 });
                 const data = await res.json();
@@ -2674,7 +2685,7 @@
             const container = document.getElementById('userListContainer');
             try {
                 const res = await fetch(WORKER_BASE + '/admin/users', {
-                    headers: { 'Authorization': getAdminAuthHeader() }
+                    headers: getAdminAuthHeader()
                 });
                 const users = await res.json();
                 renderUsers(Array.isArray(users) ? users : []);
@@ -2713,7 +2724,7 @@
             try {
                 const res = await fetch(WORKER_BASE + '/admin/users/reset-password', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': getAdminAuthHeader() },
+                    headers: Object.assign({ 'Content-Type': 'application/json' }, getAdminAuthHeader()),
                     body: JSON.stringify({ id })
                 });
                 const data = await res.json().catch(() => ({}));
@@ -2730,7 +2741,7 @@
             try {
                 const res = await fetch(WORKER_BASE + '/admin/users?id=' + id, {
                     method: 'DELETE',
-                    headers: { 'Authorization': getAdminAuthHeader() }
+                    headers: getAdminAuthHeader()
                 });
                 if (!res.ok) throw new Error(feText('deleteFailed'));
                 loadUsers();
@@ -2784,6 +2795,7 @@
         function enableAdminMode() {
             document.body.classList.add('admin-mode');
             document.getElementById('adminStatusIndicator').style.display = 'inline-flex';
+            document.getElementById('adminPanelBtn').style.display = 'inline-flex';
             document.getElementById('adminPanelBox').style.display = 'block';
             document.getElementById('adminScreenshotBox').style.display = 'block';
             document.getElementById('adminUserPanelBox').style.display = 'block';
@@ -2798,11 +2810,27 @@
             sessionStorage.removeItem('fireeye_admin_auth');
             document.body.classList.remove('admin-mode');
             document.getElementById('adminStatusIndicator').style.display = 'none';
+            document.getElementById('adminPanelBtn').style.display = 'none';
             document.getElementById('adminPanelBox').style.display = 'none';
             document.getElementById('adminScreenshotBox').style.display = 'none';
             document.getElementById('adminUserPanelBox').style.display = 'none';
             renderComments();
             renderScreenshots();
+
+            // Admin oturumu aynı zamanda kullanıcı oturumu olarak saklandığı için
+            // "Admin Modu (Çıkış)" tam çıkış yapar.
+            try {
+                const stored = JSON.parse(localStorage.getItem('fireeye_user') || '{}');
+                if (stored.user && stored.user.isAdmin) {
+                    localStorage.removeItem('fireeye_user');
+                    if (!silent) {
+                        setHeaderAuthButtons(true);
+                        closeAccountModal();
+                        activateTab('download');
+                    }
+                }
+            } catch (e) {}
+
             if (!silent) alert(feText('adminExitAlert'));
         }
 
@@ -3436,6 +3464,7 @@
                 stableSuffix: 'Kararlı Sürüm',
                 downloadBtnPrefix: 'APK İndir',
 
+                adminPanelBtn: 'Admin Paneli',
                 adminModeExit: 'Admin Modu (Çıkış)',
                 footerRights: '&copy; 2026 TechnoStudios &bull; Tüm hakları saklıdır.',
                 footerPrivacy: 'Gizlilik',
@@ -3692,6 +3721,7 @@
                 stableSuffix: 'Stable',
                 downloadBtnPrefix: 'Download APK',
 
+                adminPanelBtn: 'Admin Panel',
                 adminModeExit: 'Admin Mode (Exit)',
                 footerRights: '&copy; 2026 TechnoStudios &bull; All rights reserved.',
                 footerPrivacy: 'Privacy',
