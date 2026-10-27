@@ -1,8 +1,13 @@
 # Cloudflare Wrangler yerel önbelleği / oturum bilgileri
 .wrangler/
+.dev.vars
 
 # Node bağımlılıkları
 node_modules/
+
+# Yerel ortam / gizli değerler
+.env
+.env.*
 
 # İşletim sistemi ve editör dosyaları
 .DS_Store

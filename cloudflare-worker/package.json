@@ -1,0 +1,16 @@
+{
+  "name": "fireeye-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FireEye API - Cloudflare Worker (TechnoStudios)",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "db:migrate": "wrangler d1 execute fireeye_db --remote --file=./schema.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^4.154.0"
+  }
+}
