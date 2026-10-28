@@ -64,7 +64,14 @@ GitHub deposunda **Settings → Secrets and variables → Actions** bölümüne 
 > API Token gerekir. Token'a `Workers Scripts:Edit`, `D1:Edit` ve `Account Settings:Read`
 > izinlerini ver.
 
-## 4. Kontrol
+## 4. Otomatik dağıtım durumu
+
+- İş akışı: `.github/workflows/deploy-worker.yml`
+- Gerekli GitHub secret'ları: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`
+- `main` dalına `cloudflare-worker/` altında yapılan her push otomatik dağıtılır.
+- Manuel tetikleme: GitHub → Actions → **Deploy Cloudflare Worker** → **Run workflow**.
+
+## 5. Kontrol
 
 ```powershell
 npx wrangler deployments list
