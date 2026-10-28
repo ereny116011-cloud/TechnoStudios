@@ -99,6 +99,132 @@ async function sha256Hex(text) {
     return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// --- Cihaz yardımcıları (token, anahtar, telemetri) ---
+function randomDeviceToken() {
+    return 'fe_' + base64UrlEncode(crypto.getRandomValues(new Uint8Array(24)));
+}
+
+function newDeviceKey(name) {
+    const map = { 'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u' };
+    const base = String(name || 'cihaz').toLowerCase()
+        .replace(/[çğıöşü]/g, (c) => map[c] || c)
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 24) || 'cihaz';
+    const rand = Array.from(crypto.getRandomValues(new Uint8Array(3)), (b) => b.toString(16).padStart(2, '0')).join('');
+    return base + '-' + rand;
+}
+
+// Firmware'in gönderdiği "TELEMETRI;SICAKLIK=..;NEM=..;GAZ=.." metnini ayrıştırır.
+function parseTelemetry(payload) {
+    const out = { sicaklik: null, nem: null, gaz: null, esik: null, durum: null };
+    const text = String(payload == null ? '' : payload).trim();
+    if (!text) return out;
+
+    if (text.startsWith('TELEMETRI;')) {
+        text.slice(10).split(';').forEach((part) => {
+            const idx = part.indexOf('=');
+            if (idx < 0) return;
+            const key = part.slice(0, idx).trim().toUpperCase();
+            const val = part.slice(idx + 1).trim().replace(',', '.');
+            if (key === 'SICAKLIK' && isFinite(Number(val))) out.sicaklik = Number(val);
+            else if (key === 'NEM' && isFinite(Number(val))) out.nem = Number(val);
+            else if (key === 'GAZ' && isFinite(parseInt(val, 10))) out.gaz = parseInt(val, 10);
+            else if (key === 'ESIK' && isFinite(parseInt(val, 10))) out.esik = parseInt(val, 10);
+            else if (key === 'DURUM') out.durum = val.toUpperCase();
+        });
+        return out;
+    }
+
+    text.split(/[;,]/).map((s) => s.trim()).forEach((part) => {
+        if (part.startsWith('SICAKLIK:')) out.sicaklik = Number(part.slice(9).replace(',', '.'));
+        else if (part.startsWith('NEM:')) out.nem = Number(part.slice(4).replace(',', '.'));
+        else if (part.startsWith('GAZ:')) out.gaz = parseInt(part.slice(4), 10);
+        else if (part.startsWith('ESIK:')) out.esik = parseInt(part.slice(5), 10);
+        else if (part.startsWith('DURUM:')) out.durum = part.slice(6).split(':')[0].toUpperCase();
+    });
+
+    if (text === 'ALARM:GAZ') out.durum = 'ALARM';
+    else if (text === 'ALARM_SUSTURULDU') out.durum = 'GERI_SAYIM';
+    else if (text === 'DURUM:GAZ_HALA_YUKSEK') out.durum = 'ALARM';
+    else if (text === 'DURUM:NORMAL') out.durum = 'NORMAL';
+
+    return out;
+}
+
+// SQLite'ın "YYYY-MM-DD HH:MM:SS" (UTC) biçimini milisaniyeye çevirir.
+function sqliteTimeMs(value) {
+    if (!value) return 0;
+    let text = String(value).trim().replace(' ', 'T');
+    if (!/[zZ]|[+-]\d{2}:?\d{2}$/.test(text)) text += 'Z';
+    const ms = new Date(text).getTime();
+    return isNaN(ms) ? 0 : ms;
+}
+
+function publicDevice(row) {
+    return {
+        id: row.id,
+        name: row.name,
+        deviceKey: row.device_key,
+        hasToken: !!row.token_hash,
+        lastSeenAt: row.last_seen_at || null,
+        createdAt: row.created_at,
+    };
+}
+
+async function listDevices(env, userId) {
+    const { results } = await env.DB
+        .prepare('SELECT * FROM devices WHERE user_id = ? ORDER BY id ASC')
+        .bind(userId)
+        .all();
+    return (results || []).map(publicDevice);
+}
+
+// Kullanıcının hiç cihazı yoksa token'sız bir cihaz oluşturur (token panelden üretilir).
+async function ensureDevice(env, userId, fullName) {
+    const row = await env.DB.prepare('SELECT COUNT(*) AS c FROM devices WHERE user_id = ?').bind(userId).first();
+    if (row && row.c > 0) return null;
+    const ins = await env.DB.prepare('INSERT INTO devices (user_id, name, device_key) VALUES (?, ?, ?)')
+        .bind(userId, 'Cihaz 1', newDeviceKey(fullName))
+        .run();
+    const device = await env.DB.prepare('SELECT * FROM devices WHERE id = ?').bind(ins.meta.last_row_id).first();
+    return device ? publicDevice(device) : null;
+}
+
+// Yeni cihaz + tek seferlik gösterilecek token üretir.
+async function createDeviceForUser(env, userId, name) {
+    const deviceKey = newDeviceKey(name);
+    const token = randomDeviceToken();
+    const tokenHash = await sha256Hex(token);
+    const ins = await env.DB.prepare(
+        'INSERT INTO devices (user_id, name, device_key, token_hash) VALUES (?, ?, ?, ?)'
+    ).bind(userId, name, deviceKey, tokenHash).run();
+    const row = await env.DB.prepare('SELECT * FROM devices WHERE id = ?').bind(ins.meta.last_row_id).first();
+    return { device: publicDevice(row), token };
+}
+
+async function ownedDevice(env, session, deviceKey) {
+    if (!session) return null;
+    if (session.admin) {
+        return env.DB.prepare('SELECT * FROM devices WHERE device_key = ?').bind(deviceKey).first();
+    }
+    return env.DB.prepare('SELECT * FROM devices WHERE device_key = ? AND user_id = ?')
+        .bind(deviceKey, session.uid)
+        .first();
+}
+
+// Cihaz isteğinin kimliğini doğrular. Eski (token'sız) cihazlar için DEVICE_SECRET'a izin verir.
+async function verifyDeviceRequest(request, env, device) {
+    if (!device) return false;
+    const incoming = (request.headers.get('X-Device-Token') || '').trim();
+    if (device.token_hash) {
+        if (!incoming) return false;
+        return (await sha256Hex(incoming)) === device.token_hash;
+    }
+    const legacy = (request.headers.get('X-Device-Secret') || '').trim();
+    return !!legacy && legacy === (env.DEVICE_SECRET || 'fireeye-device-2026');
+}
+
 // İstek sahibinin IP adresini (Cloudflare başlıklarından) çıkarır.
 function clientIp(request) {
     return request.headers.get('CF-Connecting-IP')
@@ -717,12 +843,15 @@ export default {
                 if (!env.SESSION_SECRET) return json({ success: false, message: 'Sunucu yapılandırma hatası.' }, 500);
 
                 const user = await env.DB.prepare(
-                    'SELECT id, email, full_name, password_hash, password_salt, mqtt_topic, mqtt_host, mqtt_user, mqtt_pass, is_no_data, email_verified FROM users WHERE email = ?'
+                    'SELECT id, email, full_name, password_hash, password_salt, is_no_data, email_verified FROM users WHERE email = ?'
                 ).bind(email).first();
 
                 if (!user || !(await verifyPassword(password, user.password_hash, user.password_salt))) {
                     return json({ success: false, message: 'E-posta veya şifre hatalı.' }, 401);
                 }
+
+                await ensureDevice(env, user.id, user.full_name);
+                const devices = await listDevices(env, user.id);
 
                 const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30; // 30 gün
                 const token = await signSession({ uid: user.id, exp }, env.SESSION_SECRET);
@@ -737,10 +866,7 @@ export default {
                         fullName: user.full_name || '',
                         isNoData: !!user.is_no_data,
                         emailVerified: !!user.email_verified,
-                        mqttTopic: user.mqtt_topic || null,
-                        mqttHost: user.mqtt_host || null,
-                        mqttUser: user.mqtt_user || null,
-                        mqttPass: user.mqtt_pass || null,
+                        devices,
                     },
                 });
             }
@@ -773,6 +899,12 @@ export default {
                     return json({ success: false, message: 'Bu e-posta ile zaten bir hesap var.' }, 400);
                 }
 
+                // Hesap açılır açılmaz ilk cihaz ve tek seferlik token üretilir.
+                let first = null;
+                try {
+                    first = await createDeviceForUser(env, userId, 'Cihaz 1');
+                } catch (e) { console.error('Cihaz oluşturma hatası:', e && e.message); }
+
                 // Hoş geldin + e-posta doğrulama maili (Resend yapılandırılmamışsa sessizce geçer).
                 try {
                     await issueVerificationEmail(request, env, { id: userId, email, full_name: fullName }, body.redirect || '');
@@ -785,7 +917,9 @@ export default {
                     success: true,
                     message: 'Kayıt başarılı. E-postana bir doğrulama bağlantısı gönderdik.',
                     token,
-                    user: { id: String(userId), email, fullName, isNoData: false, emailVerified: false, mqttTopic: null },
+                    user: { id: String(userId), email, fullName, isNoData: false, emailVerified: false },
+                    device: first ? first.device : null,
+                    deviceToken: first ? first.token : null,
                 });
             }
 
@@ -833,6 +967,7 @@ export default {
                     ).bind(ins.meta.last_row_id).first();
                 }
 
+                await ensureDevice(env, user.id, user.full_name);
                 const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30;
                 const token = await signSession({ uid: user.id, exp }, env.SESSION_SECRET);
 
@@ -846,10 +981,7 @@ export default {
                         fullName: user.full_name || '',
                         isNoData: !!user.is_no_data,
                         emailVerified: !!user.email_verified,
-                        mqttTopic: user.mqtt_topic || null,
-                        mqttHost: user.mqtt_host || null,
-                        mqttUser: user.mqtt_user || null,
-                        mqttPass: user.mqtt_pass || null,
+                        devices: await listDevices(env, user.id),
                     },
                 });
             }
@@ -892,6 +1024,7 @@ export default {
                     ).bind(ins.meta.last_row_id).first();
                 }
 
+                await ensureDevice(env, user.id, user.full_name);
                 const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30;
                 const token = await signSession({ uid: user.id, exp }, env.SESSION_SECRET);
 
@@ -905,10 +1038,7 @@ export default {
                         fullName: user.full_name || '',
                         isNoData: !!user.is_no_data,
                         emailVerified: !!user.email_verified,
-                        mqttTopic: user.mqtt_topic || null,
-                        mqttHost: user.mqtt_host || null,
-                        mqttUser: user.mqtt_user || null,
-                        mqttPass: user.mqtt_pass || null,
+                        devices: await listDevices(env, user.id),
                     },
                 });
             }
@@ -918,9 +1048,11 @@ export default {
                 const session = await getSessionUser(request, env);
                 if (!session || !session.uid) return json({ success: false, message: 'Oturum bulunamadı.' }, 401);
                 const user = await env.DB.prepare(
-                    'SELECT id, email, full_name, mqtt_topic, mqtt_host, mqtt_user, mqtt_pass, is_no_data, email_verified FROM users WHERE id = ?'
+                    'SELECT id, email, full_name, is_no_data, email_verified FROM users WHERE id = ?'
                 ).bind(session.uid).first();
                 if (!user) return json({ success: false, message: 'Hesap bulunamadı.' }, 404);
+                await ensureDevice(env, user.id, user.full_name);
+                const devices = await listDevices(env, user.id);
                 return json({
                     success: true,
                     user: {
@@ -929,10 +1061,7 @@ export default {
                         fullName: user.full_name || '',
                         isNoData: !!user.is_no_data,
                         emailVerified: !!user.email_verified,
-                        mqttTopic: user.mqtt_topic || null,
-                        mqttHost: user.mqtt_host || null,
-                        mqttUser: user.mqtt_user || null,
-                        mqttPass: user.mqtt_pass || null,
+                        devices,
                     },
                 });
             }
@@ -1013,9 +1142,8 @@ export default {
                 return back('gh_token=' + encodeURIComponent(token));
             }
 
-            // --- /admin/create-user --- (admin: sattığın ürünün HiveMQ topic'ini hesaba bağlar) ---
+            // --- /admin/create-user --- (admin: hesap + ilk cihaz token'ı oluşturur) ---
             if (url.pathname === '/admin/create-user' && request.method === 'POST') {
-                const authHeader = request.headers.get('Authorization') || '';
                 if (!(await isAdmin(request, env))) {
                     return json({ success: false, message: 'Yetkisiz işlem' }, 401);
                 }
@@ -1024,25 +1152,29 @@ export default {
                 const email = (body.email || '').trim().toLowerCase();
                 const password = body.password || '';
                 const fullName = (body.fullName || '').trim();
-                const mqttTopic = (body.mqttTopic || '').trim();
-                const mqttHost = (body.mqttHost || '').trim();
-                const mqttUser = (body.mqttUser || '').trim();
-                const mqttPass = body.mqttPass || '';
+                const deviceName = ((body.deviceName || 'Cihaz 1').trim() || 'Cihaz 1').slice(0, 60);
 
                 if (!email || !password) return json({ success: false, message: 'E-posta ve şifre gerekli.' }, 400);
-                if (!mqttTopic || !mqttHost || !mqttUser || !mqttPass) {
-                    return json({ success: false, message: 'Cihaz için MQTT broker, kullanıcı, şifre ve topic girilmeli.' }, 400);
-                }
 
                 const { hash, salt } = await hashPassword(password);
+                let userId;
                 try {
                     const ins = await env.DB.prepare(
-                        'INSERT INTO users (email, password_hash, password_salt, full_name, mqtt_topic, mqtt_host, mqtt_user, mqtt_pass, is_no_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)'
-                    ).bind(email, hash, salt, fullName, mqttTopic, mqttHost, mqttUser, mqttPass).run();
-                    return json({ success: true, message: 'Kullanıcı oluşturuldu', user: { id: String(ins.meta.last_row_id), email, fullName, isNoData: true, mqttTopic, mqttHost, mqttUser, mqttPass } });
+                        'INSERT INTO users (email, password_hash, password_salt, full_name, is_no_data) VALUES (?, ?, ?, ?, 1)'
+                    ).bind(email, hash, salt, fullName).run();
+                    userId = ins.meta.last_row_id;
                 } catch (e) {
                     return json({ success: false, message: 'Bu e-posta ile zaten bir hesap var.' }, 400);
                 }
+
+                const first = await createDeviceForUser(env, userId, deviceName);
+                return json({
+                    success: true,
+                    message: 'Kullanıcı oluşturuldu',
+                    user: { id: String(userId), email, fullName, isNoData: true },
+                    device: first.device,
+                    deviceToken: first.token,
+                });
             }
 
             // --- /admin/users --- (admin: hesap listesi ve silme) ---
@@ -1054,24 +1186,40 @@ export default {
 
                 if (request.method === 'GET') {
                     const { results } = await env.DB
-                        .prepare('SELECT id, email, full_name, mqtt_topic, mqtt_host, mqtt_user, mqtt_pass, is_no_data, reset_requested, reset_requested_at, created_at FROM users ORDER BY reset_requested DESC, id DESC')
+                        .prepare('SELECT id, email, full_name, is_no_data, reset_requested, reset_requested_at, created_at FROM users ORDER BY reset_requested DESC, id DESC')
                         .all();
+                    const devicesRes = await env.DB.prepare('SELECT * FROM devices ORDER BY id ASC').all();
+                    const byUser = {};
+                    (devicesRes.results || []).forEach((d) => {
+                        (byUser[d.user_id] = byUser[d.user_id] || []).push(publicDevice(d));
+                    });
                     return json(results.map(r => ({
                         id: r.id,
                         email: r.email,
                         fullName: r.full_name,
-                        mqttTopic: r.mqtt_topic,
                         isNoData: !!r.is_no_data,
                         resetRequested: !!r.reset_requested,
                         resetRequestedAt: r.reset_requested_at,
                         createdAt: r.created_at,
+                        devices: byUser[r.id] || [],
                     })));
                 }
 
                 if (request.method === 'DELETE') {
                     const id = Number(url.searchParams.get('id'));
                     if (!id) return json({ error: 'Geçersiz id.' }, 400);
-                    await env.DB.prepare('DELETE FROM users WHERE id = ?').bind(id).run();
+
+                    const own = await env.DB.prepare('SELECT device_key FROM devices WHERE user_id = ?').bind(id).all();
+                    const keys = (own.results || []).map((d) => d.device_key);
+                    const stmts = [];
+                    keys.forEach((key) => {
+                        stmts.push(env.DB.prepare('DELETE FROM device_readings WHERE device_key = ?').bind(key));
+                        stmts.push(env.DB.prepare('DELETE FROM device_commands WHERE device_key = ?').bind(key));
+                        stmts.push(env.DB.prepare('DELETE FROM device_reading_history WHERE device_key = ?').bind(key));
+                    });
+                    stmts.push(env.DB.prepare('DELETE FROM devices WHERE user_id = ?').bind(id));
+                    stmts.push(env.DB.prepare('DELETE FROM users WHERE id = ?').bind(id));
+                    await env.DB.batch(stmts);
                     return json({ status: 'ok' });
                 }
             }
@@ -1238,58 +1386,187 @@ export default {
                 }
             }
 
-            // --- /device/report --- (ESP32/Arduino buraya periyodik olarak veri gönderir, MQTT'ye gerek yok) ---
-            if (url.pathname === '/device/report' && request.method === 'POST') {
-                const deviceSecret = request.headers.get('X-Device-Secret') || '';
-                const expectedSecret = env.DEVICE_SECRET || 'fireeye-device-2026';
-                if (deviceSecret !== expectedSecret) return json({ error: 'Yetkisiz cihaz.' }, 401);
+            // --- /devices --- (giriş yapan kullanıcının cihazları)
+            if (url.pathname === '/devices') {
+                const session = await getSessionUser(request, env);
+                if (!session || (!session.uid && !session.admin)) return json({ success: false, message: 'Oturum bulunamadı.' }, 401);
 
+                if (request.method === 'GET') {
+                    if (session.admin) {
+                        const { results } = await env.DB.prepare('SELECT * FROM devices ORDER BY id ASC').all();
+                        return json({ success: true, devices: (results || []).map(publicDevice) });
+                    }
+                    return json({ success: true, devices: await listDevices(env, session.uid) });
+                }
+
+                if (request.method === 'POST') {
+                    if (session.admin) return json({ success: false, message: 'Cihazlar kullanıcı hesabından eklenir.' }, 400);
+                    const count = await env.DB.prepare('SELECT COUNT(*) AS c FROM devices WHERE user_id = ?').bind(session.uid).first();
+                    if (count && count.c >= 10) {
+                        return json({ success: false, message: 'Bir hesapta en fazla 10 cihaz olabilir.' }, 400);
+                    }
+                    const body = await request.json().catch(() => ({}));
+                    const name = ((body.name || '').trim() || 'Yeni Cihaz').slice(0, 60);
+                    const created = await createDeviceForUser(env, session.uid, name);
+                    return json({ success: true, device: created.device, deviceToken: created.token });
+                }
+
+                if (request.method === 'DELETE') {
+                    const id = Number(url.searchParams.get('id'));
+                    if (!id) return json({ success: false, message: 'Geçersiz cihaz.' }, 400);
+                    const device = session.admin
+                        ? await env.DB.prepare('SELECT * FROM devices WHERE id = ?').bind(id).first()
+                        : await env.DB.prepare('SELECT * FROM devices WHERE id = ? AND user_id = ?').bind(id, session.uid).first();
+                    if (!device) return json({ success: false, message: 'Cihaz bulunamadı.' }, 404);
+
+                    await env.DB.batch([
+                        env.DB.prepare('DELETE FROM device_readings WHERE device_key = ?').bind(device.device_key),
+                        env.DB.prepare('DELETE FROM device_commands WHERE device_key = ?').bind(device.device_key),
+                        env.DB.prepare('DELETE FROM device_reading_history WHERE device_key = ?').bind(device.device_key),
+                        env.DB.prepare('DELETE FROM devices WHERE id = ?').bind(id),
+                    ]);
+                    return json({ success: true });
+                }
+            }
+
+            // --- /devices/rotate-token --- (cihaz token'ını yeniler; yeni token bir kez gösterilir)
+            if (url.pathname === '/devices/rotate-token' && request.method === 'POST') {
+                const session = await getSessionUser(request, env);
+                if (!session || (!session.uid && !session.admin)) return json({ success: false, message: 'Oturum bulunamadı.' }, 401);
+
+                const body = await request.json().catch(() => ({}));
+                const id = Number(body.id);
+                if (!id) return json({ success: false, message: 'Geçersiz cihaz.' }, 400);
+
+                const device = session.admin
+                    ? await env.DB.prepare('SELECT * FROM devices WHERE id = ?').bind(id).first()
+                    : await env.DB.prepare('SELECT * FROM devices WHERE id = ? AND user_id = ?').bind(id, session.uid).first();
+                if (!device) return json({ success: false, message: 'Cihaz bulunamadı.' }, 404);
+
+                const token = randomDeviceToken();
+                const tokenHash = await sha256Hex(token);
+                await env.DB.prepare('UPDATE devices SET token_hash = ? WHERE id = ?').bind(tokenHash, id).run();
+                return json({ success: true, deviceToken: token });
+            }
+
+            // --- /devices/rename --- (cihaz adını günceller)
+            if (url.pathname === '/devices/rename' && request.method === 'POST') {
+                const session = await getSessionUser(request, env);
+                if (!session || (!session.uid && !session.admin)) return json({ success: false, message: 'Oturum bulunamadı.' }, 401);
+
+                const body = await request.json().catch(() => ({}));
+                const id = Number(body.id);
+                const name = ((body.name || '').trim()).slice(0, 60);
+                if (!id || !name) return json({ success: false, message: 'Cihaz ve ad gerekli.' }, 400);
+
+                const device = session.admin
+                    ? await env.DB.prepare('SELECT id FROM devices WHERE id = ?').bind(id).first()
+                    : await env.DB.prepare('SELECT id FROM devices WHERE id = ? AND user_id = ?').bind(id, session.uid).first();
+                if (!device) return json({ success: false, message: 'Cihaz bulunamadı.' }, 404);
+
+                await env.DB.prepare('UPDATE devices SET name = ? WHERE id = ?').bind(name, id).run();
+                return json({ success: true });
+            }
+
+            // --- /device/latest --- (panel: cihazın son okuması + çevrimiçi durumu)
+            if (url.pathname === '/device/latest' && request.method === 'GET') {
+                const session = await getSessionUser(request, env);
+                const deviceKey = (url.searchParams.get('device_key') || '').trim();
+                if (!deviceKey) return json({ error: 'device_key gerekli.' }, 400);
+
+                const device = await ownedDevice(env, session, deviceKey);
+                if (!device) return json({ error: 'Yetkisiz.' }, 401);
+
+                const row = await env.DB.prepare('SELECT payload, updated_at FROM device_readings WHERE device_key = ?').bind(deviceKey).first();
+                if (!row) return json({ error: 'Henüz veri yok.', device: publicDevice(device) }, 404);
+
+                const seen = sqliteTimeMs(device.last_seen_at);
+                return json({
+                    device: publicDevice(device),
+                    payload: row.payload,
+                    updatedAt: row.updated_at,
+                    lastSeenAt: device.last_seen_at || null,
+                    online: seen > 0 && (Date.now() - seen) < 15000,
+                });
+            }
+
+            // --- /device/history --- (panel: son 24 saatin özetlenmiş grafiği)
+            if (url.pathname === '/device/history' && request.method === 'GET') {
+                const session = await getSessionUser(request, env);
+                const deviceKey = (url.searchParams.get('device_key') || '').trim();
+                if (!deviceKey) return json({ error: 'device_key gerekli.' }, 400);
+
+                const device = await ownedDevice(env, session, deviceKey);
+                if (!device) return json({ error: 'Yetkisiz.' }, 401);
+
+                const hours = Math.max(1, Math.min(24, Number(url.searchParams.get('hours')) || 24));
+                const { results } = await env.DB.prepare(
+                    "SELECT strftime('%Y-%m-%dT%H:%M:00Z', created_at) AS bucket, " +
+                    'AVG(sicaklik) AS sicaklik, AVG(nem) AS nem, MAX(gaz) AS gaz, MAX(esik) AS esik, ' +
+                    "SUM(CASE WHEN durum LIKE '%ALARM%' THEN 1 ELSE 0 END) AS alarms " +
+                    'FROM device_reading_history WHERE device_key = ? AND created_at >= datetime("now", ?) ' +
+                    'GROUP BY bucket ORDER BY bucket ASC LIMIT 500'
+                ).bind(deviceKey, '-' + hours + ' hours').all();
+
+                return json({
+                    success: true,
+                    deviceKey,
+                    hours,
+                    points: (results || []).map((r) => ({
+                        t: r.bucket,
+                        sicaklik: r.sicaklik == null ? null : Number(r.sicaklik),
+                        nem: r.nem == null ? null : Number(r.nem),
+                        gaz: r.gaz == null ? null : Number(r.gaz),
+                        esik: r.esik == null ? null : Number(r.esik),
+                        alarm: Number(r.alarms) > 0,
+                    })),
+                });
+            }
+
+            // --- /device/report (POST) --- (Deneyap Kart / ESP32 buraya periyodik veri gönderir)
+            if (url.pathname === '/device/report' && request.method === 'POST') {
                 const body = await request.json().catch(() => ({}));
                 const deviceKey = (body.device_key || '').trim();
                 const payload = typeof body.payload === 'string' ? body.payload : JSON.stringify(body.payload || {});
                 if (!deviceKey) return json({ error: 'device_key gerekli.' }, 400);
+                if (payload.length > 2000) return json({ error: 'Veri çok büyük.' }, 413);
 
-                await env.DB.prepare(
-                    'INSERT INTO device_readings (device_key, payload, updated_at) VALUES (?, ?, datetime("now")) ' +
-                    'ON CONFLICT(device_key) DO UPDATE SET payload = excluded.payload, updated_at = excluded.updated_at'
-                ).bind(deviceKey, payload).run();
+                const device = await env.DB.prepare('SELECT * FROM devices WHERE device_key = ?').bind(deviceKey).first();
+                if (!device) return json({ error: 'Cihaz kayıtlı değil.' }, 404);
+                if (!(await verifyDeviceRequest(request, env, device))) return json({ error: 'Yetkisiz cihaz.' }, 401);
 
-                return json({ status: 'ok' });
+                const t = parseTelemetry(payload);
+                const statements = [
+                    env.DB.prepare(
+                        'INSERT INTO device_readings (device_key, payload, updated_at) VALUES (?, ?, datetime("now")) ' +
+                        'ON CONFLICT(device_key) DO UPDATE SET payload = excluded.payload, updated_at = excluded.updated_at'
+                    ).bind(deviceKey, payload),
+                    env.DB.prepare('UPDATE devices SET last_seen_at = datetime("now") WHERE device_key = ?').bind(deviceKey),
+                    env.DB.prepare(
+                        'INSERT INTO device_reading_history (device_key, sicaklik, nem, gaz, esik, durum) VALUES (?, ?, ?, ?, ?, ?)'
+                    ).bind(deviceKey, t.sicaklik, t.nem, t.gaz, t.esik, t.durum),
+                ];
+                await env.DB.batch(statements);
+
+                // Yaklaşık her 50 okumada bir 24 saatten eski kayıtları temizle.
+                if (Math.random() < 0.02) {
+                    await env.DB.prepare('DELETE FROM device_reading_history WHERE created_at < datetime("now", "-25 hours")').run();
+                }
+
+                return json({ status: 'ok', serverTime: Date.now() });
             }
 
-            // --- /device/report (GET) --- (uygulama/site en son okunan veriyi buradan çeker) ---
-            if (url.pathname === '/device/report' && request.method === 'GET') {
-                const deviceKey = (url.searchParams.get('device_key') || '').trim();
-                if (!deviceKey) return json({ error: 'device_key gerekli.' }, 400);
-
-                const row = await env.DB.prepare('SELECT payload, updated_at FROM device_readings WHERE device_key = ?').bind(deviceKey).first();
-                if (!row) return json({ error: 'Henüz veri yok.' }, 404);
-
-                return json({ payload: row.payload, updated_at: row.updated_at });
-            }
-
-            // --- /device/command --- (uygulama/site bir komut kuyruğa koyar, örn. "kapat") ---
-            // Yetki: cihaz sırrı VEYA cihazın sahibi olan giriş yapmış kullanıcı.
+            // --- /device/command (POST) --- (panel: komutu kuyruğa koyar, örn. "kapat")
             if (url.pathname === '/device/command' && request.method === 'POST') {
+                const session = await getSessionUser(request, env);
                 const body = await request.json().catch(() => ({}));
                 const deviceKey = (body.device_key || '').trim();
                 const command = (body.command || '').trim();
                 if (!deviceKey || !command) return json({ error: 'device_key ve command gerekli.' }, 400);
+                if (command.length > 200) return json({ error: 'Komut çok uzun.' }, 400);
 
-                const deviceSecret = request.headers.get('X-Device-Secret') || '';
-                const expectedSecret = env.DEVICE_SECRET || 'fireeye-device-2026';
-                let authorized = deviceSecret === expectedSecret;
-
-                if (!authorized) {
-                    const session = await getSessionUser(request, env);
-                    if (session && session.uid) {
-                        const owner = await env.DB.prepare(
-                            'SELECT id FROM users WHERE id = ? AND mqtt_topic = ?'
-                        ).bind(session.uid, deviceKey).first();
-                        authorized = !!owner;
-                    }
-                }
-                if (!authorized) return json({ error: 'Yetkisiz.' }, 401);
+                const device = await ownedDevice(env, session, deviceKey);
+                if (!device) return json({ error: 'Yetkisiz.' }, 401);
 
                 await env.DB.prepare(
                     'INSERT INTO device_commands (device_key, command, updated_at) VALUES (?, ?, datetime("now")) ' +
@@ -1299,20 +1576,24 @@ export default {
                 return json({ status: 'ok' });
             }
 
-            // --- /device/command (GET) --- (cihaz periyodik olarak buraya bakar; okunan komut hemen silinir) ---
+            // --- /device/command (GET) --- (cihaz periyodik olarak buraya bakar; okunan komut hemen silinir)
             if (url.pathname === '/device/command' && request.method === 'GET') {
-                const deviceSecret = request.headers.get('X-Device-Secret') || '';
-                const expectedSecret = env.DEVICE_SECRET || 'fireeye-device-2026';
-                if (deviceSecret !== expectedSecret) return json({ error: 'Yetkisiz cihaz.' }, 401);
-
                 const deviceKey = (url.searchParams.get('device_key') || '').trim();
                 if (!deviceKey) return json({ error: 'device_key gerekli.' }, 400);
 
+                const device = await env.DB.prepare('SELECT * FROM devices WHERE device_key = ?').bind(deviceKey).first();
+                if (!device) return json({ error: 'Cihaz kayıtlı değil.' }, 404);
+                if (!(await verifyDeviceRequest(request, env, device))) return json({ error: 'Yetkisiz cihaz.' }, 401);
+
                 const row = await env.DB.prepare('SELECT command FROM device_commands WHERE device_key = ?').bind(deviceKey).first();
                 if (row) {
-                    await env.DB.prepare('DELETE FROM device_commands WHERE device_key = ?').bind(deviceKey).run();
+                    await env.DB.batch([
+                        env.DB.prepare('DELETE FROM device_commands WHERE device_key = ?').bind(deviceKey),
+                        env.DB.prepare('UPDATE devices SET last_seen_at = datetime("now") WHERE device_key = ?').bind(deviceKey),
+                    ]);
                     return json({ command: row.command });
                 }
+                await env.DB.prepare('UPDATE devices SET last_seen_at = datetime("now") WHERE device_key = ?').bind(deviceKey).run();
                 return json({ command: null });
             }
 

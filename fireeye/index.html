@@ -1058,7 +1058,6 @@
         }
     </style>
     <script src="https://alcdn.msauth.net/browser/2.38.1/js/msal-browser.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js" defer></script>
     <style id="linear-theme">
         /* ——— Linear / Vercel esintili katman ——— */
         :root {
@@ -1524,8 +1523,16 @@
                 </div>
 
                 <div class="security-container">
+                    <div class="device-control-row" style="margin-bottom: 14px;">
+                        <label style="font-size: 0.8rem; color: var(--text-secondary);" data-i18n="selectDevice">Cihaz</label>
+                        <select id="deviceSelect" class="form-control" style="max-width: 240px;" onchange="selectDevice(this.value)"></select>
+                        <button type="button" class="util-btn" onclick="addDevice()" data-i18n="addDevice">Cihaz Ekle</button>
+                        <button type="button" class="util-btn" onclick="rotateDeviceToken()" data-i18n="rotateToken">Token Yenile</button>
+                        <button type="button" class="util-btn" onclick="deleteCurrentDevice()" data-i18n="deleteDevice">Cihazı Sil</button>
+                    </div>
+
                     <p style="color: var(--text-secondary); margin-bottom: 10px;" data-i18n="deviceStatusTitle">FireEye Cihaz Durumu (Canlı)</p>
-                    <p id="mqttStatus" style="font-weight: 700;" data-i18n="connecting">Bağlanıyor...</p>
+                    <p id="deviceStatus" style="font-weight: 700;" data-i18n="connecting">Bağlanıyor...</p>
 
                     <div class="sensor-stats" id="sensorStats" style="display:none;">
                         <div class="sensor-stat"><span class="k" data-i18n="temperature">Sıcaklık</span><span class="v" id="statSicaklik">&mdash;</span></div>
@@ -1540,17 +1547,17 @@
                             <span><i class="dot dot-temp"></i><span data-i18n="temperature">Sıcaklık</span> (&deg;C)</span>
                             <span><i class="dot dot-hum"></i><span data-i18n="humidity">Nem</span> (%)</span>
                             <span><i class="dot dot-gas"></i><span data-i18n="gasLevel">Gaz (ADC)</span></span>
-                            <span class="chart-hint" data-i18n="chartHint">Son 60 ölçüm</span>
+                            <span class="chart-hint" data-i18n="chartHint">Son 24 saat</span>
                         </div>
                         <canvas id="sensorChart"></canvas>
                     </div>
 
-                    <button type="button" id="telemetryToggle" class="telemetry-toggle" onclick="toggleTelemetry()" aria-expanded="false" aria-controls="mqttData">
+                    <button type="button" id="telemetryToggle" class="telemetry-toggle" onclick="toggleTelemetry()" aria-expanded="false" aria-controls="telemetryData">
                         <svg class="telemetry-chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         <span data-i18n="telemetryTitle">Telemetri</span>
                     </button>
-                    <pre id="mqttData" style="display:none; white-space: pre-wrap; word-break: break-word; margin-top: 10px; font-size: 0.85rem; color: var(--text-secondary);"></pre>
-                    <button id="mqttMuteBtn" class="main-cta" style="display: none; margin-top: 14px; background: var(--danger);" data-i18n="muteAlarm">Alarmı Sustur</button>
+                    <pre id="telemetryData" style="display:none; white-space: pre-wrap; word-break: break-word; margin-top: 10px; font-size: 0.85rem; color: var(--text-secondary);"></pre>
+                    <button id="alarmMuteBtn" class="main-cta" style="display: none; margin-top: 14px; background: var(--danger);" data-i18n="muteAlarm">Alarmı Sustur</button>
 
                     <div id="deviceControls" style="display: none; margin-top: 18px; border-top: 1px solid var(--line); padding-top: 16px;">
                         <p style="font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 10px;" data-i18n="deviceControlsTitle">Cihaz Kontrolleri</p>
@@ -1562,14 +1569,7 @@
                             <input type="number" id="gasThresholdInput" class="form-control" min="1" max="4095" placeholder="Eşik (1-4095)" data-i18n-placeholder="thresholdPlaceholder" style="max-width: 180px;">
                             <button type="button" class="util-btn" onclick="setGasThreshold()" data-i18n="sendThreshold">Eşiği Gönder</button>
                         </div>
-                        <details style="margin-top: 12px;">
-                            <summary style="cursor: pointer; color: var(--text-secondary); font-size: 0.85rem;" data-i18n="wifiProvisionTitle">Wi-Fi Bilgilerini Cihaza Gönder</summary>
-                            <div class="device-control-row" style="margin-top: 10px;">
-                                <input type="text" id="wifiSsidInput" class="form-control" placeholder="Wi-Fi adı (SSID)" data-i18n-placeholder="wifiSsidPlaceholder" style="max-width: 220px;">
-                                <input type="password" id="wifiPassInput" class="form-control" placeholder="Wi-Fi şifresi" data-i18n-placeholder="wifiPassPlaceholder" style="max-width: 220px;">
-                                <button type="button" class="util-btn" onclick="sendWifiCredentials()" data-i18n="sendToDevice">Cihaza Gönder</button>
-                            </div>
-                        </details>
+                        <p style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px;" data-i18n="commandNote">Komutlar 3 saniye içinde cihaza ulaşır. Cihaz çevrimdışıysa bağlandığında alır.</p>
                     </div>
                 </div>
             </div>
@@ -1593,22 +1593,10 @@
                         <input type="text" id="newUserPassword" class="form-control" placeholder="Geçici Şifre" data-i18n-placeholder="tempPasswordLabel" required>
                     </div>
                     <div class="form-group">
-                        <label data-i18n="deviceIdLabel">Cihaz Kimliği (MQTT Topic)</label>
-                        <input type="text" id="newUserTopic" class="form-control" placeholder="fireeye/device1" required>
+                        <label data-i18n="deviceNameLabel">Cihaz Adı</label>
+                        <input type="text" id="newUserDeviceName" class="form-control" placeholder="Salon Sensörü" data-i18n-placeholder="deviceNamePlaceholder">
                     </div>
-                    <div class="form-group">
-                        <label data-i18n="mqttBrokerLabel">MQTT Broker</label>
-                        <input type="text" id="newUserMqttHost" class="form-control" placeholder="xxxx.s1.eu.hivemq.cloud" required>
-                    </div>
-                    <div class="form-group">
-                        <label data-i18n="mqttUserLabel">MQTT Kullanıcı Adı</label>
-                        <input type="text" id="newUserMqttUser" class="form-control" placeholder="fireeye" required>
-                    </div>
-                    <div class="form-group">
-                        <label data-i18n="mqttPassLabel">MQTT Şifresi</label>
-                        <input type="text" id="newUserMqttPass" class="form-control" placeholder="MQTT şifresi" data-i18n-placeholder="mqttPassPlaceholder" required>
-                    </div>
-                    <small style="color: var(--text-secondary); margin-top: -4px;" data-i18n="mqttCredentialsHint">Firmware'deki MQTT_BROKER, MQTT_USER, MQTT_PASS ve MQTT_TOPIC değerlerini buraya gir. Site WebSocket için otomatik olarak 8884 portunu kullanır.</small>
+                    <small style="color: var(--text-secondary); margin-top: -4px;" data-i18n="createUserHint">Hesap oluşturulunca ilk cihaz ve cihaza özel token üretilir. Token yalnızca bir kez gösterilir; firmware'e yazılır.</small>
                     <button type="submit" class="main-cta" data-i18n="createAccountBtn">Hesabı Oluştur</button>
                 </form>
 
@@ -1725,6 +1713,26 @@
                 </div>
             </div>
         </div>
+
+        <!-- Cihaz Token Modalı (yalnızca bir kez gösterilir) -->
+        <div class="account-modal-overlay" id="deviceTokenModal" onclick="closeDeviceTokenOutside(event)">
+            <div class="account-modal-box" style="max-width: 540px;">
+                <button class="account-modal-close" onclick="closeDeviceTokenModal()" aria-label="Kapat" data-i18n-aria="closeAria">&times;</button>
+                <div class="account-panel">
+                    <h3 class="account-panel-title" data-i18n="deviceTokenTitle">Cihaz Token'ı</h3>
+                    <p class="account-panel-sub" data-i18n="tokenOnce">Bu token yalnızca bir kez gösterilir. Kopyalayıp firmware'deki DEVICE_TOKEN alanına yaz. Kaybolursa "Token Yenile" ile yenisini üretebilirsin.</p>
+                    <div class="form-group">
+                        <label data-i18n="deviceKeyLabel">Cihaz Anahtarı</label>
+                        <input type="text" id="deviceTokenKey" class="form-control" readonly onclick="this.select()">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="deviceTokenLabel">Cihaz Token'ı</label>
+                        <input type="text" id="deviceTokenValue" class="form-control" readonly onclick="this.select()">
+                    </div>
+                    <button type="button" class="main-cta" onclick="copyDeviceToken()" data-i18n="copyToken">Kopyala</button>
+                </div>
+            </div>
+        </div>
     </main>
 
     <footer>
@@ -1745,17 +1753,16 @@
         // adresi (https://fireeye-api.SENIN-ALT-ADIN.workers.dev) buraya yapıştır.
         const WORKER_BASE = 'https://fireeye-api.ereny116011.workers.dev';
 
-        // MQTT bağlantı bilgileri hesap bazlıdır (admin, hesap açarken firmware'deki
-        // MQTT_BROKER / MQTT_USER / MQTT_PASS / MQTT_TOPIC değerlerini girer).
-        // Tarayıcı aynı kümeye TLS WebSocket (8884/mqtt) üzerinden bağlanır.
-        function buildMqttWsUrl(host) {
-            let h = String(host || '').trim();
-            if (!h) return '';
-            if (/^wss?:\/\//i.test(h)) return h;
-            h = h.replace(/^mqtts?:\/\//i, '').replace(/^https?:\/\//i, '');
-            h = h.split('/')[0];
-            h = h.split(':')[0];
-            return 'wss://' + h + ':8884/mqtt';
+        // Cihazlar HTTP ile çalışır: panel 3 saniyede bir /device/latest uç noktasını yoklar,
+        // komutlar /device/command üzerinden kuyruğa alınır. MQTT kullanılmaz.
+        async function apiFetch(path, opts) {
+            const stored = JSON.parse(localStorage.getItem('fireeye_user') || '{}');
+            const options = Object.assign({}, opts || {});
+            const headers = Object.assign({}, options.headers || {});
+            if (stored.token) headers['Authorization'] = 'Bearer ' + stored.token;
+            if (options.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
+            options.headers = headers;
+            return fetch(WORKER_BASE + path, options);
         }
 
         // Google ile Giriş — Google Cloud Console > OAuth istemci kimliği.
@@ -2055,10 +2062,9 @@
             }
         }
 
-        // --- Kullanıcı hesabı girişi (kayıt yok, admin oluşturur) + hesaba tanımlı cihazı canlı okuma ---
-        // Uygulama ile TAMAMEN aynı API sözleşmesi: /login, /admin/create-user, /user/update-credentials.
-        // Cihaz HiveMQ üzerinden yayın yapar; site aynı kümeye WebSocket (8884) ile bağlanıp
-        // "DEV|" mesajlarını dinler, komutları "APP|" önekiyle yayınlar.
+        // --- Kullanıcı hesabı girişi: her hesap birden fazla HTTP cihazı yönetebilir ---
+        // Panel /devices, /device/latest, /device/history ve /device/command uçlarını
+        // oturum token'ı (Bearer) ile kullanır. Cihaz başına ayrı token üretilir.
         let deviceDataInterval = null;
 
         async function restoreUserSession() {
@@ -2235,10 +2241,15 @@
                 const data = await res.json().catch(() => ({}));
                 if (!data.success) throw new Error(data.message || feText('registerFailed'));
 
-                localStorage.setItem('fireeye_user', JSON.stringify({ token: data.token, user: data.user }));
+                const user = Object.assign({}, data.user, {
+                    devices: data.device ? [data.device] : []
+                });
+                localStorage.setItem('fireeye_user', JSON.stringify({ token: data.token, user }));
                 document.getElementById('registerForm').reset();
                 document.getElementById('registerForm').style.display = 'none';
-                showAccountDashboard(data.user);
+                showAccountDashboard(user);
+                // Hesap açılır açılmaz cihaz token'ı bir kez gösterilir.
+                if (data.device && data.deviceToken) showDeviceToken(data.device, data.deviceToken);
             } catch (err) {
                 msg.style.color = 'var(--danger)';
                 msg.textContent = err.message;
@@ -2272,17 +2283,20 @@
         }
 
         function handleUserLogout() {
-            if (deviceDataInterval) { clearInterval(deviceDataInterval); deviceDataInterval = null; }
-            disconnectDeviceMqtt();
+            stopDeviceReading();
+            userDevices = [];
+            currentDevice = null;
             localStorage.removeItem('fireeye_user');
-            const statusEl = document.getElementById('mqttStatus');
-            const dataEl = document.getElementById('mqttData');
-            const muteBtn = document.getElementById('mqttMuteBtn');
+            const statusEl = document.getElementById('deviceStatus');
+            const dataEl = document.getElementById('telemetryData');
+            const muteBtn = document.getElementById('alarmMuteBtn');
             const controls = document.getElementById('deviceControls');
+            const select = document.getElementById('deviceSelect');
             if (statusEl) statusEl.textContent = feText('connecting');
             if (dataEl) dataEl.textContent = '';
             if (muteBtn) muteBtn.style.display = 'none';
             if (controls) controls.style.display = 'none';
+            if (select) select.innerHTML = '';
             logoutAdmin(true);
             setHeaderAuthButtons(true);
             closeAccountModal();
@@ -2331,12 +2345,12 @@
             const banner = document.getElementById('verifyBanner');
             if (banner) banner.style.display = (user.emailVerified === false) ? 'flex' : 'none';
             activateTab('device');
-            startDeviceReading({
-                topic: user.mqttTopic,
-                host: user.mqttHost,
-                user: user.mqttUser,
-                pass: user.mqttPass
-            });
+
+            userDevices = Array.isArray(user.devices) ? user.devices : [];
+            const remembered = localStorage.getItem('fireeye_selected_device');
+            currentDevice = deviceByKey(remembered) || userDevices[0] || null;
+            renderDeviceSelect();
+            startDeviceReading(currentDevice);
         }
 
         // Cihazın gönderdiği mesajları ayrıştırır.
@@ -2395,7 +2409,7 @@
 
         function toggleTelemetry() {
             const btn = document.getElementById('telemetryToggle');
-            const pre = document.getElementById('mqttData');
+            const pre = document.getElementById('telemetryData');
             if (!btn || !pre) return;
             const open = btn.getAttribute('aria-expanded') !== 'true';
             btn.setAttribute('aria-expanded', String(open));
@@ -2572,7 +2586,7 @@
         // Canlı cihaz verisi (kısmi mesajlar birleştirilir)
         const deviceLive = { sicaklik: null, nem: null, gaz: null, esik: null, durum: null, isiniyor: null };
 
-        function updateSensorUI(parsed) {
+        function updateSensorUI(parsed, opts) {
             const st = document.getElementById('sensorStats');
             const wrap = document.getElementById('chartWrap');
 
@@ -2606,10 +2620,18 @@
                 const alarm = (deviceLive.durum || '').toUpperCase().indexOf('ALARM') >= 0;
                 dEl.textContent = durumText;
                 dEl.style.color = alarm ? 'var(--danger)' : 'var(--text-primary)';
+                const muteBtn = document.getElementById('alarmMuteBtn');
+                if (muteBtn) muteBtn.style.display = alarm ? 'inline-flex' : 'none';
+                if (alarm && !alarmToastShown) {
+                    showToast(feText('alarmDetected'), 'err');
+                    alarmToastShown = true;
+                } else if (!alarm) {
+                    alarmToastShown = false;
+                }
             }
 
             // Grafiğe sıcaklık/nem/gaz içeren telemetri mesajları işlensin
-            if (parsed.sicaklik != null || parsed.nem != null || parsed.gaz != null) {
+            if ((parsed.sicaklik != null || parsed.nem != null || parsed.gaz != null) && (!opts || opts.push !== false)) {
                 pushSensorPoint(sic, nem, gaz);
             }
             if (st) st.style.display = 'grid';
@@ -2617,166 +2639,330 @@
             drawSensorChart();
         }
 
-        // --- HiveMQ canlı bağlantısı (TLS WebSocket, firmware ile aynı kümeye) ---
-        let deviceMqttClient = null;
-        let deviceMqttTopic = null;
+        // --- Cihaz listesi, seçim ve HTTP polling (MQTT yok) ---
+        let userDevices = [];
+        let currentDevice = null;
+        let devicePollTimer = null;
+        let lastLiveSig = '';
+        let alarmToastShown = false;
 
-        function disconnectDeviceMqtt() {
-            if (deviceMqttClient) {
-                try { deviceMqttClient.end(true); } catch (e) {}
-                deviceMqttClient = null;
-            }
-            deviceMqttTopic = null;
+        // Sunucu "2026-10-28 10:00:00" (UTC) döndürür; tarayıcıda güvenli biçimde ayrıştır.
+        function parseServerTime(value) {
+            if (!value) return null;
+            let text = String(value).trim().replace(' ', 'T');
+            if (!/[zZ]|[+-]\d{2}:?\d{2}$/.test(text)) text += 'Z';
+            const d = new Date(text);
+            return isNaN(d.getTime()) ? null : d;
         }
 
         function setDeviceStatus(key) {
-            const statusEl = document.getElementById('mqttStatus');
+            const statusEl = document.getElementById('deviceStatus');
             if (statusEl) statusEl.textContent = feText(key);
         }
 
         function appendDeviceLog(msg) {
-            const dataEl = document.getElementById('mqttData');
-            if (!dataEl) return;
+            const dataEl = document.getElementById('telemetryData');
+            if (!dataEl || !msg) return;
             const stamp = new Date().toLocaleTimeString();
             dataEl.textContent = '[' + stamp + '] ' + msg + '\n' + dataEl.textContent;
             const lines = dataEl.textContent.split('\n');
             if (lines.length > 40) dataEl.textContent = lines.slice(0, 40).join('\n');
         }
 
-        function publishDeviceCommand(cmd) {
-            if (!deviceMqttClient || !deviceMqttClient.connected || !deviceMqttTopic) {
-                showToast(feText('mqttNotConnected'), 'err');
-                return false;
+        function deviceByKey(key) {
+            for (let i = 0; i < userDevices.length; i++) {
+                if (userDevices[i].deviceKey === key) return userDevices[i];
             }
-            deviceMqttClient.publish(deviceMqttTopic, 'APP|' + cmd);
-            appendDeviceLog('APP|' + cmd);
-            return true;
+            return null;
         }
 
-        function requestDeviceStatus() {
-            if (publishDeviceCommand('durum')) showToast(feText('commandSent'), 'ok');
+        function renderDeviceSelect() {
+            const select = document.getElementById('deviceSelect');
+            if (!select) return;
+            select.innerHTML = '';
+            if (!userDevices.length) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = feText('noDevice');
+                select.appendChild(opt);
+                return;
+            }
+            userDevices.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.deviceKey;
+                opt.textContent = d.name || d.deviceKey;
+                select.appendChild(opt);
+            });
+            if (currentDevice && deviceByKey(currentDevice.deviceKey)) {
+                select.value = currentDevice.deviceKey;
+            }
         }
 
-        function testDeviceBuzzer() {
-            if (publishDeviceCommand('buzzer_test')) showToast(feText('commandSent'), 'ok');
+        // localStorage'daki kullanıcı kaydını güncel cihaz listesiyle eşitler.
+        function syncStoredDevices() {
+            try {
+                const stored = JSON.parse(localStorage.getItem('fireeye_user') || '{}');
+                if (!stored || !stored.user) return;
+                stored.user.devices = userDevices;
+                localStorage.setItem('fireeye_user', JSON.stringify(stored));
+            } catch (e) {}
         }
 
-        function setGasThreshold() {
-            const input = document.getElementById('gasThresholdInput');
-            const val = parseInt(input && input.value, 10);
-            if (!(val >= 1 && val <= 4095)) { showToast(feText('thresholdInvalid'), 'err'); return; }
-            if (publishDeviceCommand('esik:' + val)) showToast(feText('commandSent'), 'ok');
+        function selectDevice(key) {
+            const device = deviceByKey(key);
+            if (!device) return;
+            localStorage.setItem('fireeye_selected_device', device.deviceKey);
+            startDeviceReading(device);
         }
 
-        function sendWifiCredentials() {
-            const ssidEl = document.getElementById('wifiSsidInput');
-            const passEl = document.getElementById('wifiPassInput');
-            const ssid = (ssidEl && ssidEl.value ? ssidEl.value : '').trim();
-            const pass = (passEl && passEl.value ? passEl.value : '');
-            if (!ssid || !pass) { showToast(feText('wifiMissing'), 'err'); return; }
-            if (!publishDeviceCommand('ssid:' + ssid)) return;
-            // Firmware "ssid:" ve "sifre:" komutlarını sırayla bekler
-            setTimeout(() => { publishDeviceCommand('sifre:' + pass); }, 400);
-            showToast(feText('wifiSent'), 'ok');
-        }
-
-        function handleDeviceMessage(msg) {
-            const parsed = parseVeriPayload(msg);
-            const hasData = parsed.sicaklik != null || parsed.nem != null || parsed.gaz != null || parsed.esik != null || !!parsed.durum;
-            if (hasData) updateSensorUI(parsed);
-
-            // Cihaz bildirimleri
-            const upper = msg.toUpperCase();
-            if (upper === 'ALARM:GAZ') showToast(feText('alarmDetected'), 'err');
-            else if (upper === 'ALARM_SUSTURULDU') showToast(feText('alarmSilenced'), 'ok');
-            else if (upper === 'MQTT:BAGLANDI') showToast(feText('deviceOnline'), 'ok');
-            else if (upper === 'WIFI:BAGLANDI') showToast(feText('wifiOk'), 'ok');
-            else if (upper === 'WIFI:HATA') showToast(feText('wifiFail'), 'err');
-            else if (upper === 'BUZZER:TEST_OK') showToast(feText('buzzerOk'), 'ok');
-
-            appendDeviceLog(msg);
-            const statusEl = document.getElementById('mqttStatus');
-            if (statusEl) statusEl.textContent = feText('deviceConnected') + new Date().toLocaleTimeString();
-        }
-
-        function startDeviceReading(device) {
-            const statusEl = document.getElementById('mqttStatus');
-            const muteBtn = document.getElementById('mqttMuteBtn');
-            const controls = document.getElementById('deviceControls');
-
-            const deviceKey = (device && device.topic) ? String(device.topic).trim() : '';
-            const deviceHost = (device && device.host) ? String(device.host).trim() : '';
-            const deviceUser = (device && device.user) ? String(device.user).trim() : '';
-            const devicePass = (device && device.pass) ? String(device.pass) : '';
-            const wsUrl = buildMqttWsUrl(deviceHost);
-
+        function stopDeviceReading() {
+            if (devicePollTimer) { clearInterval(devicePollTimer); devicePollTimer = null; }
             if (deviceDataInterval) { clearInterval(deviceDataInterval); deviceDataInterval = null; }
-            disconnectDeviceMqtt();
+        }
 
-            // eski canlı veriyi ve grafik geçmişini temizle
+        function resetLiveData() {
             Object.keys(deviceLive).forEach(k => { deviceLive[k] = null; });
             Object.keys(sensorSeries).forEach(k => { sensorSeries[k].length = 0; });
             chartHoverX = null;
+            lastLiveSig = '';
+            alarmToastShown = false;
+            drawSensorChart();
+        }
 
-            if (!deviceKey) {
-                statusEl.textContent = feText('deviceNone');
-                muteBtn.style.display = 'none';
-                controls.style.display = 'none';
-                return;
-            }
+        // --- Token / cihaz yönetimi ---
+        function showDeviceToken(device, token) {
+            const keyEl = document.getElementById('deviceTokenKey');
+            const valEl = document.getElementById('deviceTokenValue');
+            const modal = document.getElementById('deviceTokenModal');
+            if (keyEl) keyEl.value = (device && device.deviceKey) || '';
+            if (valEl) valEl.value = token || '';
+            if (modal) modal.classList.add('active');
+        }
 
-            if (!wsUrl || !deviceUser || !devicePass) {
-                statusEl.textContent = feText('deviceConfigMissing');
-                muteBtn.style.display = 'none';
-                controls.style.display = 'none';
-                return;
-            }
+        function closeDeviceTokenModal() {
+            const modal = document.getElementById('deviceTokenModal');
+            if (modal) modal.classList.remove('active');
+        }
 
-            if (typeof mqtt === 'undefined') {
-                statusEl.textContent = feText('mqttLibMissing');
-                muteBtn.style.display = 'none';
-                controls.style.display = 'none';
-                return;
-            }
+        function closeDeviceTokenOutside(event) {
+            if (event.target.id === 'deviceTokenModal') closeDeviceTokenModal();
+        }
 
-            statusEl.textContent = feText('connecting');
-            muteBtn.style.display = 'inline-flex';
-            controls.style.display = 'block';
-            muteBtn.onclick = () => {
-                if (publishDeviceCommand('kapat')) showToast(feText('commandSent'), 'ok');
-            };
-
-            deviceMqttTopic = deviceKey;
-            const clientId = 'fireeye-web-' + Math.random().toString(16).slice(2, 10);
-            const client = mqtt.connect(wsUrl, {
-                clientId: clientId,
-                username: deviceUser,
-                password: devicePass,
-                clean: true,
-                keepalive: 30,
-                reconnectPeriod: 4000,
-                connectTimeout: 10000,
-            });
-            deviceMqttClient = client;
-
-            client.on('connect', () => {
-                setDeviceStatus('mqttConnectedWaiting');
-                client.subscribe(deviceKey, { qos: 0 }, (err) => {
-                    if (err) appendDeviceLog('SUB ERR: ' + (err && err.message ? err.message : err));
+        function copyDeviceToken() {
+            const el = document.getElementById('deviceTokenValue');
+            if (!el || !el.value) return;
+            el.select();
+            const done = () => showToast(feText('tokenCopied'), 'ok');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(el.value).then(done).catch(() => {
+                    try { document.execCommand('copy'); done(); } catch (e) {}
                 });
-                // bağlanır bağlanmaz cihazın mevcut durumunu sor
-                client.publish(deviceKey, 'APP|durum');
-            });
-            client.on('message', (topic, payload) => {
-                if (topic !== deviceKey) return;
-                const raw = payload.toString().trim();
-                if (!raw) return;
-                // Firmware düz "TELEMETRI;..." yayınlar; eski "DEV|" öneki de desteklenir.
-                handleDeviceMessage(raw.startsWith('DEV|') ? raw.slice(4) : raw);
-            });
-            client.on('error', () => { if (deviceMqttClient === client) setDeviceStatus('mqttError'); });
-            client.on('close', () => { if (deviceMqttClient === client) setDeviceStatus('mqttReconnecting'); });
-            client.on('reconnect', () => { if (deviceMqttClient === client) setDeviceStatus('mqttReconnecting'); });
+            } else {
+                try { document.execCommand('copy'); done(); } catch (e) {}
+            }
+        }
+
+        async function addDevice() {
+            const suggested = 'Cihaz ' + (userDevices.length + 1);
+            const name = (prompt(feText('deviceNamePrompt'), suggested) || '').trim();
+            if (!name) return;
+            try {
+                const res = await apiFetch('/devices', { method: 'POST', body: JSON.stringify({ name }) });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.success) {
+                    showToast(data.message || feText('deviceAddFailed'), 'err');
+                    return;
+                }
+                userDevices.push(data.device);
+                currentDevice = data.device;
+                renderDeviceSelect();
+                syncStoredDevices();
+                startDeviceReading(data.device);
+                showDeviceToken(data.device, data.deviceToken);
+            } catch (e) {
+                showToast(feText('connRetry'), 'err');
+            }
+        }
+
+        async function rotateDeviceToken() {
+            if (!currentDevice) { showToast(feText('noDevice'), 'err'); return; }
+            if (!confirm(feText('rotateConfirm'))) return;
+            try {
+                const res = await apiFetch('/devices/rotate-token', {
+                    method: 'POST',
+                    body: JSON.stringify({ id: currentDevice.id })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.success) {
+                    showToast(data.message || feText('rotateFailed'), 'err');
+                    return;
+                }
+                currentDevice.hasToken = true;
+                syncStoredDevices();
+                showDeviceToken(currentDevice, data.deviceToken);
+            } catch (e) {
+                showToast(feText('connRetry'), 'err');
+            }
+        }
+
+        async function deleteCurrentDevice() {
+            if (!currentDevice) { showToast(feText('noDevice'), 'err'); return; }
+            if (!confirm(feText('deleteDeviceConfirm'))) return;
+            const removedKey = currentDevice.deviceKey;
+            try {
+                const res = await apiFetch('/devices?id=' + encodeURIComponent(currentDevice.id), { method: 'DELETE' });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.success) {
+                    showToast(data.message || feText('deleteFailed'), 'err');
+                    return;
+                }
+                userDevices = userDevices.filter(d => d.deviceKey !== removedKey);
+                syncStoredDevices();
+                renderDeviceSelect();
+                startDeviceReading(userDevices[0] || null);
+            } catch (e) {
+                showToast(feText('connRetry'), 'err');
+            }
+        }
+
+        async function publishDeviceCommand(cmd) {
+            if (!currentDevice) {
+                showToast(feText('noDevice'), 'err');
+                return false;
+            }
+            try {
+                const res = await apiFetch('/device/command', {
+                    method: 'POST',
+                    body: JSON.stringify({ device_key: currentDevice.deviceKey, command: cmd })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    showToast(data.error || feText('commandFailed'), 'err');
+                    return false;
+                }
+                appendDeviceLog('APP|' + cmd);
+                return true;
+            } catch (e) {
+                showToast(feText('connRetry'), 'err');
+                return false;
+            }
+        }
+
+        async function requestDeviceStatus() {
+            if (await publishDeviceCommand('durum')) showToast(feText('commandSent'), 'ok');
+        }
+
+        async function testDeviceBuzzer() {
+            if (await publishDeviceCommand('buzzer_test')) showToast(feText('commandSent'), 'ok');
+        }
+
+        async function setGasThreshold() {
+            const input = document.getElementById('gasThresholdInput');
+            const val = parseInt(input && input.value, 10);
+            if (!(val >= 1 && val <= 4095)) { showToast(feText('thresholdInvalid'), 'err'); return; }
+            if (await publishDeviceCommand('esik:' + val)) showToast(feText('commandSent'), 'ok');
+        }
+
+        // 3 saniyede bir cihazın son okumasını çeker.
+        async function pollDeviceLatest() {
+            if (!currentDevice) return;
+            const key = currentDevice.deviceKey;
+            try {
+                const res = await apiFetch('/device/latest?device_key=' + encodeURIComponent(key));
+                if (!currentDevice || currentDevice.deviceKey !== key) return;
+                const data = await res.json().catch(() => ({}));
+
+                if (res.status === 404) {
+                    setDeviceStatus('waitingData');
+                    return;
+                }
+                if (!res.ok) {
+                    setDeviceStatus('deviceError');
+                    return;
+                }
+
+                const parsed = parseVeriPayload(data.payload);
+                const sig = [parsed.sicaklik, parsed.nem, parsed.gaz, parsed.esik, parsed.durum].join('|');
+                updateSensorUI(parsed, { push: sig !== lastLiveSig });
+                if (sig !== lastLiveSig) {
+                    appendDeviceLog(data.payload);
+                    lastLiveSig = sig;
+                }
+
+                const statusEl = document.getElementById('deviceStatus');
+                if (data.online) {
+                    const when = parseServerTime(data.updatedAt);
+                    if (statusEl) statusEl.textContent = feText('deviceConnected') + (when ? when.toLocaleTimeString() : '');
+                } else {
+                    setDeviceStatus('deviceOffline');
+                }
+            } catch (e) {
+                if (currentDevice && currentDevice.deviceKey === key) setDeviceStatus('connRetry');
+            }
+        }
+
+        // Son 24 saatin saatlik ortalamalarını grafiğe yükler.
+        async function loadDeviceHistory() {
+            if (!currentDevice) return;
+            const key = currentDevice.deviceKey;
+            try {
+                const res = await apiFetch('/device/history?device_key=' + encodeURIComponent(key) + '&hours=24');
+                if (!res.ok) return;
+                const data = await res.json().catch(() => ({}));
+                if (!currentDevice || currentDevice.deviceKey !== key || !Array.isArray(data.points)) return;
+
+                Object.keys(sensorSeries).forEach(k => { sensorSeries[k].length = 0; });
+                data.points.forEach(p => {
+                    const d = parseServerTime(p.t);
+                    if (!d) return;
+                    const t = d.getTime();
+                    if (p.sicaklik != null) sensorSeries.sicaklik.push({ t, v: p.sicaklik });
+                    if (p.nem != null) sensorSeries.nem.push({ t, v: p.nem });
+                    if (p.gaz != null) sensorSeries.gaz.push({ t, v: p.gaz });
+                });
+                const wrap = document.getElementById('chartWrap');
+                const hasPoints = sensorSeries.sicaklik.length || sensorSeries.nem.length || sensorSeries.gaz.length;
+                if (wrap && hasPoints) wrap.style.display = 'block';
+                drawSensorChart();
+            } catch (e) {}
+        }
+
+        function startDeviceReading(device) {
+            const statusEl = document.getElementById('deviceStatus');
+            const muteBtn = document.getElementById('alarmMuteBtn');
+            const controls = document.getElementById('deviceControls');
+
+            stopDeviceReading();
+            resetLiveData();
+
+            currentDevice = (device && device.deviceKey) ? device : null;
+
+            if (!currentDevice) {
+                if (statusEl) statusEl.textContent = feText('noDevice');
+                if (muteBtn) muteBtn.style.display = 'none';
+                if (controls) controls.style.display = 'none';
+                const select = document.getElementById('deviceSelect');
+                if (select && !userDevices.length) select.value = '';
+                return;
+            }
+
+            const select = document.getElementById('deviceSelect');
+            if (select && select.value !== currentDevice.deviceKey) {
+                select.value = currentDevice.deviceKey;
+            }
+
+            if (statusEl) statusEl.textContent = feText('waitingData');
+            if (controls) controls.style.display = 'block';
+            if (muteBtn) {
+                muteBtn.style.display = 'none';
+                muteBtn.onclick = async () => {
+                    if (await publishDeviceCommand('kapat')) showToast(feText('commandSent'), 'ok');
+                };
+            }
+
+            pollDeviceLatest();
+            loadDeviceHistory();
+            devicePollTimer = setInterval(pollDeviceLatest, 3000);
         }
 
         async function resendVerification() {
@@ -2816,22 +3002,20 @@
             const email = document.getElementById('newUserEmail').value.trim();
             const password = document.getElementById('newUserPassword').value;
             const fullName = document.getElementById('newUserFullName').value.trim();
-            const mqttTopic = document.getElementById('newUserTopic').value.trim();
-            const mqttHost = document.getElementById('newUserMqttHost').value.trim();
-            const mqttUser = document.getElementById('newUserMqttUser').value.trim();
-            const mqttPass = document.getElementById('newUserMqttPass').value;
+            const deviceName = document.getElementById('newUserDeviceName').value.trim();
 
             try {
                 const res = await fetch(WORKER_BASE + '/admin/create-user', {
                     method: 'POST',
                     headers: Object.assign({ 'Content-Type': 'application/json' }, getAdminAuthHeader()),
-                    body: JSON.stringify({ email, password, fullName, mqttTopic, mqttHost, mqttUser, mqttPass })
+                    body: JSON.stringify({ email, password, fullName, deviceName })
                 });
                 const data = await res.json();
                 if (!data.success) throw new Error(data.message || feText('userCreateFailed') + ' ');
 
                 alert(feText('userCreated') + email);
                 e.target.reset();
+                if (data.device && data.deviceToken) showDeviceToken(data.device, data.deviceToken);
                 loadUsers();
             } catch (err) {
                 alert(feText('userCreateFailed') + err.message);
@@ -2868,7 +3052,7 @@
                         <span class="comment-author">${escapeHtml(u.fullName || u.email)}</span>
                         <span class="comment-date">${u.resetRequested ? feText('userStatusReset') : (u.isNoData ? feText('userStatusFirst') : feText('userStatusActive'))}</span>
                     </div>
-                    <p class="comment-text">${escapeHtml(u.email)}${u.mqttTopic ? ' · ' + escapeHtml(u.mqttTopic) : ''}</p>
+                    <p class="comment-text">${escapeHtml(u.email)} · ${escapeHtml(Array.isArray(u.devices) && u.devices.length ? u.devices.map(d => d.name).join(', ') : feText('noDevice'))}</p>
                     <button class="admin-delete-btn" style="background: var(--accent); border-color: var(--accent); margin-right: 8px;" onclick="resetUserPassword(${u.id}, '${escapeHtml(u.email)}')">${feText('newPasswordBtn')}</button>
                     <button class="admin-delete-btn" onclick="deleteUser(${u.id}, '${escapeHtml(u.email)}')">${feText('reviewDelete')}</button>
                 `;
@@ -3546,7 +3730,7 @@
                 verifyResend: 'Yeniden Gönder',
                 deviceStatusTitle: 'FireEye Cihaz Durumu (Canlı)',
                 temperature: 'Sıcaklık', humidity: 'Nem', state: 'Durum',
-                chartHint: 'Son 60 ölçüm', muteAlarm: 'Alarmı Sustur', telemetryTitle: 'Telemetri',
+                chartHint: 'Son 24 saat', muteAlarm: 'Alarmı Sustur', telemetryTitle: 'Telemetri',
 
                 downloadTitle: 'FireEye Android Uygulaması',
                 downloadSub: 'Android 8.0 ve üzeri cihazlarda çalışır.',
@@ -3652,14 +3836,30 @@
                 forceSubmit: 'Bilgileri Güncelle',
                 adminAddUser: 'Hesap Ekle',
                 tempPasswordLabel: 'Geçici Şifre',
-                deviceIdLabel: 'Cihaz Kimliği (MQTT Topic)',
-                deviceIdHint: "Firmware'deki MQTT_TOPIC ile birebir aynı olmalı (örn. fireeye/device1). Site bu konu üzerinden cihaza komut gönderir ve telemetriyi dinler.",
-                mqttBrokerLabel: 'MQTT Broker',
-                mqttUserLabel: 'MQTT Kullanıcı Adı',
-                mqttPassLabel: 'MQTT Şifresi',
-                mqttPassPlaceholder: 'MQTT şifresi',
-                mqttCredentialsHint: "Firmware'deki MQTT_BROKER, MQTT_USER, MQTT_PASS ve MQTT_TOPIC değerlerini buraya gir. Site WebSocket için otomatik olarak 8884 portunu kullanır.",
-                deviceConfigMissing: 'Cihaz bağlantı bilgileri eksik. Admin, hesap oluştururken MQTT broker, kullanıcı, şifre ve topic girmeli.',
+                deviceNameLabel: 'Cihaz Adı',
+                deviceNamePlaceholder: 'Salon Sensörü',
+                createUserHint: 'Hesap oluşturulunca ilk cihaz ve cihaza özel token üretilir. Token yalnızca bir kez gösterilir; firmware\'e yazılır.',
+                selectDevice: 'Cihaz',
+                addDevice: 'Cihaz Ekle',
+                rotateToken: 'Token Yenile',
+                deleteDevice: 'Cihazı Sil',
+                deviceTokenTitle: 'Cihaz Token\'ı',
+                tokenOnce: 'Bu token yalnızca bir kez gösterilir. Kopyalayıp firmware\'deki DEVICE_TOKEN alanına yaz. Kaybolursa "Token Yenile" ile yenisini üretebilirsin.',
+                deviceKeyLabel: 'Cihaz Anahtarı',
+                deviceTokenLabel: 'Cihaz Token\'ı',
+                copyToken: 'Kopyala',
+                tokenCopied: 'Token kopyalandı.',
+                noToken: 'token yok',
+                noDevice: 'Henüz cihaz yok. "Cihaz Ekle" ile oluştur.',
+                waitingData: 'Cihazdan veri bekleniyor...',
+                deviceOffline: 'Cihaz çevrimdışı — son veri eski.',
+                deviceError: 'Cihaz verisi alınamadı.',
+                deviceNamePrompt: 'Yeni cihazın adı:',
+                deviceAddFailed: 'Cihaz eklenemedi.',
+                rotateConfirm: 'Cihaz token\'ı yenilensin mi? Eski token geçersiz olur ve firmware güncellenmelidir.',
+                rotateFailed: 'Token yenilenemedi.',
+                deleteDeviceConfirm: 'Bu cihaz ve tüm geçmiş verileri silinsin mi?',
+                commandNote: 'Komutlar 3 saniye içinde cihaza ulaşır. Cihaz çevrimdışıysa bağlandığında alır.',
                 createAccountBtn: 'Hesabı Oluştur',
                 registeredAccounts: 'Kayıtlı Hesaplar',
                 screenshotAlt: 'Ekran Görüntüsü',
@@ -3741,25 +3941,11 @@
                 buzzerTest: 'Buzzer Testi',
                 thresholdPlaceholder: 'Eşik (1-4095)',
                 sendThreshold: 'Eşiği Gönder',
-                wifiProvisionTitle: 'Wi-Fi Bilgilerini Cihaza Gönder',
-                wifiSsidPlaceholder: 'Wi-Fi adı (SSID)',
-                wifiPassPlaceholder: 'Wi-Fi şifresi',
-                sendToDevice: 'Cihaza Gönder',
-                mqttConnectedWaiting: 'Bağlandı — cihazdan veri bekleniyor...',
-                mqttReconnecting: 'Bağlantı koptu, yeniden bağlanılıyor...',
-                mqttError: 'MQTT bağlantı hatası.',
-                mqttLibMissing: 'MQTT kütüphanesi yüklenemedi. Sayfayı yenileyip tekrar dene.',
-                mqttNotConnected: 'Cihaz bağlantısı yok, komut gönderilemedi.',
                 commandSent: 'Komut cihaza gönderildi.',
                 thresholdInvalid: 'Eşik 1 ile 4095 arasında bir sayı olmalı.',
-                wifiMissing: 'Wi-Fi adı ve şifresi gerekli.',
-                wifiSent: 'Wi-Fi bilgileri cihaza gönderildi.',
                 alarmDetected: 'ALARM: Gaz/duman algılandı!',
                 alarmSilenced: 'Alarm susturuldu, geri sayım başladı.',
                 deviceOnline: 'Cihaz çevrimiçi.',
-                wifiOk: 'Cihaz Wi-Fi ağına bağlandı.',
-                wifiFail: 'Cihaz Wi-Fi ağına bağlanamadı.',
-                buzzerOk: 'Buzzer testi başarılı.',
                 commandFailed: 'Komut gönderilemedi.',
                 commandConnFailed: 'Bağlantı hatası, komut gönderilemedi.',
                 verifySent: 'Doğrulama e-postası gönderildi. Gelen kutunu (ve spam klasörünü) kontrol et.',
@@ -3802,7 +3988,7 @@
                 verifyResend: 'Resend',
                 deviceStatusTitle: 'FireEye Device Status (Live)',
                 temperature: 'Temperature', humidity: 'Humidity', state: 'Status',
-                chartHint: 'Last 60 readings', muteAlarm: 'Mute Alarm', telemetryTitle: 'Telemetry',
+                chartHint: 'Last 24 hours', muteAlarm: 'Mute Alarm', telemetryTitle: 'Telemetry',
 
                 downloadTitle: 'FireEye for Android',
                 downloadSub: 'Runs on Android 8.0 and later.',
@@ -3908,14 +4094,30 @@
                 forceSubmit: 'Update Details',
                 adminAddUser: 'Add Account',
                 tempPasswordLabel: 'Temporary Password',
-                deviceIdLabel: 'Device ID (MQTT Topic)',
-                deviceIdHint: 'Must exactly match MQTT_TOPIC in the firmware (e.g. fireeye/device1). The site sends commands and listens for telemetry on this topic.',
-                mqttBrokerLabel: 'MQTT Broker',
-                mqttUserLabel: 'MQTT Username',
-                mqttPassLabel: 'MQTT Password',
-                mqttPassPlaceholder: 'MQTT password',
-                mqttCredentialsHint: 'Enter the MQTT_BROKER, MQTT_USER, MQTT_PASS and MQTT_TOPIC values from the firmware. The site automatically uses port 8884 for WebSocket.',
-                deviceConfigMissing: 'Device connection info is missing. The admin must enter the MQTT broker, username, password and topic when creating the account.',
+                deviceNameLabel: 'Device Name',
+                deviceNamePlaceholder: 'Living Room Sensor',
+                createUserHint: 'Creating the account generates the first device and a device-specific token. The token is shown only once; write it into the firmware.',
+                selectDevice: 'Device',
+                addDevice: 'Add Device',
+                rotateToken: 'Rotate Token',
+                deleteDevice: 'Delete Device',
+                deviceTokenTitle: 'Device Token',
+                tokenOnce: 'This token is shown only once. Copy it into DEVICE_TOKEN in the firmware. If you lose it, use "Rotate Token" to generate a new one.',
+                deviceKeyLabel: 'Device Key',
+                deviceTokenLabel: 'Device Token',
+                copyToken: 'Copy',
+                tokenCopied: 'Token copied.',
+                noToken: 'no token',
+                noDevice: 'No devices yet. Create one with "Add Device".',
+                waitingData: 'Waiting for device data...',
+                deviceOffline: 'Device offline — last data is stale.',
+                deviceError: 'Could not read device data.',
+                deviceNamePrompt: 'Name of the new device:',
+                deviceAddFailed: 'Could not add the device.',
+                rotateConfirm: 'Rotate the device token? The old token stops working and the firmware must be updated.',
+                rotateFailed: 'Could not rotate the token.',
+                deleteDeviceConfirm: 'Delete this device and all of its history?',
+                commandNote: 'Commands reach the device within 3 seconds. If it is offline, it receives them once it reconnects.',
                 createAccountBtn: 'Create Account',
                 registeredAccounts: 'Registered Accounts',
                 screenshotAlt: 'Screenshot',
@@ -3997,25 +4199,11 @@
                 buzzerTest: 'Buzzer Test',
                 thresholdPlaceholder: 'Threshold (1-4095)',
                 sendThreshold: 'Send Threshold',
-                wifiProvisionTitle: 'Send Wi-Fi Credentials to Device',
-                wifiSsidPlaceholder: 'Wi-Fi name (SSID)',
-                wifiPassPlaceholder: 'Wi-Fi password',
-                sendToDevice: 'Send to Device',
-                mqttConnectedWaiting: 'Connected — waiting for device data...',
-                mqttReconnecting: 'Connection lost, reconnecting...',
-                mqttError: 'MQTT connection error.',
-                mqttLibMissing: 'Could not load the MQTT library. Refresh the page and try again.',
-                mqttNotConnected: 'No device connection, command not sent.',
                 commandSent: 'Command sent to the device.',
                 thresholdInvalid: 'The threshold must be a number between 1 and 4095.',
-                wifiMissing: 'Wi-Fi name and password are required.',
-                wifiSent: 'Wi-Fi credentials sent to the device.',
                 alarmDetected: 'ALARM: Gas/smoke detected!',
                 alarmSilenced: 'Alarm silenced, countdown started.',
                 deviceOnline: 'Device is online.',
-                wifiOk: 'Device connected to Wi-Fi.',
-                wifiFail: 'Device could not connect to Wi-Fi.',
-                buzzerOk: 'Buzzer test passed.',
                 commandFailed: 'Could not send the command.',
                 commandConnFailed: 'Connection error, could not send the command.',
                 verifySent: 'Verification email sent. Check your inbox (and spam folder).',
