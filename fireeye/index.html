@@ -595,6 +595,22 @@
         }
         body.admin-mode .admin-delete-btn { display: inline-block; }
 
+        /* Hesaplar listesindeki işlem butonları: kartın sağ üstüne üst üste binmesin,
+           içerik akışında yan yana dursun. */
+        .user-card-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .user-card-actions .admin-delete-btn {
+            position: static;
+            top: auto;
+            right: auto;
+            margin: 0;
+            white-space: nowrap;
+        }
+
         #adminPanelBox {
             display: none;
             background: var(--surface);
@@ -3294,8 +3310,10 @@
                         <span class="comment-date">${u.resetRequested ? feText('userStatusReset') : (u.isNoData ? feText('userStatusFirst') : feText('userStatusActive'))}</span>
                     </div>
                     <p class="comment-text">${escapeHtml(u.email)} · ${escapeHtml(Array.isArray(u.devices) && u.devices.length ? u.devices.map(d => d.name).join(', ') : feText('noDevice'))}</p>
-                    <button class="admin-delete-btn" style="background: var(--accent); border-color: var(--accent); margin-right: 8px;" onclick="resetUserPassword(${u.id}, '${escapeHtml(u.email)}')">${feText('newPasswordBtn')}</button>
-                    <button class="admin-delete-btn" onclick="deleteUser(${u.id}, '${escapeHtml(u.email)}')">${feText('reviewDelete')}</button>
+                    <div class="user-card-actions">
+                        <button class="admin-delete-btn" style="background: var(--accent); border-color: var(--accent); color: #fff;" onclick="resetUserPassword(${u.id}, '${escapeHtml(u.email)}')">${feText('newPasswordBtn')}</button>
+                        <button class="admin-delete-btn" onclick="deleteUser(${u.id}, '${escapeHtml(u.email)}')">${feText('reviewDelete')}</button>
+                    </div>
                 `;
                 container.appendChild(card);
             });
