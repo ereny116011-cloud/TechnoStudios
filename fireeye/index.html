@@ -1571,6 +1571,51 @@
                         </div>
                         <p style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px;" data-i18n="commandNote">Komutlar 3 saniye içinde cihaza ulaşır. Cihaz çevrimdışıysa bağlandığında alır.</p>
                     </div>
+
+                    <!-- Güvenlik: İki Adımlı Doğrulama -->
+                    <div id="twoFactorBox" style="margin-top: 22px; border-top: 1px solid var(--line); padding-top: 16px;">
+                        <p style="font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 10px;">Güvenlik</p>
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                            <div>
+                                <strong style="font-size: 0.95rem;">İki Adımlı Doğrulama</strong>
+                                <p id="twoFactorState" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">Durum yükleniyor...</p>
+                            </div>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button type="button" id="twoFactorEnableBtn" class="util-btn" style="display: none;" onclick="start2faSetup()">Etkinleştir</button>
+                                <button type="button" id="twoFactorDisableBtn" class="util-btn" style="display: none; border-color: var(--danger); color: var(--danger);" onclick="open2faDisable()">Kapat</button>
+                            </div>
+                        </div>
+
+                        <div id="twoFactorSetupBox" style="display: none; margin-top: 14px; border: 1px solid var(--line); border-radius: 12px; padding: 14px;">
+                            <p style="font-size: 0.85rem; line-height: 1.7;">1) Google Authenticator / Microsoft Authenticator / Aegis uygulamasında <strong>FireEye</strong> hesabı ekle.<br>
+                            2) Aşağıdaki anahtarı elle gir veya "Authenticator'da Aç" bağlantısına dokun.<br>
+                            3) Uygulamanın gösterdiği 6 haneli kodu yazıp doğrula.</p>
+                            <div class="form-group" style="margin-top: 10px;">
+                                <label>Gizli Anahtar</label>
+                                <input type="text" id="twoFactorSecret" class="form-control" readonly onclick="this.select()">
+                            </div>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
+                                <button type="button" class="util-btn" onclick="copy2faSecret()">Anahtarı Kopyala</button>
+                                <a id="twoFactorOtpAnchor" class="util-btn" href="#" style="text-decoration: none;">Authenticator'da Aç</a>
+                            </div>
+                            <div class="form-group">
+                                <label>6 Haneli Kod</label>
+                                <input type="text" id="twoFactorEnableCode" class="form-control" inputmode="numeric" maxlength="6" placeholder="123456">
+                            </div>
+                            <button type="button" class="main-cta" onclick="confirm2faSetup()">Doğrula ve Aç</button>
+                            <p id="twoFactorSetupMsg" style="font-size: 0.82rem; margin-top: 8px; display: none;"></p>
+                        </div>
+
+                        <div id="twoFactorDisableBox" style="display: none; margin-top: 14px; border: 1px solid var(--line); border-radius: 12px; padding: 14px;">
+                            <p style="font-size: 0.85rem;">İki adımlı doğrulamayı kapatmak için şifreni gir.</p>
+                            <div class="form-group" style="margin-top: 10px;">
+                                <label>Şifre</label>
+                                <input type="password" id="twoFactorDisablePassword" class="form-control" placeholder="Şifre">
+                            </div>
+                            <button type="button" class="main-cta" style="background: var(--danger);" onclick="confirm2faDisable()">Kapat</button>
+                            <p id="twoFactorDisableMsg" style="font-size: 0.82rem; margin-top: 8px; display: none;"></p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1613,7 +1658,7 @@
                 <div id="accountLoginBox">
                     <div class="account-panel">
                         <h3 class="account-panel-title" data-i18n="accountLoginTitle">Hesabına Giriş Yap</h3>
-                        <form onsubmit="handleUserLogin(event)" class="account-form">
+                        <form id="loginForm" onsubmit="handleUserLogin(event)" class="account-form">
                             <div class="form-group">
                                 <label data-i18n="emailLabel">E-posta</label>
                                 <input type="text" id="accountEmail" class="form-control" placeholder="ornek@eposta.com" data-i18n-placeholder="emailPlaceholder" required>
@@ -1630,6 +1675,17 @@
                                 <div id="ghBtnLogin" class="google-slot"></div>
                             </div>
                             <p id="accountLoginError" style="color: var(--danger); font-size: 0.85rem; display: none;"></p>
+                        </form>
+                        <form id="twoFactorForm" onsubmit="handleTwoFactorLogin(event)" class="account-form" style="display: none;">
+                            <h4 class="account-panel-title" style="font-size: 1rem;">İki Adımlı Doğrulama</h4>
+                            <p class="account-panel-sub">Authenticator uygulamandaki 6 haneli kodu gir.</p>
+                            <div class="form-group">
+                                <label>Doğrulama Kodu</label>
+                                <input type="text" id="twoFactorCode" class="form-control" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" required>
+                            </div>
+                            <button type="submit" class="main-cta">Doğrula ve Giriş Yap</button>
+                            <p><a href="#" class="account-link" onclick="show2faStep(false); return false;">Geri dön</a></p>
+                            <p id="twoFactorError" style="color: var(--danger); font-size: 0.85rem; display: none;"></p>
                         </form>
                         <div style="display: flex; justify-content: space-between; margin-top: 12px;">
                             <a href="#" onclick="toggleForgotPasswordBox(event)" class="account-link" data-i18n="forgotLink">Şifremi unuttum</a>
@@ -2150,6 +2206,7 @@
             const forgotForm = document.getElementById('forgotPasswordForm');
             if (registerForm) registerForm.style.display = (view === 'register') ? 'flex' : 'none';
             if (forgotForm) forgotForm.style.display = (view === 'forgot') ? 'flex' : 'none';
+            if (view === 'login' || view === 'register' || view === 'forgot') show2faStep(false);
 
             modal.classList.add('active');
 
@@ -2170,6 +2227,38 @@
             if (event.target.id === 'accountModal') closeAccountModal();
         }
 
+        let twoFaChallenge = null;
+
+        function show2faStep(show) {
+            const loginForm = document.getElementById('loginForm');
+            const twoForm = document.getElementById('twoFactorForm');
+            const err = document.getElementById('twoFactorError');
+            if (loginForm) loginForm.style.display = show ? 'none' : 'flex';
+            if (twoForm) twoForm.style.display = show ? 'flex' : 'none';
+            if (err) err.style.display = 'none';
+            const code = document.getElementById('twoFactorCode');
+            if (code) { code.value = ''; if (show) setTimeout(() => code.focus(), 100); }
+        }
+
+        // Giriş başarılı olduğunda (şifre veya 2FA sonrası) ortak işlemler.
+        function finishUserLogin(data, email, password) {
+            localStorage.setItem('fireeye_user', JSON.stringify({ token: data.token, user: data.user }));
+
+            if (data.user && data.user.isAdmin) {
+                sessionStorage.setItem('fireeye_admin_auth', 'Basic ' + btoa(email + ':' + password));
+                enableAdminMode();
+                setHeaderAuthButtons(false);
+                activateTab('accounts');
+                return;
+            }
+
+            if (data.user && data.user.isNoData) {
+                showForceChange(data.user.email);
+            } else {
+                showAccountDashboard(data.user);
+            }
+        }
+
         async function handleUserLogin(e) {
             e.preventDefault();
             const email = document.getElementById('accountEmail').value.trim();
@@ -2188,22 +2277,40 @@
                 const data = await res.json();
                 if (!data.success) throw new Error(data.message || feText('loginFailed'));
 
-                localStorage.setItem('fireeye_user', JSON.stringify({ token: data.token, user: data.user }));
-
-                if (data.user.isAdmin) {
-                    // Yönetici bilgileriyle girildi: admin uçları için Basic başlığını sakla.
-                    sessionStorage.setItem('fireeye_admin_auth', 'Basic ' + btoa(email + ':' + password));
-                    enableAdminMode();
-                    setHeaderAuthButtons(false);
-                    activateTab('accounts');
+                // İki adımlı doğrulama açıksa önce kodu iste.
+                if (data.requires2fa) {
+                    twoFaChallenge = data.challenge;
+                    show2faStep(true);
                     return;
                 }
 
-                if (data.user.isNoData) {
-                    showForceChange(data.user.email);
-                } else {
-                    showAccountDashboard(data.user);
-                }
+                finishUserLogin(data, email, password);
+            } catch (err) {
+                errMsg.textContent = err.message;
+                errMsg.style.display = 'block';
+            }
+        }
+
+        async function handleTwoFactorLogin(e) {
+            e.preventDefault();
+            const errMsg = document.getElementById('twoFactorError');
+            errMsg.style.display = 'none';
+            const code = document.getElementById('twoFactorCode').value.trim();
+            const email = document.getElementById('accountEmail').value.trim();
+            const password = document.getElementById('accountPassword').value;
+
+            try {
+                const res = await fetch(WORKER_BASE + '/login/2fa', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ challenge: twoFaChallenge, code })
+                });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message || 'Kod doğrulanamadı.');
+
+                twoFaChallenge = null;
+                show2faStep(false);
+                finishUserLogin(data, email, password);
             } catch (err) {
                 errMsg.textContent = err.message;
                 errMsg.style.display = 'block';
@@ -2351,6 +2458,140 @@
             currentDevice = deviceByKey(remembered) || userDevices[0] || null;
             renderDeviceSelect();
             startDeviceReading(currentDevice);
+            refresh2faStatus();
+        }
+
+        // ---------- İki adımlı doğrulama (panel tarafı) ----------
+        function currentUserToken() {
+            try {
+                const stored = JSON.parse(localStorage.getItem('fireeye_user') || '{}');
+                return (stored && stored.token) || '';
+            } catch (e) { return ''; }
+        }
+
+        async function refresh2faStatus() {
+            const stateEl = document.getElementById('twoFactorState');
+            if (!stateEl) return;
+            const enableBtn = document.getElementById('twoFactorEnableBtn');
+            const disableBtn = document.getElementById('twoFactorDisableBtn');
+            const setupBox = document.getElementById('twoFactorSetupBox');
+            const disableBox = document.getElementById('twoFactorDisableBox');
+            if (setupBox) setupBox.style.display = 'none';
+            if (disableBox) disableBox.style.display = 'none';
+            if (!currentUserToken()) {
+                stateEl.textContent = 'Giriş yapınca kullanılabilir.';
+                if (enableBtn) enableBtn.style.display = 'none';
+                if (disableBtn) disableBtn.style.display = 'none';
+                return;
+            }
+            try {
+                const res = await apiFetch('/2fa/status');
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message || 'Durum alınamadı');
+                stateEl.textContent = data.enabled
+                    ? 'Açık — girişte authenticator kodu isteniyor.'
+                    : 'Kapalı — girişte yalnızca şifre yeterli.';
+                if (enableBtn) enableBtn.style.display = data.enabled ? 'none' : 'inline-block';
+                if (disableBtn) disableBtn.style.display = data.enabled ? 'inline-block' : 'none';
+            } catch (e) {
+                stateEl.textContent = 'Durum alınamadı.';
+            }
+        }
+
+        async function start2faSetup() {
+            const box = document.getElementById('twoFactorSetupBox');
+            const msg = document.getElementById('twoFactorSetupMsg');
+            try {
+                const res = await apiFetch('/2fa/setup', { method: 'POST' });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message || 'Kurulum başlatılamadı.');
+                document.getElementById('twoFactorSecret').value = data.secret;
+                const anchor = document.getElementById('twoFactorOtpAnchor');
+                if (anchor) anchor.href = data.otpauth;
+                document.getElementById('twoFactorEnableCode').value = '';
+                if (box) box.style.display = 'block';
+                if (msg) msg.style.display = 'none';
+            } catch (e) {
+                if (msg) {
+                    msg.style.color = 'var(--danger)';
+                    msg.textContent = e.message;
+                    msg.style.display = 'block';
+                }
+            }
+        }
+
+        function copy2faSecret() {
+            const input = document.getElementById('twoFactorSecret');
+            if (!input) return;
+            input.select();
+            try { document.execCommand('copy'); } catch (e) {}
+            const msg = document.getElementById('twoFactorSetupMsg');
+            if (msg) {
+                msg.style.color = 'var(--text-secondary)';
+                msg.textContent = 'Anahtar kopyalandı.';
+                msg.style.display = 'block';
+            }
+        }
+
+        async function confirm2faSetup() {
+            const code = document.getElementById('twoFactorEnableCode').value.trim();
+            const msg = document.getElementById('twoFactorSetupMsg');
+            try {
+                const res = await apiFetch('/2fa/enable', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code })
+                });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message || 'Kod doğrulanamadı.');
+                if (msg) {
+                    msg.style.color = 'var(--accent)';
+                    msg.textContent = data.message || 'İki adımlı doğrulama açıldı.';
+                    msg.style.display = 'block';
+                }
+                refresh2faStatus();
+            } catch (e) {
+                if (msg) {
+                    msg.style.color = 'var(--danger)';
+                    msg.textContent = e.message;
+                    msg.style.display = 'block';
+                }
+            }
+        }
+
+        function open2faDisable() {
+            const box = document.getElementById('twoFactorDisableBox');
+            const msg = document.getElementById('twoFactorDisableMsg');
+            if (box) box.style.display = 'block';
+            if (msg) msg.style.display = 'none';
+            const pw = document.getElementById('twoFactorDisablePassword');
+            if (pw) { pw.value = ''; pw.focus(); }
+        }
+
+        async function confirm2faDisable() {
+            const password = document.getElementById('twoFactorDisablePassword').value;
+            const msg = document.getElementById('twoFactorDisableMsg');
+            try {
+                const res = await apiFetch('/2fa/disable', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message || 'Kapatılamadı.');
+                if (msg) {
+                    msg.style.color = 'var(--accent)';
+                    msg.textContent = data.message || 'İki adımlı doğrulama kapatıldı.';
+                    msg.style.display = 'block';
+                }
+                refresh2faStatus();
+            } catch (e) {
+                if (msg) {
+                    msg.style.color = 'var(--danger)';
+                    msg.textContent = e.message;
+                    msg.style.display = 'block';
+                }
+            }
         }
 
         // Cihazın gönderdiği mesajları ayrıştırır.
