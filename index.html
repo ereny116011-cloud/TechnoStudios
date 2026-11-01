@@ -332,6 +332,11 @@
             height: 100%;
             object-fit: contain;
         }
+        .product-icon-box svg.fireeye-emblem-svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
         .fireeye-emblem-light { display: none; }
         .fireeye-emblem-dark { display: block; }
         body.light-mode .fireeye-emblem-light { display: block; }
@@ -931,8 +936,13 @@
                 <div class="card-top-row">
                     <div class="product-identity">
                         <div class="product-icon-box">
-                            <img class="fireeye-emblem fireeye-emblem-light" src="fireeye/emblem-light.png" alt="FireEye">
-                            <img class="fireeye-emblem fireeye-emblem-dark" src="fireeye/emblem-dark.png" alt="">
+                            <svg class="fireeye-emblem-svg" viewBox="0 0 100 100" role="img" aria-label="FireEye">
+                                <path fill="#FF4500" fill-opacity="0.2" d="M50,10c0,0 35,20 35,55c0,20 -15,35 -35,35s-35,-15 -35,-35c0,-35 35,-55 35,-55z" />
+                                <path fill="#FF4500" d="M50,15c0,0 30,18 30,50c0,16 -13,30 -30,30s-30,-14 -30,-30c0,-32 30,-50 30,-50z" />
+                                <path fill="#FF8C00" d="M50,30c0,0 22,14 22,38c0,12 -10,22 -22,22s-22,-10 -22,-22c0,-24 22,-38 22,-38z" />
+                                <path fill="#FFD700" d="M50,45c0,0 14,10 14,25c0,8 -6,14 -14,14s-14,-6 -14,-14c0,-15 14,-25 14,-25z" />
+                                <circle cx="50" cy="60" r="5" fill="#1A1A1A" />
+                            </svg>
                         </div>
                         <div class="product-meta">
                             <h3 style="color: var(--accent-red);">FireEye</h3>
