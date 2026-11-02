@@ -463,81 +463,9 @@ async function getSessionUser(request, env) {
     return verifySession(header.slice(7), env.SESSION_SECRET);
 }
 
-// ==================== İKİ ADIMLI DOĞRULAMA (TOTP) ====================
-// Google Authenticator / Microsoft Authenticator / Aegis gibi uygulamalarla çalışır.
-// Sır yalnızca sunucuda tutulur; istemci sadece 6 haneli kodu gönderir.
-
-const B32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-
-function base32Encode(bytes) {
-    let bits = 0;
-    let value = 0;
-    let out = '';
-    for (const b of bytes) {
-        value = (value << 8) | b;
-        bits += 8;
-        while (bits >= 5) {
-            out += B32_ALPHABET[(value >>> (bits - 5)) & 31];
-            bits -= 5;
-        }
-    }
-    if (bits > 0) out += B32_ALPHABET[(value << (5 - bits)) & 31];
-    return out;
-}
-
-function base32Decode(str) {
-    const clean = String(str || '').toUpperCase().replace(/[^A-Z2-7]/g, '');
-    let bits = 0;
-    let value = 0;
-    const out = [];
-    for (const ch of clean) {
-        const idx = B32_ALPHABET.indexOf(ch);
-        if (idx < 0) continue;
-        value = (value << 5) | idx;
-        bits += 5;
-        if (bits >= 8) {
-            out.push((value >>> (bits - 8)) & 0xff);
-            bits -= 8;
-        }
-    }
-    return new Uint8Array(out);
-}
-
-function newTotpSecret() {
-    const bytes = new Uint8Array(20);
-    crypto.getRandomValues(bytes);
-    return base32Encode(bytes);
-}
-
-async function totpCodeAt(secretB32, step) {
-    const key = await crypto.subtle.importKey(
-        'raw', base32Decode(secretB32), { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']
-    );
-    const buf = new ArrayBuffer(8);
-    const view = new DataView(buf);
-    view.setUint32(0, Math.floor(step / 0x100000000));
-    view.setUint32(4, step >>> 0);
-    const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, buf));
-    const offset = sig[sig.length - 1] & 0x0f;
-    const bin = ((sig[offset] & 0x7f) << 24) | (sig[offset + 1] << 16) | (sig[offset + 2] << 8) | (sig[offset + 3]);
-    return String(bin % 1000000).padStart(6, '0');
-}
-
-// Doğruysa kullanılan zaman adımını (replay koruması için), yanlışsa 0 döner.
-async function verifyTotp(secretB32, code) {
-    const clean = String(code || '').replace(/\D/g, '');
-    if (clean.length !== 6 || !secretB32) return 0;
-    const step = Math.floor(Date.now() / 1000 / 30);
-    for (let d = -1; d <= 1; d++) {
-        if (await totpCodeAt(secretB32, step + d) === clean) return step + d;
-    }
-    return 0;
-}
-
-function otpauthUrl(secret, email) {
-    const label = encodeURIComponent('FireEye:' + (email || 'hesap'));
-    return `otpauth://totp/${label}?secret=${secret}&issuer=FireEye&algorithm=SHA1&digits=6&period=30`;
-}
+// ==================== İKİ ADIMLI DOĞRULAMA (E-POSTA KODU) ====================
+// Girişte kullanıcının e-postasına 6 haneli tek kullanımlık kod gönderilir.
+// Kod yalnızca hash'lenmiş olarak saklanır; istemci sadece kodu gönderir.
 
 let twofaTableReady = false;
 
@@ -570,6 +498,110 @@ async function get2fa(env, userId) {
     } catch (e) {
         return null;
     }
+}
+
+// ==== E-posta ile iki adımlı doğrulama (6 haneli tek kullanımlık kod) ====
+let emailCodesTableReady = false;
+
+async function ensureEmailCodesTable(env) {
+    if (emailCodesTableReady) return;
+    try {
+        await env.DB.prepare(
+            `CREATE TABLE IF NOT EXISTS email_codes (
+                user_id INTEGER PRIMARY KEY,
+                code_hash TEXT NOT NULL,
+                purpose TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                attempts INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT (datetime('now'))
+            )`
+        ).run();
+        emailCodesTableReady = true;
+    } catch (e) {
+        console.error('email_codes tablo hatası:', e && e.message);
+    }
+}
+
+function newEmailCode() {
+    const n = crypto.getRandomValues(new Uint32Array(1))[0] % 1000000;
+    return String(n).padStart(6, '0');
+}
+
+async function codeHash(userId, code, purpose) {
+    return sha256Hex(userId + ':' + code + ':' + purpose);
+}
+
+// Kodu üretir, veritabanına yazar ve e-postayla gönderir.
+// purpose: 'login' | 'enable'
+async function sendEmailCode(env, user, purpose) {
+    await ensureEmailCodesTable(env);
+    const code = newEmailCode();
+    const hash = await codeHash(user.id, code, purpose);
+
+    await env.DB.prepare(
+        `INSERT INTO email_codes (user_id, code_hash, purpose, expires_at, attempts, created_at)
+         VALUES (?, ?, ?, datetime('now', '+10 minutes'), 0, datetime('now'))
+         ON CONFLICT(user_id) DO UPDATE SET
+            code_hash = excluded.code_hash,
+            purpose = excluded.purpose,
+            expires_at = excluded.expires_at,
+            attempts = 0,
+            created_at = datetime('now')`
+    ).bind(user.id, hash, purpose).run();
+
+    const isLogin = purpose === 'login';
+    const firstName = (user.full_name || '').trim().split(/\s+/)[0] || '';
+    const subject = isLogin ? 'FireEye — Giriş doğrulama kodun' : 'FireEye — İki adımlı doğrulamayı aç';
+    const heading = isLogin ? 'Giriş kodun hazır' : 'Doğrulama kodun hazır';
+    const intro = isLogin
+        ? 'FireEye hesabına giriş yapmak için aşağıdaki 6 haneli kodu kullan.'
+        : 'İki adımlı doğrulamayı açmak için aşağıdaki 6 haneli kodu FireEye uygulamasına gir.';
+
+    const sent = await sendEmail(env, user.email, subject,
+        emailLayout({
+            preheader: 'Tek kullanımlık kodun: ' + code,
+            icon: '&#128274;',
+            heading,
+            intro,
+            greeting: firstName ? `Merhaba ${firstName},` : 'Merhaba,',
+            steps: [
+                { title: 'Kodu gir', text: 'FireEye uygulamasındaki veya paneldeki 6 haneli kod alanına bu kodu yaz.' },
+                { title: 'Süre', text: 'Kod 10 dakika geçerlidir ve tek kullanımlıktır.' },
+            ],
+            copyLabel: '6 haneli doğrulama kodun',
+            copyValue: code,
+            chips: ['10 dakika geçerli', 'Tek kullanımlık'],
+            note: 'Bu girişi sen başlatmadıysan şifreni değiştirmeni öneririz.',
+            signature: 'TechnoStudios Ekibi',
+        }),
+        `FireEye doğrulama kodun: ${code}\n\nKod 10 dakika geçerlidir ve tek kullanımlıktır.`
+    );
+
+    return { sent, code };
+}
+
+// Kodu doğrular; doğruysa siler ve ok döner.
+async function consumeEmailCode(env, userId, purpose, code) {
+    await ensureEmailCodesTable(env);
+    const clean = String(code || '').replace(/\D/g, '');
+    if (clean.length !== 6) return { ok: false, message: '6 haneli kodu gir.' };
+
+    const row = await env.DB.prepare(
+        "SELECT code_hash, purpose, attempts, (expires_at > datetime('now')) AS fresh FROM email_codes WHERE user_id = ?"
+    ).bind(userId).first();
+    if (!row) return { ok: false, message: 'Kod bulunamadı. Yeni kod iste.' };
+    if (!row.fresh) return { ok: false, message: 'Kodun süresi doldu. Yeni kod iste.' };
+    if (row.purpose !== purpose) return { ok: false, message: 'Bu kod bu işlem için geçerli değil.' };
+    if ((row.attempts || 0) >= 6) return { ok: false, message: 'Çok fazla yanlış deneme. Yeni kod iste.' };
+
+    const hash = await codeHash(userId, clean, purpose);
+    if (hash !== row.code_hash) {
+        await env.DB.prepare('UPDATE email_codes SET attempts = attempts + 1 WHERE user_id = ?').bind(userId).run();
+        return { ok: false, message: 'Kod hatalı. E-postadaki son kodu kontrol et.' };
+    }
+
+    await env.DB.prepare('DELETE FROM email_codes WHERE user_id = ?').bind(userId).run();
+    return { ok: true };
 }
 
 // Giriş sonrası döndürülen kullanıcı gövdesi (normal giriş ve 2FA girişi aynı şeyi döner).
@@ -941,7 +973,10 @@ export default {
                 if (user.email_verified) return json({ success: true, message: 'E-posta zaten doğrulanmış.' });
 
                 const body = await request.json().catch(() => ({}));
-                await issueVerificationEmail(request, env, user, (body && body.redirect) || '');
+                const result = await issueVerificationEmail(request, env, user, (body && body.redirect) || '');
+                if (!result.sent) {
+                    return json({ success: false, message: 'Doğrulama e-postası gönderilemedi. E-posta adresini kontrol et veya biraz sonra tekrar dene.' }, 502);
+                }
                 return json({ success: true, message: 'Doğrulama e-postası gönderildi.' });
             }
 
@@ -982,25 +1017,35 @@ export default {
                     return json({ success: false, message: 'E-posta veya şifre hatalı.' }, 401);
                 }
 
-                // İki adımlı doğrulama açıksa şifre tek başına yetmez: kısa ömürlü bir "challenge" döneriz.
+                // İki adımlı doğrulama açıksa şifre tek başına yetmez: e-postaya 6 haneli kod göndeririz.
                 const twofa = await get2fa(env, user.id);
                 if (twofa && twofa.enabled) {
                     const challenge = await signSession(
                         { uid: user.id, p: '2fa', exp: Math.floor(Date.now() / 1000) + 600 },
                         env.SESSION_SECRET
                     );
+                    let sent = false;
+                    try {
+                        sent = (await sendEmailCode(env, user, 'login')).sent;
+                    } catch (e) {
+                        console.error('2FA kod gönderilemedi:', e && e.message);
+                    }
                     return json({
                         success: true,
                         requires2fa: true,
                         challenge,
-                        message: 'İki adımlı doğrulama kodu gerekli.',
+                        email: user.email,
+                        emailSent: sent,
+                        message: sent
+                            ? 'E-postana 6 haneli kod gönderdik.'
+                            : 'Kod gönderilemedi. Tekrar giriş yapmayı dene.',
                     });
                 }
 
                 return json(await sessionPayload(env, user));
             }
 
-            // --- /login/2fa --- (şifre sonrası 6 haneli authenticator kodu)
+            // --- /login/2fa --- (şifre sonrası e-postaya gönderilen 6 haneli kod)
             if (url.pathname === '/login/2fa' && request.method === 'POST') {
                 if (!env.SESSION_SECRET) return json({ success: false, message: 'Sunucu yapılandırma hatası.' }, 500);
 
@@ -1020,14 +1065,10 @@ export default {
                     return json({ success: false, message: 'Bu hesapta iki adımlı doğrulama açık değil.' }, 400);
                 }
 
-                const step = await verifyTotp(row.secret, body.code);
-                if (!step) {
-                    return json({ success: false, message: 'Kod hatalı. Uygulamadaki güncel 6 haneli kodu gir.' }, 401);
+                const check = await consumeEmailCode(env, payload.uid, 'login', body.code);
+                if (!check.ok) {
+                    return json({ success: false, message: check.message }, 401);
                 }
-                if (step <= (row.last_step || 0)) {
-                    return json({ success: false, message: 'Bu kod daha önce kullanıldı. Yeni kodun gelmesini bekle.' }, 401);
-                }
-                await env.DB.prepare('UPDATE user_2fa SET last_step = ? WHERE user_id = ?').bind(step, payload.uid).run();
 
                 const user = await env.DB.prepare(
                     'SELECT id, email, full_name, is_no_data, email_verified FROM users WHERE id = ?'
@@ -1049,12 +1090,15 @@ export default {
                 });
             }
 
-            // --- /2fa/setup --- (yeni sır üretir, henüz etkinleştirmez)
+            // --- /2fa/setup --- (e-postaya 6 haneli doğrulama kodu gönderir)
             if (url.pathname === '/2fa/setup' && request.method === 'POST') {
                 const session = await getSessionUser(request, env);
                 if (!session || session.admin || !session.uid) return json({ success: false, message: 'Oturum gerekli.' }, 401);
 
-                const user = await env.DB.prepare('SELECT id, email FROM users WHERE id = ?').bind(session.uid).first();
+                const rl = await checkRateLimit(env, '2fa-setup:' + session.uid, 5, 600);
+                if (!rl.allowed) return json({ success: false, message: 'Çok fazla kod isteği. Biraz bekle.' }, 429);
+
+                const user = await env.DB.prepare('SELECT id, email, full_name FROM users WHERE id = ?').bind(session.uid).first();
                 if (!user) return json({ success: false, message: 'Kullanıcı bulunamadı.' }, 404);
 
                 const existing = await get2fa(env, session.uid);
@@ -1062,22 +1106,30 @@ export default {
                     return json({ success: false, message: 'İki adımlı doğrulama zaten açık. Önce kapat.' }, 400);
                 }
 
-                const secret = newTotpSecret();
+                let sent = false;
+                try {
+                    sent = (await sendEmailCode(env, user, 'enable')).sent;
+                } catch (e) {
+                    console.error('2FA setup kod hatası:', e && e.message);
+                }
+                if (!sent) {
+                    return json({ success: false, message: 'Doğrulama e-postası gönderilemedi. E-posta adresini kontrol et.' }, 502);
+                }
+
                 await ensure2faTable(env);
                 await env.DB.prepare(
-                    `INSERT INTO user_2fa (user_id, secret, enabled, last_step) VALUES (?, ?, 0, 0)
-                     ON CONFLICT(user_id) DO UPDATE SET secret = excluded.secret, enabled = 0, last_step = 0`
-                ).bind(session.uid, secret).run();
+                    `INSERT INTO user_2fa (user_id, secret, enabled, last_step) VALUES (?, '', 0, 0)
+                     ON CONFLICT(user_id) DO UPDATE SET enabled = 0`
+                ).bind(session.uid).run();
 
                 return json({
                     success: true,
-                    secret,
-                    otpauth: otpauthUrl(secret, user.email),
-                    message: 'Sırrı authenticator uygulamasına ekle, sonra uygulamanın gösterdiği kodu gir.',
+                    email: user.email,
+                    message: '6 haneli kodu e-postana gönderdik.',
                 });
             }
 
-            // --- /2fa/enable ---
+            // --- /2fa/enable --- (e-postaya gelen kodu doğrular)
             if (url.pathname === '/2fa/enable' && request.method === 'POST') {
                 const session = await getSessionUser(request, env);
                 if (!session || session.admin || !session.uid) return json({ success: false, message: 'Oturum gerekli.' }, 401);
@@ -1087,15 +1139,15 @@ export default {
 
                 const body = await request.json().catch(() => ({}));
                 const row = await get2fa(env, session.uid);
-                if (!row || !row.secret) return json({ success: false, message: 'Önce kurulumu başlat.' }, 400);
+                if (!row) return json({ success: false, message: 'Önce kurulumu başlat.' }, 400);
                 if (row.enabled) return json({ success: true, message: 'İki adımlı doğrulama zaten açık.' });
 
-                const step = await verifyTotp(row.secret, body.code);
-                if (!step) return json({ success: false, message: 'Kod hatalı. Uygulamadaki 6 haneli kodu kontrol et.' }, 401);
+                const check = await consumeEmailCode(env, session.uid, 'enable', body.code);
+                if (!check.ok) return json({ success: false, message: check.message }, 401);
 
                 await env.DB.prepare(
-                    "UPDATE user_2fa SET enabled = 1, last_step = ?, enabled_at = datetime('now') WHERE user_id = ?"
-                ).bind(step, session.uid).run();
+                    "UPDATE user_2fa SET enabled = 1, enabled_at = datetime('now') WHERE user_id = ?"
+                ).bind(session.uid).run();
 
                 return json({ success: true, message: 'İki adımlı doğrulama açıldı.' });
             }
@@ -1118,6 +1170,7 @@ export default {
 
                 await ensure2faTable(env);
                 await env.DB.prepare('DELETE FROM user_2fa WHERE user_id = ?').bind(session.uid).run();
+                await env.DB.prepare('DELETE FROM email_codes WHERE user_id = ?').bind(session.uid).run().catch(() => {});
                 return json({ success: true, message: 'İki adımlı doğrulama kapatıldı.' });
             }
 
@@ -1156,8 +1209,9 @@ export default {
                 } catch (e) { console.error('Cihaz oluşturma hatası:', e && e.message); }
 
                 // Hoş geldin + e-posta doğrulama maili (Resend yapılandırılmamışsa sessizce geçer).
+                let verifySent = false;
                 try {
-                    await issueVerificationEmail(request, env, { id: userId, email, full_name: fullName }, body.redirect || '');
+                    verifySent = (await issueVerificationEmail(request, env, { id: userId, email, full_name: fullName }, body.redirect || '')).sent;
                 } catch (e) { console.error('Doğrulama e-postası hatası:', e && e.message); }
 
                 const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30;
@@ -1165,7 +1219,10 @@ export default {
 
                 return json({
                     success: true,
-                    message: 'Kayıt başarılı. E-postana bir doğrulama bağlantısı gönderdik.',
+                    message: verifySent
+                        ? 'Kayıt başarılı. E-postana bir doğrulama bağlantısı gönderdik.'
+                        : 'Kayıt başarılı. Doğrulama e-postası gönderilemedi; profilden tekrar isteyebilirsin.',
+                    emailSent: verifySent,
                     token,
                     user: { id: String(userId), email, fullName, isNoData: false, emailVerified: false },
                     device: first ? first.device : null,
@@ -1469,7 +1526,9 @@ export default {
                     });
                     stmts.push(env.DB.prepare('DELETE FROM devices WHERE user_id = ?').bind(id));
                     await ensure2faTable(env);
+                    await ensureEmailCodesTable(env);
                     stmts.push(env.DB.prepare('DELETE FROM user_2fa WHERE user_id = ?').bind(id));
+                    stmts.push(env.DB.prepare('DELETE FROM email_codes WHERE user_id = ?').bind(id));
                     stmts.push(env.DB.prepare('DELETE FROM users WHERE id = ?').bind(id));
                     await env.DB.batch(stmts);
                     return json({ status: 'ok' });
@@ -1560,11 +1619,12 @@ export default {
                 await env.DB.prepare('UPDATE password_resets SET used = 1 WHERE user_id = ? AND used = 0').bind(row.user_id).run();
                 await env.DB.prepare('UPDATE users SET reset_requested = 0, reset_requested_at = NULL WHERE id = ?').bind(row.user_id).run();
 
-                // Kurtarma yolu: şifresini e-postayla sıfırlayan kullanıcı, authenticator cihazını
-                // kaybettiyse kilitli kalmasın diye iki adımlı doğrulama sıfırlanır.
+                // Kurtarma yolu: şifresini e-postayla sıfırlayan kullanıcı, doğrulama e-postasına
+                // erişemiyorsa kilitli kalmasın diye iki adımlı doğrulama sıfırlanır.
                 try {
                     await ensure2faTable(env);
                     await env.DB.prepare('DELETE FROM user_2fa WHERE user_id = ?').bind(row.user_id).run();
+                    await env.DB.prepare('DELETE FROM email_codes WHERE user_id = ?').bind(row.user_id).run();
                 } catch (e) { console.error('2FA sıfırlama hatası:', e && e.message); }
 
                 const changedUser = await env.DB.prepare('SELECT email FROM users WHERE id = ?').bind(row.user_id).first();

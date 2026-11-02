@@ -1197,9 +1197,9 @@
             width: 132px;
             height: auto;
             display: block;
-            filter: drop-shadow(0 14px 30px rgba(226, 96, 63, 0.35));
+            filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.45));
         }
-        body.light .hero-logo-svg { filter: drop-shadow(0 14px 28px rgba(194, 74, 43, 0.28)); }
+        body.light .hero-logo-svg { filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.16)); }
         @media (max-width: 480px) { .hero-logo-svg { width: 118px; } }
 
         /* Sekmeler */
@@ -1327,8 +1327,7 @@
                             </linearGradient>
                         </defs>
                         <!-- Uygulama açılış ekranındaki alev (ic_fire_eye_logo) -->
-                        <g transform="translate(46.5,0) scale(2.1)">
-                            <path fill="#FF4500" fill-opacity="0.2" d="M50,10c0,0 35,20 35,55c0,20 -15,35 -35,35s-35,-15 -35,-35c0,-35 35,-55 35,-55z" />
+                        <g transform="translate(15,0) scale(2.1)">
                             <path fill="#FF4500" d="M50,15c0,0 30,18 30,50c0,16 -13,30 -30,30s-30,-14 -30,-30c0,-32 30,-50 30,-50z" />
                             <path fill="#FF8C00" d="M50,30c0,0 22,14 22,38c0,12 -10,22 -22,22s-22,-10 -22,-22c0,-24 22,-38 22,-38z" />
                             <path fill="#FFD700" d="M50,45c0,0 14,10 14,25c0,8 -6,14 -14,14s-14,-6 -14,-14c0,-15 14,-25 14,-25z" />
@@ -1627,16 +1626,11 @@
                         </div>
 
                         <div id="twoFactorSetupBox" style="display: none; margin-top: 14px; border: 1px solid var(--line); border-radius: 12px; padding: 14px;">
-                            <p style="font-size: 0.85rem; line-height: 1.7;">1) Google Authenticator / Microsoft Authenticator / Aegis uygulamasında <strong>FireEye</strong> hesabı ekle.<br>
-                            2) Aşağıdaki anahtarı elle gir veya "Authenticator'da Aç" bağlantısına dokun.<br>
-                            3) Uygulamanın gösterdiği 6 haneli kodu yazıp doğrula.</p>
-                            <div class="form-group" style="margin-top: 10px;">
-                                <label>Gizli Anahtar</label>
-                                <input type="text" id="twoFactorSecret" class="form-control" readonly onclick="this.select()">
-                            </div>
-                            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
-                                <button type="button" class="util-btn" onclick="copy2faSecret()">Anahtarı Kopyala</button>
-                                <a id="twoFactorOtpAnchor" class="util-btn" href="#" style="text-decoration: none;">Authenticator'da Aç</a>
+                            <p style="font-size: 0.85rem; line-height: 1.7;">1) "Kod Gönder"e bas; hesabının e-posta adresine 6 haneli bir kod gelecek.<br>
+                            2) Gelen kodu aşağıdaki alana yaz.<br>
+                            3) "Doğrula ve Aç"a bas. Kod 10 dakika geçerlidir.</p>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0;">
+                                <button type="button" class="util-btn" onclick="resend2faCode()">Kodu Tekrar Gönder</button>
                             </div>
                             <div class="form-group">
                                 <label>6 Haneli Kod</label>
@@ -1718,7 +1712,7 @@
                         </form>
                         <form id="twoFactorForm" onsubmit="handleTwoFactorLogin(event)" class="account-form" style="display: none;">
                             <h4 class="account-panel-title" style="font-size: 1rem;">İki Adımlı Doğrulama</h4>
-                            <p class="account-panel-sub">Authenticator uygulamandaki 6 haneli kodu gir.</p>
+                            <p class="account-panel-sub" id="twoFactorEmailHint">E-postana 6 haneli bir kod gönderdik.</p>
                             <div class="form-group">
                                 <label>Doğrulama Kodu</label>
                                 <input type="text" id="twoFactorCode" class="form-control" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" required>
@@ -2317,10 +2311,17 @@
                 const data = await res.json();
                 if (!data.success) throw new Error(data.message || feText('loginFailed'));
 
-                // İki adımlı doğrulama açıksa önce kodu iste.
+                // İki adımlı doğrulama açıksa e-postaya kod gönderilir ve kod istenir.
                 if (data.requires2fa) {
                     twoFaChallenge = data.challenge;
                     show2faStep(true);
+                    const hint = document.getElementById('twoFactorEmailHint');
+                    if (hint) {
+                        hint.textContent = data.emailSent === false
+                            ? 'Kod gönderilemedi. "Geri dön"e basıp tekrar giriş yapmayı dene.'
+                            : 'E-postana 6 haneli bir kod gönderdik' + (data.email ? ' (' + data.email + ')' : '') + '.';
+                        hint.style.color = data.emailSent === false ? 'var(--danger)' : 'var(--text-secondary)';
+                    }
                     return;
                 }
 
@@ -2529,7 +2530,7 @@
                 const data = await res.json();
                 if (!data.success) throw new Error(data.message || 'Durum alınamadı');
                 stateEl.textContent = data.enabled
-                    ? 'Açık — girişte authenticator kodu isteniyor.'
+                    ? 'Açık — girişte e-postana gönderilen 6 haneli kod isteniyor.'
                     : 'Kapalı — girişte yalnızca şifre yeterli.';
                 if (enableBtn) enableBtn.style.display = data.enabled ? 'none' : 'inline-block';
                 if (disableBtn) disableBtn.style.display = data.enabled ? 'inline-block' : 'none';
@@ -2544,13 +2545,15 @@
             try {
                 const res = await apiFetch('/2fa/setup', { method: 'POST' });
                 const data = await res.json();
-                if (!data.success) throw new Error(data.message || 'Kurulum başlatılamadı.');
-                document.getElementById('twoFactorSecret').value = data.secret;
-                const anchor = document.getElementById('twoFactorOtpAnchor');
-                if (anchor) anchor.href = data.otpauth;
+                if (!data.success) throw new Error(data.message || 'Kod gönderilemedi.');
                 document.getElementById('twoFactorEnableCode').value = '';
                 if (box) box.style.display = 'block';
-                if (msg) msg.style.display = 'none';
+                if (msg) {
+                    msg.style.color = 'var(--text-secondary)';
+                    msg.textContent = (data.message || '6 haneli kodu e-postana gönderdik.') +
+                        (data.email ? ' (' + data.email + ')' : '');
+                    msg.style.display = 'block';
+                }
             } catch (e) {
                 if (msg) {
                     msg.style.color = 'var(--danger)';
@@ -2560,16 +2563,24 @@
             }
         }
 
-        function copy2faSecret() {
-            const input = document.getElementById('twoFactorSecret');
-            if (!input) return;
-            input.select();
-            try { document.execCommand('copy'); } catch (e) {}
+        async function resend2faCode() {
             const msg = document.getElementById('twoFactorSetupMsg');
-            if (msg) {
-                msg.style.color = 'var(--text-secondary)';
-                msg.textContent = 'Anahtar kopyalandı.';
-                msg.style.display = 'block';
+            try {
+                const res = await apiFetch('/2fa/setup', { method: 'POST' });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message || 'Kod gönderilemedi.');
+                document.getElementById('twoFactorEnableCode').value = '';
+                if (msg) {
+                    msg.style.color = 'var(--text-secondary)';
+                    msg.textContent = 'Yeni kod gönderildi. E-postanı kontrol et.';
+                    msg.style.display = 'block';
+                }
+            } catch (e) {
+                if (msg) {
+                    msg.style.color = 'var(--danger)';
+                    msg.textContent = e.message;
+                    msg.style.display = 'block';
+                }
             }
         }
 
