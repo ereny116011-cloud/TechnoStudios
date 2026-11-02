@@ -2555,11 +2555,22 @@
                 const res = await apiFetch('/2fa/status');
                 const data = await res.json();
                 if (!data.success) throw new Error(data.message || 'Durum alınamadı');
-                stateEl.textContent = data.enabled
-                    ? 'Açık — girişte e-postana gönderilen 6 haneli kod isteniyor.'
-                    : 'Kapalı — girişte yalnızca şifre yeterli.';
-                if (enableBtn) enableBtn.style.display = data.enabled ? 'none' : 'inline-block';
-                if (disableBtn) disableBtn.style.display = data.enabled ? 'inline-block' : 'none';
+                const mode = data.mode || (data.enabled ? 'always' : 'auto');
+                const idleDays = data.idleDays || 7;
+                const texts = {
+                    always: 'Açık — her girişte e-postana gönderilen 6 haneli kod isteniyor.',
+                    auto: 'Otomatik — ' + idleDays + ' günden uzun süre giriş yapılmazsa e-posta kodu istenir, sık girişlerde istenmez.',
+                    off: 'Kapalı — girişte yalnızca şifre yeterli.'
+                };
+                stateEl.textContent = texts[mode] || texts.auto;
+                if (enableBtn) {
+                    enableBtn.style.display = mode === 'always' ? 'none' : 'inline-block';
+                    enableBtn.textContent = mode === 'off' ? 'Etkinleştir' : 'Her Girişte İste';
+                }
+                if (disableBtn) {
+                    disableBtn.style.display = mode === 'off' ? 'none' : 'inline-block';
+                    disableBtn.textContent = mode === 'off' ? 'Kapat' : 'Tamamen Kapat';
+                }
             } catch (e) {
                 stateEl.textContent = 'Durum alınamadı.';
             }
