@@ -191,16 +191,52 @@ async function ensureDevice(env, userId, fullName) {
     return device ? publicDevice(device) : null;
 }
 
+// Cihazın LCD ekranındaki eşleştirme kodunu (hash'li) saklamak için kolon.
+let deviceCodeColumnReady = false;
+async function ensureDeviceCodeColumn(env) {
+    if (deviceCodeColumnReady) return;
+    try {
+        await env.DB.prepare('ALTER TABLE devices ADD COLUMN pairing_code_hash TEXT').run();
+    } catch (e) {
+        // Kolon zaten varsa hata verir; sorun değil.
+    }
+    try {
+        await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_devices_user_code ON devices(user_id, pairing_code_hash)').run();
+    } catch (e) { /* yoksay */ }
+    deviceCodeColumnReady = true;
+}
+
 // Yeni cihaz + tek seferlik gösterilecek token üretir.
-async function createDeviceForUser(env, userId, name) {
+// pairingCode verilirse aynı kodla daha önce eklenmiş cihaz varsa yenisini
+// oluşturmak yerine o cihazı günceller (mükerrer kayıt oluşmaz).
+async function createDeviceForUser(env, userId, name, pairingCode) {
+    await ensureDeviceCodeColumn(env);
+    const code = (pairingCode || '').toString().trim() || null;
+    const codeHash = code ? await sha256Hex(code) : null;
+
+    if (codeHash) {
+        const existing = await env.DB.prepare(
+            'SELECT * FROM devices WHERE user_id = ? AND pairing_code_hash = ?'
+        ).bind(userId, codeHash).first();
+        if (existing) {
+            const token = randomDeviceToken();
+            const tokenHash = await sha256Hex(token);
+            await env.DB.prepare(
+                'UPDATE devices SET name = ?, token_hash = ?, last_seen_at = NULL WHERE id = ?'
+            ).bind(name, tokenHash, existing.id).run();
+            const row = await env.DB.prepare('SELECT * FROM devices WHERE id = ?').bind(existing.id).first();
+            return { device: publicDevice(row), token, reused: true };
+        }
+    }
+
     const deviceKey = newDeviceKey(name);
     const token = randomDeviceToken();
     const tokenHash = await sha256Hex(token);
     const ins = await env.DB.prepare(
-        'INSERT INTO devices (user_id, name, device_key, token_hash) VALUES (?, ?, ?, ?)'
-    ).bind(userId, name, deviceKey, tokenHash).run();
+        'INSERT INTO devices (user_id, name, device_key, token_hash, pairing_code_hash) VALUES (?, ?, ?, ?, ?)'
+    ).bind(userId, name, deviceKey, tokenHash, codeHash).run();
     const row = await env.DB.prepare('SELECT * FROM devices WHERE id = ?').bind(ins.meta.last_row_id).first();
-    return { device: publicDevice(row), token };
+    return { device: publicDevice(row), token, reused: false };
 }
 
 async function ownedDevice(env, session, deviceKey) {
@@ -644,7 +680,6 @@ async function consumeEmailCode(env, userId, purpose, code) {
 
 // Giriş sonrası döndürülen kullanıcı gövdesi (normal giriş ve 2FA girişi aynı şeyi döner).
 async function sessionPayload(env, user) {
-    await ensureDevice(env, user.id, user.full_name);
     await markLogin(env, user.id);
     const devices = await listDevices(env, user.id);
     const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30; // 30 gün
@@ -1268,11 +1303,8 @@ export default {
                     return json({ success: false, message: 'Bu e-posta ile zaten bir hesap var.' }, 400);
                 }
 
-                // Hesap açılır açılmaz ilk cihaz ve tek seferlik token üretilir.
-                let first = null;
-                try {
-                    first = await createDeviceForUser(env, userId, 'Cihaz 1');
-                } catch (e) { console.error('Cihaz oluşturma hatası:', e && e.message); }
+                // Cihaz kaydı, kullanıcı cihazı eşleştirdiğinde oluşturulur.
+                // Böylece hesapta boş "Cihaz 1" kayıtları birikmez.
 
                 // Hoş geldin + e-posta doğrulama maili (Resend yapılandırılmamışsa sessizce geçer).
                 let verifySent = false;
@@ -1291,8 +1323,8 @@ export default {
                     emailSent: verifySent,
                     token,
                     user: { id: String(userId), email, fullName, isNoData: false, emailVerified: false },
-                    device: first ? first.device : null,
-                    deviceToken: first ? first.token : null,
+                    device: null,
+                    deviceToken: null,
                 });
             }
 
@@ -1340,7 +1372,6 @@ export default {
                     ).bind(ins.meta.last_row_id).first();
                 }
 
-                await ensureDevice(env, user.id, user.full_name);
                 await markLogin(env, user.id);
                 const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30;
                 const token = await signSession({ uid: user.id, exp }, env.SESSION_SECRET);
@@ -1398,7 +1429,6 @@ export default {
                     ).bind(ins.meta.last_row_id).first();
                 }
 
-                await ensureDevice(env, user.id, user.full_name);
                 await markLogin(env, user.id);
                 const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30;
                 const token = await signSession({ uid: user.id, exp }, env.SESSION_SECRET);
@@ -1426,7 +1456,6 @@ export default {
                     'SELECT id, email, full_name, is_no_data, email_verified FROM users WHERE id = ?'
                 ).bind(session.uid).first();
                 if (!user) return json({ success: false, message: 'Hesap bulunamadı.' }, 404);
-                await ensureDevice(env, user.id, user.full_name);
                 const devices = await listDevices(env, user.id);
                 return json({
                     success: true,
@@ -1777,6 +1806,45 @@ export default {
                 }
             }
 
+            // --- /devices/find --- (LCD'deki 6 haneli kod ile kullanıcının cihazını bulur)
+            if (url.pathname === '/devices/find' && request.method === 'GET') {
+                const session = await getSessionUser(request, env);
+                if (!session || (!session.uid && !session.admin)) return json({ success: false, message: 'Oturum bulunamadı.' }, 401);
+
+                const rl = await checkRateLimit(env, 'finddevice:' + clientIp(request), 30, 600);
+                if (!rl.allowed) {
+                    return json({ success: false, message: 'Çok fazla kod denemesi. Lütfen birkaç dakika sonra tekrar deneyin.' }, 429);
+                }
+
+                const code = (url.searchParams.get('code') || '').trim();
+                if (!/^\d{4,10}$/.test(code)) return json({ success: false, message: 'Geçerli bir cihaz kodu girin.' }, 400);
+
+                await ensureDeviceCodeColumn(env);
+                const codeHash = await sha256Hex(code);
+                const row = await env.DB.prepare(
+                    'SELECT * FROM devices WHERE user_id = ? AND pairing_code_hash = ? ORDER BY id DESC LIMIT 1'
+                ).bind(session.uid, codeHash).first();
+
+                if (row) return json({ success: true, device: publicDevice(row) });
+
+                // Eski sürümde eşleştirilmiş cihazların kodu kayıtlı değildir.
+                // Hesapta tek bir eşleştirilmiş cihaz varsa kullanıcıyı kilitlememek için
+                // kodu o cihaza bağla (token'ı olmayan otomatik "Cihaz 1" kayıtlarını sayma).
+                const { results } = await env.DB.prepare(
+                    'SELECT * FROM devices WHERE user_id = ? ORDER BY id DESC'
+                ).bind(session.uid).all();
+                const owned = results || [];
+                const paired = owned.filter((d) => !!d.token_hash);
+                const candidate = paired.length === 1 ? paired[0] : (owned.length === 1 ? owned[0] : null);
+                if (candidate) {
+                    await env.DB.prepare(
+                        'UPDATE devices SET pairing_code_hash = ? WHERE id = ?'
+                    ).bind(codeHash, candidate.id).run();
+                    return json({ success: true, device: publicDevice(candidate) });
+                }
+
+                return json({ success: false, message: 'Bu kodla eşleşen cihaz bulunamadı.' }, 404);            }
+
             // --- /devices --- (giriş yapan kullanıcının cihazları)
             if (url.pathname === '/devices') {
                 const session = await getSessionUser(request, env);
@@ -1798,8 +1866,8 @@ export default {
                     }
                     const body = await request.json().catch(() => ({}));
                     const name = ((body.name || '').trim() || 'Yeni Cihaz').slice(0, 60);
-                    const created = await createDeviceForUser(env, session.uid, name);
-                    return json({ success: true, device: created.device, deviceToken: created.token });
+                    const created = await createDeviceForUser(env, session.uid, name, body.pairingCode);
+                    return json({ success: true, device: created.device, deviceToken: created.token, reused: !!created.reused });
                 }
 
                 if (request.method === 'DELETE') {
