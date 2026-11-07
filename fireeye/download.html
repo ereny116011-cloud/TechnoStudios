@@ -25,24 +25,27 @@
 
         <!-- İçerik -->
         <div class="download-box">
-            <a href="https://fireeye-api.ereny116011.workers.dev/release/latest/download" class="btn-download" download>
+            <a href="../fireeye.apk" class="btn-download" download>
                 FireEye APK İndir
             </a>
-            <p class="file-info" id="fileInfoText">Sürüm: V1.0 | Android 8.0+ Uyumluluğu</p>
+            <p class="file-info" id="fileInfoText">Sürüm: 1.0 | Android 8.0+ Uyumluluğu</p>
         </div>
     </div>
 
     <script>
-        // Güncel sürüm numarasını admin panelinden yüklenen son sürümden göster.
-        fetch('https://fireeye-api.ereny116011.workers.dev/release/latest')
+        // Sürüm numarasını API'den almayı dene; erişilemezse varsayılan metin kalır.
+        const infoEl = document.getElementById('fileInfoText');
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 4000);
+        fetch('https://fireeye-api.ereny116011.workers.dev/release/latest', { signal: ctrl.signal })
             .then(res => res.ok ? res.json() : null)
             .then(data => {
                 if (data && data.version) {
-                    document.getElementById('fileInfoText').textContent =
-                        'Sürüm: ' + data.version + ' | Android 8.0+ Uyumluluğu';
+                    infoEl.textContent = 'Sürüm: ' + data.version + ' | Android 8.0+ Uyumluluğu';
                 }
             })
-            .catch(() => {});
+            .catch(() => {})
+            .finally(() => clearTimeout(t));
     </script>
 </body>
 </html>

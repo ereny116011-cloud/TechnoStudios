@@ -1448,5 +1448,155 @@
             });
         });
     </script>
+
+    <!-- Site içi yapay zeka asistanı (ana sayfa) -->
+    <style>
+        .ai-fab{position:fixed;right:20px;bottom:20px;z-index:960;width:56px;height:56px;border-radius:50%;border:1px solid var(--line, rgba(255,255,255,.1));background:var(--accent,#e2603f);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 16px 34px -12px rgba(0,0,0,.65);transition:transform .15s ease}
+        .ai-fab:hover{transform:translateY(-2px) scale(1.03)}
+        .ai-fab svg{width:24px;height:24px}
+        .ai-fab .ai-x{display:none}
+        .ai-fab.open .ai-c{display:none}
+        .ai-fab.open .ai-x{display:block}
+        .ai-panel{position:fixed;right:20px;bottom:88px;z-index:961;width:min(390px,calc(100vw - 32px));max-height:min(580px,calc(100vh - 140px));display:none;flex-direction:column;background:var(--bg,#0c0d10);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:16px;box-shadow:0 30px 70px -24px rgba(0,0,0,.8);overflow:hidden}
+        .ai-panel.open{display:flex}
+        .ai-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line,rgba(255,255,255,.1))}
+        .ai-head strong{font-size:.95rem;color:var(--text-primary)}
+        .ai-head span{display:block;font-size:.72rem;color:var(--text-secondary)}
+        .ai-close{border:0;background:transparent;color:var(--text-secondary);font-size:1.4rem;line-height:1;cursor:pointer;padding:2px 6px;border-radius:8px}
+        .ai-close:hover{color:var(--text-primary)}
+        .ai-msgs{flex:1;overflow-y:auto;padding:14px 14px 6px;display:flex;flex-direction:column;gap:10px;min-height:170px}
+        .ai-msg{max-width:88%;padding:9px 12px;border-radius:12px;font-size:.85rem;line-height:1.55;white-space:pre-wrap;word-break:break-word}
+        .ai-msg.bot{align-self:flex-start;background:var(--glass,rgba(255,255,255,.03));border:1px solid var(--line,rgba(255,255,255,.1));color:var(--text-primary);border-bottom-left-radius:4px}
+        .ai-msg.user{align-self:flex-end;background:var(--accent,#e2603f);color:#fff;border-bottom-right-radius:4px}
+        .ai-msg.typing{color:var(--text-secondary);font-style:italic}
+        .ai-suggests{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 10px}
+        .ai-suggests button{border:1px solid var(--line,rgba(255,255,255,.1));background:transparent;color:var(--text-secondary);font-size:.74rem;padding:5px 10px;border-radius:999px;cursor:pointer}
+        .ai-suggests button:hover{border-color:var(--accent,#e2603f);color:var(--text-primary)}
+        .ai-form{display:flex;align-items:flex-end;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line,rgba(255,255,255,.1))}
+        .ai-form textarea{flex:1;resize:none;max-height:110px;padding:9px 11px;border-radius:10px;border:1px solid var(--line,rgba(255,255,255,.1));background:rgba(255,255,255,.03);color:var(--text-primary);font-family:inherit;font-size:.85rem;line-height:1.45}
+        .ai-form textarea:focus{outline:none;border-color:var(--accent,#e2603f)}
+        .ai-form button[type=submit]{width:40px;height:40px;flex:0 0 40px;border-radius:10px;border:1px solid var(--line,rgba(255,255,255,.1));background:var(--accent,#e2603f);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+        .ai-form button[type=submit]:disabled{opacity:.5}
+        .ai-form button[type=submit] svg{width:18px;height:18px}
+        .ai-foot{padding:0 14px 10px;font-size:.66rem;color:var(--text-secondary);opacity:.75}
+        @media (max-width:520px){.ai-fab{right:14px;bottom:14px}.ai-panel{right:8px;left:8px;width:auto;bottom:80px}}
+    </style>
+    <button type="button" class="ai-fab" id="aiFab" aria-label="Yapay zeka asistanı" aria-expanded="false" aria-controls="aiPanel" onclick="aiToggle()">
+        <svg class="ai-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        <svg class="ai-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <section class="ai-panel" id="aiPanel" role="dialog" aria-modal="false" aria-labelledby="aiPanelTitle">
+        <div class="ai-head">
+            <div><strong id="aiPanelTitle">Eren</strong><span id="aiPanelSub">FireEye ekibinin asistanı · phonk & Minecraft</span></div>
+            <button type="button" class="ai-close" onclick="aiToggle(false)" aria-label="Kapat">&times;</button>
+        </div>
+        <div class="ai-msgs" id="aiMsgs" role="log" aria-live="polite"></div>
+        <div class="ai-suggests" id="aiSuggests"></div>
+        <form class="ai-form" onsubmit="aiSend(event)">
+            <textarea id="aiInput" rows="1" maxlength="1000" placeholder="Mesajını yaz..." oninput="aiGrow(this)" onkeydown="aiKey(event)"></textarea>
+            <button type="submit" id="aiSendBtn" aria-label="Gönder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9 22 2Z"/></svg>
+            </button>
+        </form>
+        <div class="ai-foot" id="aiFoot">Yapay zeka hata yapabilir. Acil durumda 112'yi arayın.</div>
+    </section>
+    <script>
+        (function () {
+            const API = 'https://fireeye-api.ereny116011.workers.dev/ai/chat';
+            const EN = (function () { try { return localStorage.getItem('ts-lang') === 'en'; } catch (e) { return false; } })();
+            const T = EN ? {
+                title: 'Eren', sub: 'FireEye team assistant · phonk & Minecraft', ph: 'Say something to Eren...',
+                foot: 'Eren is an AI and can make mistakes. In an emergency, call your local emergency number.',
+                greet: 'Hey, I am Eren! The (slightly crazy) assistant of the FireEye team. I listen to phonk and build Minecraft projects. Ask me anything, or just chat.',
+                think: 'Eren is thinking', err: 'I cannot answer right now. Please check your connection and try again.',
+                s1: 'Eren, who are you?', s2: 'Favourite music genre?', s3: 'What Minecraft projects do you build?', s4: 'Who is on the team?'
+            } : {
+                title: 'Eren', sub: 'FireEye ekibinin asistanı · phonk & Minecraft', ph: 'Eren\'e bir şey yaz...',
+                foot: 'Eren yapay zekadır, hata yapabilir. Acil durumda 112\'yi arayın.',
+                greet: 'Selam, ben Eren! FireEye ekibinin (biraz deli) asistanıyım. Phonk dinleyip Minecraft projeleri geliştiriyorum. Ne istersen sor, sohbet de olur.',
+                think: 'Eren düşünüyor', err: 'Şu an yanıt veremiyorum. Bağlantını kontrol edip tekrar dene.',
+                s1: 'Eren, sen kimsin?', s2: 'En sevdiğin müzik türü?', s3: 'Minecraft projelerin neler?', s4: 'Takımda kimler var?'
+            };
+            let busy = false, greeted = false;
+            const msgs = [];
+            const $ = id => document.getElementById(id);
+
+            function bubble(role, text) {
+                const box = $('aiMsgs'); if (!box) return null;
+                const d = document.createElement('div');
+                d.className = 'ai-msg ' + (role === 'user' ? 'user' : 'bot') + (role === 'typing' ? ' typing' : '');
+                d.textContent = text;
+                box.appendChild(d); box.scrollTop = box.scrollHeight;
+                return d;
+            }
+            function render() {
+                const box = $('aiMsgs'); if (!box) return;
+                box.innerHTML = '';
+                if (!greeted) return;
+                if (!msgs.length) { bubble('bot', T.greet); return; }
+                msgs.forEach(m => bubble(m.role, m.content));
+            }
+            function chips() {
+                const box = $('aiSuggests'); if (!box) return;
+                box.innerHTML = '';
+                [T.s1, T.s2, T.s3, T.s4].forEach(t => {
+                    const b = document.createElement('button');
+                    b.type = 'button'; b.textContent = t;
+                    b.onclick = () => { $('aiInput').value = t; aiSend(); };
+                    box.appendChild(b);
+                });
+            }
+            window.aiToggle = function (force) {
+                const p = $('aiPanel'), f = $('aiFab');
+                const open = typeof force === 'boolean' ? force : !p.classList.contains('open');
+                p.classList.toggle('open', open); f.classList.toggle('open', open);
+                f.setAttribute('aria-expanded', open ? 'true' : 'false');
+                if (open) {
+                    if (!greeted) { greeted = true; render(); }
+                    setTimeout(() => { try { $('aiInput').focus(); } catch (e) {} }, 60);
+                }
+            };
+            window.aiGrow = el => { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 110) + 'px'; };
+            window.aiKey = ev => { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); aiSend(); } };
+            window.aiSend = async function (ev) {
+                if (ev && ev.preventDefault) ev.preventDefault();
+                if (busy) return;
+                const input = $('aiInput');
+                const text = (input.value || '').trim();
+                if (!text) return;
+                input.value = ''; input.style.height = 'auto';
+                busy = true; $('aiSendBtn').disabled = true;
+                msgs.push({ role: 'user', content: text });
+                bubble('user', text);
+                const typing = bubble('typing', T.think);
+                const started = Date.now();
+                try {
+                    const res = await fetch(API, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ lang: EN ? 'en' : 'tr', messages: msgs.slice(-10) })
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok || !data.success) throw new Error('fail');
+                    const wait = Math.max(0, 900 - (Date.now() - started));
+                    if (wait) await new Promise(r => setTimeout(r, wait));
+                    if (typing) typing.remove();
+                    const reply = String(data.reply || '').trim();
+                    msgs.push({ role: 'assistant', content: reply });
+                    bubble('bot', reply);
+                } catch (e) {
+                    if (typing) typing.remove();
+                    bubble('bot', T.err);
+                } finally {
+                    busy = false; $('aiSendBtn').disabled = false;
+                }
+            };
+            $('aiPanelTitle').textContent = T.title;
+            $('aiPanelSub').textContent = T.sub;
+            $('aiInput').placeholder = T.ph;
+            $('aiFoot').textContent = T.foot;
+            $('aiFab').setAttribute('aria-label', T.title);
+            chips();
+        })();
+    </script>
 </body>
 </html>

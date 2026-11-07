@@ -1316,6 +1316,177 @@
         .pw-toggle:hover { opacity: 1; color: var(--text-primary); }
         .pw-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
         .pw-toggle svg { width: 19px; height: 19px; display: block; }
+
+        /* --- Site içi yapay zeka asistanı --- */
+        .ai-fab {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            z-index: 960;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: 1px solid var(--line);
+            background: var(--accent);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 16px 34px -12px rgba(0, 0, 0, 0.65);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .ai-fab:hover { transform: translateY(-2px) scale(1.03); }
+        .ai-fab:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+        .ai-fab svg { width: 24px; height: 24px; }
+        .ai-fab .ai-fab-close { display: none; }
+        .ai-fab.open .ai-fab-chat { display: none; }
+        .ai-fab.open .ai-fab-close { display: block; }
+
+        .ai-panel {
+            position: fixed;
+            right: 20px;
+            bottom: 88px;
+            z-index: 961;
+            width: min(390px, calc(100vw - 32px));
+            max-height: min(580px, calc(100vh - 140px));
+            display: none;
+            flex-direction: column;
+            background: var(--ink);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            box-shadow: 0 30px 70px -24px rgba(0, 0, 0, 0.8);
+            overflow: hidden;
+        }
+        .ai-panel.open { display: flex; }
+
+        .ai-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--line);
+            background: var(--glass);
+        }
+        .ai-head-txt { display: flex; flex-direction: column; gap: 2px; }
+        .ai-head-txt strong { font-size: 0.95rem; color: var(--text-primary); }
+        .ai-head-txt span { font-size: 0.72rem; color: var(--text-secondary); }
+        .ai-close {
+            border: 0;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 1.4rem;
+            line-height: 1;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 8px;
+        }
+        .ai-close:hover { color: var(--text-primary); background: var(--glass); }
+
+        .ai-msgs {
+            flex: 1;
+            overflow-y: auto;
+            padding: 14px 14px 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 180px;
+        }
+        .ai-msg {
+            max-width: 88%;
+            padding: 9px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            line-height: 1.55;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .ai-msg.bot {
+            align-self: flex-start;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            color: var(--text-primary);
+            border-bottom-left-radius: 4px;
+        }
+        .ai-msg.user {
+            align-self: flex-end;
+            background: var(--accent);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+        .ai-msg.typing { color: var(--text-secondary); font-style: italic; }
+        .ai-msg.typing::after {
+            content: '...';
+            animation: aiDots 1.2s steps(4, end) infinite;
+        }
+        @keyframes aiDots { 0% { opacity: 0.2; } 50% { opacity: 1; } 100% { opacity: 0.2; } }
+
+        .ai-suggests {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 0 14px 10px;
+        }
+        .ai-suggests button {
+            border: 1px solid var(--line);
+            background: var(--glass);
+            color: var(--text-secondary);
+            font-size: 0.74rem;
+            padding: 5px 10px;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: border-color 0.15s ease, color 0.15s ease;
+        }
+        .ai-suggests button:hover { border-color: var(--accent); color: var(--text-primary); }
+
+        .ai-form {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            padding: 10px 12px 12px;
+            border-top: 1px solid var(--line);
+            background: var(--glass);
+        }
+        .ai-form textarea {
+            flex: 1;
+            resize: none;
+            max-height: 110px;
+            padding: 9px 11px;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+            background: var(--panel);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.85rem;
+            line-height: 1.45;
+        }
+        .ai-form textarea:focus { outline: none; border-color: var(--accent); }
+        .ai-form button[type="submit"] {
+            width: 40px;
+            height: 40px;
+            flex: 0 0 40px;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+            background: var(--accent);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .ai-form button[type="submit"]:disabled { opacity: 0.5; cursor: default; }
+        .ai-form button[type="submit"] svg { width: 18px; height: 18px; }
+        .ai-foot {
+            padding: 0 14px 10px;
+            font-size: 0.66rem;
+            color: var(--text-secondary);
+            opacity: 0.75;
+        }
+        @media (max-width: 520px) {
+            .ai-fab { right: 14px; bottom: 14px; }
+            .ai-panel { right: 8px; left: 8px; width: auto; bottom: 80px; }
+        }
     </style>
 </head>
 <body>
@@ -1639,40 +1810,40 @@
 
                     <!-- Güvenlik: İki Adımlı Doğrulama -->
                     <div id="twoFactorBox" style="margin-top: 22px; border-top: 1px solid var(--line); padding-top: 16px;">
-                        <p style="font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 10px;">Güvenlik</p>
+                        <p style="font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 10px;" data-i18n="security">Güvenlik</p>
                         <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
                             <div>
-                                <strong style="font-size: 0.95rem;">İki Adımlı Doğrulama</strong>
+                                <strong style="font-size: 0.95rem;" data-i18n="twoFactorTitle">İki Adımlı Doğrulama</strong>
                                 <p id="twoFactorState" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">Durum yükleniyor...</p>
                             </div>
                             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                <button type="button" id="twoFactorEnableBtn" class="util-btn" style="display: none;" onclick="start2faSetup()">Etkinleştir</button>
-                                <button type="button" id="twoFactorDisableBtn" class="util-btn" style="display: none; border-color: var(--danger); color: var(--danger);" onclick="open2faDisable()">Kapat</button>
+                                <button type="button" id="twoFactorEnableBtn" class="util-btn" style="display: none;" onclick="start2faSetup()" data-i18n="twoFactorEnable">Etkinleştir</button>
+                                <button type="button" id="twoFactorDisableBtn" class="util-btn" style="display: none; border-color: var(--danger); color: var(--danger);" onclick="open2faDisable()" data-i18n="twoFactorDisable">Kapat</button>
                             </div>
                         </div>
 
                         <div id="twoFactorSetupBox" style="display: none; margin-top: 14px; border: 1px solid var(--line); border-radius: 12px; padding: 14px;">
-                            <p style="font-size: 0.85rem; line-height: 1.7;">1) "Kod Gönder"e bas; hesabının e-posta adresine 6 haneli bir kod gelecek.<br>
+                            <p style="font-size: 0.85rem; line-height: 1.7;" data-i18n-html="twoFactorSteps">1) "Kod Gönder"e bas; hesabının e-posta adresine 6 haneli bir kod gelecek.<br>
                             2) Gelen kodu aşağıdaki alana yaz.<br>
                             3) "Doğrula ve Aç"a bas. Kod 10 dakika geçerlidir.</p>
                             <div style="display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0;">
-                                <button type="button" class="util-btn" onclick="resend2faCode()">Kodu Tekrar Gönder</button>
+                                <button type="button" class="util-btn" onclick="resend2faCode()" data-i18n="twoFactorResend">Kodu Tekrar Gönder</button>
                             </div>
                             <div class="form-group">
-                                <label>6 Haneli Kod</label>
+                                <label data-i18n="twoFactorCodeLabel">6 Haneli Kod</label>
                                 <input type="text" id="twoFactorEnableCode" class="form-control" inputmode="numeric" maxlength="6" placeholder="123456">
                             </div>
-                            <button type="button" class="main-cta" onclick="confirm2faSetup()">Doğrula ve Aç</button>
+                            <button type="button" class="main-cta" onclick="confirm2faSetup()" data-i18n="twoFactorVerifyEnable">Doğrula ve Aç</button>
                             <p id="twoFactorSetupMsg" style="font-size: 0.82rem; margin-top: 8px; display: none;"></p>
                         </div>
 
                         <div id="twoFactorDisableBox" style="display: none; margin-top: 14px; border: 1px solid var(--line); border-radius: 12px; padding: 14px;">
-                            <p style="font-size: 0.85rem;">İki adımlı doğrulamayı kapatmak için şifreni gir.</p>
+                            <p style="font-size: 0.85rem;" data-i18n="twoFactorDisableHint">İki adımlı doğrulamayı kapatmak için şifreni gir.</p>
                             <div class="form-group" style="margin-top: 10px;">
-                                <label>Şifre</label>
-                                <input type="password" id="twoFactorDisablePassword" class="form-control" placeholder="Şifre">
+                                <label data-i18n="passwordLabel">Şifre</label>
+                                <input type="password" id="twoFactorDisablePassword" class="form-control" placeholder="Şifre" data-i18n-placeholder="passwordPlaceholder">
                             </div>
-                            <button type="button" class="main-cta" style="background: var(--danger);" onclick="confirm2faDisable()">Kapat</button>
+                            <button type="button" class="main-cta" style="background: var(--danger);" onclick="confirm2faDisable()" data-i18n="twoFactorDisable">Kapat</button>
                             <p id="twoFactorDisableMsg" style="font-size: 0.82rem; margin-top: 8px; display: none;"></p>
                         </div>
                     </div>
@@ -1737,14 +1908,14 @@
                             <p id="accountLoginError" style="color: var(--danger); font-size: 0.85rem; display: none;"></p>
                         </form>
                         <form id="twoFactorForm" onsubmit="handleTwoFactorLogin(event)" class="account-form" style="display: none;">
-                            <h4 class="account-panel-title" style="font-size: 1rem;">İki Adımlı Doğrulama</h4>
-                            <p class="account-panel-sub" id="twoFactorEmailHint">E-postana 6 haneli bir kod gönderdik.</p>
+                            <h4 class="account-panel-title" style="font-size: 1rem;" data-i18n="twoFactorTitle">İki Adımlı Doğrulama</h4>
+                            <p class="account-panel-sub" id="twoFactorEmailHint" data-i18n="twoFactorEmailSent">E-postana 6 haneli bir kod gönderdik.</p>
                             <div class="form-group">
-                                <label>Doğrulama Kodu</label>
+                                <label data-i18n="twoFactorCodeLabelVerify">Doğrulama Kodu</label>
                                 <input type="text" id="twoFactorCode" class="form-control" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" required>
                             </div>
-                            <button type="submit" class="main-cta">Doğrula ve Giriş Yap</button>
-                            <p><a href="#" class="account-link" onclick="show2faStep(false); return false;">Geri dön</a></p>
+                            <button type="submit" class="main-cta" data-i18n="twoFactorVerifyLogin">Doğrula ve Giriş Yap</button>
+                            <p><a href="#" class="account-link" onclick="show2faStep(false); return false;" data-i18n="backLink">Geri dön</a></p>
                             <p id="twoFactorError" style="color: var(--danger); font-size: 0.85rem; display: none;"></p>
                         </form>
                         <div style="display: flex; justify-content: space-between; margin-top: 12px;">
@@ -1861,6 +2032,30 @@
         <a href="../kullanim-sartlari.html" class="footer-github" data-i18n="footerTerms">Kullanım Şartları</a>
         <a href="../iletisim.html" class="footer-github" data-i18n="footerContact">İletişim</a>
     </footer>
+
+    <!-- Site içi yapay zeka asistanı -->
+    <button type="button" class="ai-fab" id="aiFab" aria-label="Yapay zeka asistanı" aria-expanded="false" aria-controls="aiPanel" onclick="aiToggle()">
+        <svg class="ai-fab-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        <svg class="ai-fab-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <section class="ai-panel" id="aiPanel" role="dialog" aria-modal="false" aria-labelledby="aiPanelTitle">
+        <header class="ai-head">
+            <div class="ai-head-txt">
+                <strong id="aiPanelTitle">Eren</strong>
+                <span id="aiPanelSub">FireEye ekibinin asistanı · phonk & Minecraft</span>
+            </div>
+            <button type="button" class="ai-close" onclick="aiToggle(false)" aria-label="Kapat" data-i18n-aria="closeAria">&times;</button>
+        </header>
+        <div class="ai-msgs" id="aiMsgs" role="log" aria-live="polite"></div>
+        <div class="ai-suggests" id="aiSuggests"></div>
+        <form class="ai-form" id="aiForm" onsubmit="aiSend(event)">
+            <textarea id="aiInput" rows="1" maxlength="1000" placeholder="Mesajını yaz..." data-i18n-placeholder="aiPlaceholder" oninput="aiAutoGrow(this)" onkeydown="aiInputKey(event)"></textarea>
+            <button type="submit" id="aiSendBtn" aria-label="Gönder" data-i18n-aria="aiSendAria">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9 22 2Z"/></svg>
+            </button>
+        </form>
+        <div class="ai-foot" id="aiFoot">Yapay zeka hata yapabilir. Acil durumda 112'yi arayın.</div>
+    </section>
 
     <script>
         /* --- DİĞER FONKSİYONLAR VE UYGULAMA MANTIĞI --- */
@@ -2344,8 +2539,8 @@
                     const hint = document.getElementById('twoFactorEmailHint');
                     if (hint) {
                         hint.textContent = data.emailSent === false
-                            ? 'Kod gönderilemedi. "Geri dön"e basıp tekrar giriş yapmayı dene.'
-                            : 'E-postana 6 haneli bir kod gönderdik' + (data.email ? ' (' + data.email + ')' : '') + '.';
+                            ? feText('twoFactorSendFailed')
+                            : feText('twoFactorEmailSent') + (data.email ? ' (' + data.email + ')' : '') + '.';
                         hint.style.color = data.emailSent === false ? 'var(--danger)' : 'var(--text-secondary)';
                     }
                     return;
@@ -2373,7 +2568,7 @@
                     body: JSON.stringify({ challenge: twoFaChallenge, code })
                 });
                 const data = await res.json();
-                if (!data.success) throw new Error(data.message || 'Kod doğrulanamadı.');
+                if (!data.success) throw new Error(feApiMsg(data, 'twoFactorVerifyFailed'));
 
                 twoFaChallenge = null;
                 show2faStep(false);
@@ -2546,7 +2741,7 @@
             if (setupBox) setupBox.style.display = 'none';
             if (disableBox) disableBox.style.display = 'none';
             if (!currentUserToken()) {
-                stateEl.textContent = 'Giriş yapınca kullanılabilir.';
+                stateEl.textContent = feText('twoFactorNeedLogin');
                 if (enableBtn) enableBtn.style.display = 'none';
                 if (disableBtn) disableBtn.style.display = 'none';
                 return;
@@ -2554,25 +2749,25 @@
             try {
                 const res = await apiFetch('/2fa/status');
                 const data = await res.json();
-                if (!data.success) throw new Error(data.message || 'Durum alınamadı');
+                if (!data.success) throw new Error(feApiMsg(data, 'twoFactorStatusFailed'));
                 const mode = data.mode || (data.enabled ? 'always' : 'auto');
                 const idleDays = data.idleDays || 7;
                 const texts = {
-                    always: 'Açık — her girişte e-postana gönderilen 6 haneli kod isteniyor.',
-                    auto: 'Otomatik — ' + idleDays + ' günden uzun süre giriş yapılmazsa e-posta kodu istenir, sık girişlerde istenmez.',
-                    off: 'Kapalı — girişte yalnızca şifre yeterli.'
+                    always: feText('twoFactorModeAlways'),
+                    auto: feTextFmt('twoFactorModeAuto', { days: idleDays }),
+                    off: feText('twoFactorModeOff')
                 };
                 stateEl.textContent = texts[mode] || texts.auto;
                 if (enableBtn) {
                     enableBtn.style.display = mode === 'always' ? 'none' : 'inline-block';
-                    enableBtn.textContent = mode === 'off' ? 'Etkinleştir' : 'Her Girişte İste';
+                    enableBtn.textContent = mode === 'off' ? feText('twoFactorEnable') : feText('twoFactorAskEveryLogin');
                 }
                 if (disableBtn) {
                     disableBtn.style.display = mode === 'off' ? 'none' : 'inline-block';
-                    disableBtn.textContent = mode === 'off' ? 'Kapat' : 'Tamamen Kapat';
+                    disableBtn.textContent = mode === 'off' ? feText('twoFactorDisable') : feText('twoFactorDisableAll');
                 }
             } catch (e) {
-                stateEl.textContent = 'Durum alınamadı.';
+                stateEl.textContent = feText('twoFactorStatusFailed');
             }
         }
 
@@ -2582,12 +2777,12 @@
             try {
                 const res = await apiFetch('/2fa/setup', { method: 'POST' });
                 const data = await res.json();
-                if (!data.success) throw new Error(data.message || 'Kod gönderilemedi.');
+                if (!data.success) throw new Error(feApiMsg(data, 'twoFactorCodeSendFailed'));
                 document.getElementById('twoFactorEnableCode').value = '';
                 if (box) box.style.display = 'block';
                 if (msg) {
                     msg.style.color = 'var(--text-secondary)';
-                    msg.textContent = (data.message || '6 haneli kodu e-postana gönderdik.') +
+                    msg.textContent = feApiMsg(data, 'twoFactorCodeSent') +
                         (data.email ? ' (' + data.email + ')' : '');
                     msg.style.display = 'block';
                 }
@@ -2605,11 +2800,11 @@
             try {
                 const res = await apiFetch('/2fa/setup', { method: 'POST' });
                 const data = await res.json();
-                if (!data.success) throw new Error(data.message || 'Kod gönderilemedi.');
+                if (!data.success) throw new Error(feApiMsg(data, 'twoFactorCodeSendFailed'));
                 document.getElementById('twoFactorEnableCode').value = '';
                 if (msg) {
                     msg.style.color = 'var(--text-secondary)';
-                    msg.textContent = 'Yeni kod gönderildi. E-postanı kontrol et.';
+                    msg.textContent = feText('twoFactorNewCodeSent');
                     msg.style.display = 'block';
                 }
             } catch (e) {
@@ -2631,10 +2826,10 @@
                     body: JSON.stringify({ code })
                 });
                 const data = await res.json();
-                if (!data.success) throw new Error(data.message || 'Kod doğrulanamadı.');
+                if (!data.success) throw new Error(feApiMsg(data, 'twoFactorVerifyFailed'));
                 if (msg) {
                     msg.style.color = 'var(--accent)';
-                    msg.textContent = data.message || 'İki adımlı doğrulama açıldı.';
+                    msg.textContent = feApiMsg(data, 'twoFactorEnabled');
                     msg.style.display = 'block';
                 }
                 refresh2faStatus();
@@ -2666,10 +2861,10 @@
                     body: JSON.stringify({ password })
                 });
                 const data = await res.json();
-                if (!data.success) throw new Error(data.message || 'Kapatılamadı.');
+                if (!data.success) throw new Error(feApiMsg(data, 'twoFactorDisableFailed'));
                 if (msg) {
                     msg.style.color = 'var(--accent)';
-                    msg.textContent = data.message || 'İki adımlı doğrulama kapatıldı.';
+                    msg.textContent = feApiMsg(data, 'twoFactorDisabled');
                     msg.style.display = 'block';
                 }
                 refresh2faStatus();
@@ -3092,7 +3287,7 @@
         }
 
         async function addDevice() {
-            const suggested = 'Cihaz ' + (userDevices.length + 1);
+            const suggested = feText('devicePrefix') + (userDevices.length + 1);
             const name = (prompt(feText('deviceNamePrompt'), suggested) || '').trim();
             if (!name) return;
             try {
@@ -3524,7 +3719,7 @@
                     clearInterval(interval);
                     statusText.textContent = feText('downloadComplete');
                     playClickSound(800, 0.15, 'sine');
-                    window.location.href = WORKER_BASE + "/release/latest/download";
+                    window.location.href = '../fireeye.apk';
                     setTimeout(() => {
                         progressContainer.style.display = 'none';
                         feedbackArea.style.display = 'block';
@@ -4307,7 +4502,53 @@
                 ghContinue: 'GitHub ile devam et',
                 verifyOk: 'E-postan doğrulandı. Teşekkürler!',
                 verifyExpired: 'Doğrulama bağlantısının süresi dolmuş. Yeniden gönder.',
-                verifyInvalid: 'Doğrulama bağlantısı geçersiz.'
+                verifyInvalid: 'Doğrulama bağlantısı geçersiz.',
+
+                // --- Güvenlik / 2FA ve genel ---
+                security: 'Güvenlik',
+                twoFactorTitle: 'İki Adımlı Doğrulama',
+                twoFactorEnable: 'Etkinleştir',
+                twoFactorDisable: 'Kapat',
+                twoFactorEnableBtn: 'Etkinleştir',
+                twoFactorSteps: '1) "Kodu Gönder"e bas; hesabının e-posta adresine 6 haneli bir kod gelecek.<br>2) Gelen kodu aşağıdaki alana yaz.<br>3) "Doğrula ve Aç"a bas. Kod 10 dakika geçerlidir.',
+                twoFactorResend: 'Kodu Tekrar Gönder',
+                twoFactorCodeLabel: '6 Haneli Kod',
+                twoFactorCodeLabelVerify: 'Doğrulama Kodu',
+                twoFactorVerifyEnable: 'Doğrula ve Aç',
+                twoFactorVerifyLogin: 'Doğrula ve Giriş Yap',
+                backLink: 'Geri dön',
+                twoFactorEmailSent: 'E-postana 6 haneli bir kod gönderdik.',
+                twoFactorSendFailed: 'Kod gönderilemedi. "Geri dön"e basıp tekrar giriş yapmayı dene.',
+                twoFactorVerifyFailed: 'Kod doğrulanamadı.',
+                twoFactorNeedLogin: 'Giriş yapınca kullanılabilir.',
+                twoFactorStatusFailed: 'Durum alınamadı.',
+                twoFactorModeAlways: 'Açık — her girişte e-postana gönderilen 6 haneli kod isteniyor.',
+                twoFactorModeAuto: 'Otomatik — {days} günden uzun süre giriş yapılmazsa e-posta kodu istenir, sık girişlerde istenmez.',
+                twoFactorModeOff: 'Kapalı — girişte yalnızca şifre yeterli.',
+                twoFactorAskEveryLogin: 'Her Girişte İste',
+                twoFactorDisableAll: 'Tamamen Kapat',
+                twoFactorDisableHint: 'İki adımlı doğrulamayı kapatmak için şifreni gir.',
+                twoFactorCodeSendFailed: 'Kod gönderilemedi.',
+                twoFactorCodeSent: '6 haneli kodu e-postana gönderdik.',
+                twoFactorNewCodeSent: 'Yeni kod gönderildi. E-postanı kontrol et.',
+                twoFactorEnabled: 'İki adımlı doğrulama açıldı.',
+                twoFactorDisableFailed: 'Kapatılamadı.',
+                twoFactorDisabled: 'İki adımlı doğrulama kapatıldı.',
+                devicePrefix: 'Cihaz ',
+
+                // --- Yapay zeka asistanı (Eren) ---
+                aiTitle: 'Eren',
+                aiSub: 'FireEye ekibinin asistanı · phonk & Minecraft',
+                aiPlaceholder: 'Eren\'e bir şey yaz...',
+                aiSendAria: 'Gönder',
+                aiFoot: 'Eren yapay zekadır, hata yapabilir. Acil durumda 112\'yi arayın.',
+                aiGreeting: 'Selam, ben Eren! FireEye ekibinin (biraz deli) asistanıyım. Phonk dinleyip Minecraft projeleri geliştiriyorum. Proje, kurulum, eşleştirme, panel, güvenlik... ne istersen sor, sohbet de olur.',
+                aiThinking: 'Eren düşünüyor',
+                aiError: 'Şu an yanıt veremiyorum. Bağlantını kontrol edip tekrar dene; acil durumda 112\'yi ara.',
+                aiSug1: 'Eren, sen kimsin?',
+                aiSug2: 'En sevdiğin müzik türü?',
+                aiSug3: 'Minecraft projelerin neler?',
+                aiSug4: 'Takımda kimler var?'
             },
             en: {
                 login: 'Sign In', register: 'Sign Up', logout: 'Sign Out', theme: 'Theme', lang: 'Language',
@@ -4565,7 +4806,53 @@
                 ghContinue: 'Continue with GitHub',
                 verifyOk: 'Your email has been verified. Thanks!',
                 verifyExpired: 'The verification link has expired. Send it again.',
-                verifyInvalid: 'The verification link is invalid.'
+                verifyInvalid: 'The verification link is invalid.',
+
+                // --- Security / 2FA and misc ---
+                security: 'Security',
+                twoFactorTitle: 'Two-Factor Authentication',
+                twoFactorEnable: 'Enable',
+                twoFactorDisable: 'Disable',
+                twoFactorEnableBtn: 'Enable',
+                twoFactorSteps: '1) Press "Send Code"; a 6-digit code will be sent to your account email.<br>2) Enter the code below.<br>3) Press "Verify & Enable". The code is valid for 10 minutes.',
+                twoFactorResend: 'Resend Code',
+                twoFactorCodeLabel: '6-digit Code',
+                twoFactorCodeLabelVerify: 'Verification Code',
+                twoFactorVerifyEnable: 'Verify & Enable',
+                twoFactorVerifyLogin: 'Verify & Sign In',
+                backLink: 'Go back',
+                twoFactorEmailSent: 'We sent a 6-digit code to your email.',
+                twoFactorSendFailed: 'Could not send the code. Press "Go back" and try signing in again.',
+                twoFactorVerifyFailed: 'The code could not be verified.',
+                twoFactorNeedLogin: 'Available after signing in.',
+                twoFactorStatusFailed: 'Could not load the status.',
+                twoFactorModeAlways: 'On — a 6-digit code is required on every sign-in.',
+                twoFactorModeAuto: 'Automatic — a code is requested if you have not signed in for more than {days} days; frequent sign-ins skip it.',
+                twoFactorModeOff: 'Off — only your password is required.',
+                twoFactorAskEveryLogin: 'Ask Every Sign-in',
+                twoFactorDisableAll: 'Turn Off Completely',
+                twoFactorDisableHint: 'Enter your password to turn off two-factor authentication.',
+                twoFactorCodeSendFailed: 'Could not send the code.',
+                twoFactorCodeSent: 'We sent a 6-digit code to your email.',
+                twoFactorNewCodeSent: 'A new code was sent. Check your email.',
+                twoFactorEnabled: 'Two-factor authentication is enabled.',
+                twoFactorDisableFailed: 'Could not turn it off.',
+                twoFactorDisabled: 'Two-factor authentication is disabled.',
+                devicePrefix: 'Device ',
+
+                // --- AI assistant (Eren) ---
+                aiTitle: 'Eren',
+                aiSub: 'FireEye team assistant · phonk & Minecraft',
+                aiPlaceholder: 'Say something to Eren...',
+                aiSendAria: 'Send',
+                aiFoot: 'Eren is an AI and can make mistakes. In an emergency, call your local emergency number.',
+                aiGreeting: 'Hey, I am Eren! The (slightly crazy) assistant of the FireEye team. I listen to phonk and build Minecraft projects. Ask me about the project, setup, pairing, the panel, security... or just chat.',
+                aiThinking: 'Eren is thinking',
+                aiError: 'I cannot answer right now. Check your connection and try again; in an emergency call your local emergency number.',
+                aiSug1: 'Eren, who are you?',
+                aiSug2: 'Favourite music genre?',
+                aiSug3: 'What Minecraft projects do you build?',
+                aiSug4: 'Who is on the team?'
             }
         };
 
@@ -4598,6 +4885,19 @@
         function feText(key) {
             const dict = FE_I18N[currentFeLang()] || FE_I18N.tr;
             return dict[key] != null ? dict[key] : (FE_I18N.tr[key] != null ? FE_I18N.tr[key] : key);
+        }
+
+        // Basit yer tutucu değişimi: feTextFmt('twoFactorModeAuto', { days: 7 })
+        function feTextFmt(key, vars) {
+            let s = feText(key);
+            Object.keys(vars || {}).forEach(k => { s = s.split('{' + k + '}').join(String(vars[k])); });
+            return s;
+        }
+
+        // Sunucu hata mesajları Türkçe döner; İngilizce arayüzde yerel karşılığı kullanılır.
+        function feApiMsg(data, key) {
+            if (currentFeLang() === 'tr' && data && data.message) return data.message;
+            return feText(key);
         }
 
         function currentFeLang() {
@@ -4667,6 +4967,7 @@
             if (typeof renderScreenshots === 'function') renderScreenshots();
             if (typeof renderChangelogs === 'function') renderChangelogs();
             if (typeof updateVersionDisplay === 'function') updateVersionDisplay();
+            if (typeof aiApplyLang === 'function') aiApplyLang();
         }
 
         function toggleFeLang() {
@@ -4748,6 +5049,146 @@
                 setTimeout(() => { queued = false; scan(); }, 150);
             }).observe(document.body, { childList: true, subtree: true });
         })();
+        // --- Site içi yapay zeka asistanı ---
+        const AI_STATE = { open: false, busy: false, messages: [], greeted: false };
+
+        function aiText(key) {
+            try { return feText(key); } catch (e) { return ''; }
+        }
+
+        function aiBubble(role, text, extra) {
+            const box = document.getElementById('aiMsgs');
+            if (!box) return null;
+            const d = document.createElement('div');
+            d.className = 'ai-msg ' + (role === 'user' ? 'user' : 'bot') + (extra ? ' ' + extra : '');
+            d.textContent = text;
+            box.appendChild(d);
+            box.scrollTop = box.scrollHeight;
+            return d;
+        }
+
+        function aiRenderAll() {
+            const box = document.getElementById('aiMsgs');
+            if (!box) return;
+            box.innerHTML = '';
+            if (!AI_STATE.greeted) return;
+            if (!AI_STATE.messages.length) {
+                aiBubble('assistant', aiText('aiGreeting'));
+                return;
+            }
+            AI_STATE.messages.forEach(m => aiBubble(m.role, m.content));
+        }
+
+        function aiRenderSuggestions() {
+            const box = document.getElementById('aiSuggests');
+            if (!box) return;
+            box.innerHTML = '';
+            ['aiSug1', 'aiSug2', 'aiSug3', 'aiSug4'].forEach(k => {
+                const t = aiText(k);
+                if (!t) return;
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.textContent = t;
+                b.onclick = () => {
+                    const inp = document.getElementById('aiInput');
+                    if (inp) {
+                        inp.value = t;
+                        aiSend();
+                    }
+                };
+                box.appendChild(b);
+            });
+        }
+
+        function aiToggle(force) {
+            const panel = document.getElementById('aiPanel');
+            const fab = document.getElementById('aiFab');
+            if (!panel || !fab) return;
+            const next = typeof force === 'boolean' ? force : !AI_STATE.open;
+            AI_STATE.open = next;
+            panel.classList.toggle('open', next);
+            fab.classList.toggle('open', next);
+            fab.setAttribute('aria-expanded', next ? 'true' : 'false');
+            if (next) {
+                if (!AI_STATE.greeted) {
+                    AI_STATE.greeted = true;
+                    aiRenderAll();
+                }
+                setTimeout(() => {
+                    const inp = document.getElementById('aiInput');
+                    if (inp) { try { inp.focus(); } catch (e) {} }
+                }, 60);
+            }
+        }
+
+        function aiApplyLang() {
+            const title = document.getElementById('aiPanelTitle');
+            if (title) title.textContent = aiText('aiTitle');
+            const sub = document.getElementById('aiPanelSub');
+            if (sub) sub.textContent = aiText('aiSub');
+            const foot = document.getElementById('aiFoot');
+            if (foot) foot.textContent = aiText('aiFoot');
+            const input = document.getElementById('aiInput');
+            if (input) input.placeholder = aiText('aiPlaceholder');
+            const fab = document.getElementById('aiFab');
+            if (fab) fab.setAttribute('aria-label', aiText('aiTitle'));
+            aiRenderSuggestions();
+            aiRenderAll();
+        }
+
+        function aiAutoGrow(el) {
+            if (!el) return;
+            el.style.height = 'auto';
+            el.style.height = Math.min(el.scrollHeight, 110) + 'px';
+        }
+
+        function aiInputKey(ev) {
+            if (ev.key === 'Enter' && !ev.shiftKey) {
+                ev.preventDefault();
+                aiSend();
+            }
+        }
+
+        async function aiSend(ev) {
+            if (ev && ev.preventDefault) ev.preventDefault();
+            if (AI_STATE.busy) return;
+            const input = document.getElementById('aiInput');
+            const text = ((input && input.value) || '').trim();
+            if (!text) return;
+            input.value = '';
+            input.style.height = 'auto';
+            AI_STATE.busy = true;
+            const btn = document.getElementById('aiSendBtn');
+            if (btn) btn.disabled = true;
+            AI_STATE.messages.push({ role: 'user', content: text });
+            aiBubble('user', text);
+            const typing = aiBubble('assistant', aiText('aiThinking'), 'typing');
+            const started = Date.now();
+            try {
+                const res = await fetch(WORKER_BASE + '/ai/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lang: currentFeLang(), messages: AI_STATE.messages.slice(-10) })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.success) throw new Error((data && data.error) || 'error');
+                const reply = String(data.reply || '').trim();
+                // "Az düşünsün" ama insansı hissettirsin: en az ~900 ms bekle.
+                const wait = Math.max(0, 900 - (Date.now() - started));
+                if (wait) await new Promise(r => setTimeout(r, wait));
+                if (typing) typing.remove();
+                AI_STATE.messages.push({ role: 'assistant', content: reply });
+                aiBubble('assistant', reply);
+            } catch (err) {
+                if (typing) typing.remove();
+                aiBubble('assistant', aiText('aiError'));
+            } finally {
+                AI_STATE.busy = false;
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        aiApplyLang();
     </script>
 </body>
 </html>

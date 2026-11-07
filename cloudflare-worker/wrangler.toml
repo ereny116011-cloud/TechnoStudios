@@ -9,6 +9,10 @@ binding = "DB"
 database_name = "fireeye_db"
 database_id = "203a8f3c-ae0d-42e9-8f50-5c6b20261d00"
 
+# Site içi yapay zeka asistanı (Workers AI) bağlaması
+[ai]
+binding = "AI"
+
 # Kullanıcı oturum token'larını imzalamak için gizli bir anahtar gerekiyor.
 # Terminalde şunu çalıştır: wrangler secret put SESSION_SECRET
 # (İstediğin uzun, rastgele bir metin gir — örn. bir şifre üreticiden.)
