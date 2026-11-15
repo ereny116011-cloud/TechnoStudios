@@ -312,10 +312,15 @@ Mevcut satır sonlarını koruyun.
    UTC ISO kullanılır. Karıştırmayın.
 10. `fireeye.apk`, `firelogo.jpg`, `fire.mp4`, PNG'ler binary artifact'tir; metin olarak düzenlemeyin.
 11. APK yükleme `POST /admin/release/upload` → Worker → Wasmer S3 (SigV4) zincirinden geçer.
-    `WASMER_S3_*` secret'ları tanımlı değilse uç 502 döner; indirme yine de repodaki
-    `fireeye.apk` yedeği üzerinden çalışır. Mount yolu `/public/downloads` varsayımıdır —
-    Wasmer paketinin statik kökü farklıysa `app.yaml` içindeki `mount` değerini güncelleyin.
-    Volume adı/mount değişimi volume içeriğini siler.
+    Sitenin volume'su `/opt/static_app/downloads` altına mount edilidir (`/out/...` veya
+    `/public/...` servis edilmez, 404 verir). `WASMER_S3_*` secret'ları tanımlı değilse uç
+    502 döner; indirme yine de repodaki `fireeye.apk` yedeği üzerinden çalışır.
+12. **Site deploy'u = Worker secret yenileme.** Site her push'ta otomatik derlenir; deploy
+    sonrası Wasmer'da S3 erişimi "disabled" duruma düşer ve `wasmer app volume enable-s3`
+    yeniden çalıştırıldığında endpoint + anahtarlar + bucket adı **yenilenir**. Dolayısıyla
+    her site güncellemesinden sonra `enable-s3` + `credentials --format=json` çıktısını
+    Worker'a girmek gerekir (bkz. `cloudflare-worker/DEPLOY.md` §4.1). Worker bucket adını
+    otomatik keşfeder (`ListBuckets`), bu yüzden yalnızca endpoint/anahtar değerleri yeterli.
 
 ---
 

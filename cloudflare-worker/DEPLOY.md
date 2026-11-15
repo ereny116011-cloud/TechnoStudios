@@ -109,40 +109,57 @@ GitHub deposunda **Settings → Secrets and variables → Actions** bölümüne 
 
 ## 4.1 Site (Wasmer Edge) ve APK depolaması
 
-Site Wasmer Edge'de statik olarak çalışır (`app.yaml`). APK dosyaları kalıcı bir **volume**'da
-tutulur ve sitenin kendi adresinden servis edilir.
+Site Wasmer Edge'de **anybuild `staticfile`** sağlayıcısıyla çalışır; dosyalar
+`static-web-server --root=/opt/static_app` ile servis edilir. APK dosyaları kalıcı bir
+**volume**'da tutulur ve sitenin kendi adresinden servis edilir.
 
-1. `app.yaml` içinde volume tanımı zaten var:
+1. `app.yaml` içindeki volume tanımı:
 
    ```yaml
    volumes:
      - name: downloads
-       mount: /public/downloads
+       mount: /opt/static_app/downloads
    ```
 
-   Volume'u oluşturmak için siteyi yeniden dağıt: `wasmer deploy`.
+   > **ÖNEMLİ:** Mount yolu `/opt/static_app` altında olmalı (`/out/downloads` veya
+   > `/public/downloads` servis edilmez, 404 verir). Bu yüzden her site push'u sonrası
+   > otomatik derlemede volume bu yola mount edilir.
 
 2. Volume'a S3 erişimini aç ve anahtarları al:
 
    ```bash
-   wasmer app volume enable-s3
-   wasmer app volume credentials --format=json
+   wasmer app volume enable-s3 ereny116011-cloud/technoweb
+   wasmer app volume credentials --format=json ereny116011-cloud/technoweb
    ```
 
    Çıktıdaki endpoint / access key / secret key değerlerini Worker'a secret olarak gir
    (yukarıdaki `WASMER_S3_*` komutları). Bölge bilgisi gerekiyorsa `WASMER_S3_REGION`.
    Sunucu "host" başlığının imzalanmasını reddederse `WASMER_S3_SIGN_HOST=false` ile kapat.
 
-3. Yeni APK yayınlama: site → **Sürüm Notları** sekmesi → admin modu → sürüm numarası +
+3. **Her site deploy'unda yapılması gerekenler:** Deploy sonrası S3 erişimi otomatik olarak
+   "disabled" durumuna düşer ve `enable-s3` yeniden çalıştırıldığında **endpoint, anahtarlar
+   ve bucket adı yenilenir**. Yani site güncellendikten sonra şu iki komutu tekrar çalıştır
+   ve yeni değerleri Worker'a gir (CI `wrangler deploy` ile bunları alır):
+
+   ```powershell
+   wasmer app volume enable-s3 ereny116011-cloud/technoweb
+   wasmer app volume credentials --format=json ereny116011-cloud/technoweb
+   ```
+
+   Worker'daki bucket adı **otomatik keşfedilir** (`ListBuckets`), bu yüzden
+   `WASMER_S3_BUCKET` girmek zorunlu değildir; endpoint/anahtar değerleri yeterli.
+   `wasmer app volume credentials --format=rclone` çıktısı da aynı değerleri verir.
+
+4. Yeni APK yayınlama: site → **Sürüm Notları** sekmesi → admin modu → sürüm numarası +
    değişiklikleri yaz, APK dosyasını seç ve **Yeni Sürümü Yayınla**'ya bas.
    İstek `POST /admin/release/upload` ile Worker'a gider; Worker dosyayı SigV4 imzasıyla
    volume'a yazar ve `releases` tablosuna kaydeder. APK,
    `https://www.technoweb.win/downloads/fireeye-<sürüm>.apk` adresinden indirilir.
 
-4. Volume'a S3 erişimi açılmadıysa `GET /release/latest/download` isteği repodaki
+5. Volume'a S3 erişimi açılmadıysa `GET /release/latest/download` isteği repodaki
    `fireeye.apk` yedeğine yönlendirir; indirme her zaman çalışır.
 
-> Not: Volume adı veya mount yolu değiştirilirse volume içindeki dosyalar silinir.
+> Not: Volume adı değiştirilirse volume içindeki dosyalar silinir.
 
 ## 5. Kontrol
 
