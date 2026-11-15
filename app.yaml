@@ -1,0 +1,16 @@
+kind: wasmer.io/App.v0
+locality:
+  regions:
+    - fr-roub1
+
+# Kalıcı dosya deposu. "downloads" volume'u /public/downloads altına mount edilir;
+# volume'a yazılan APK dosyaları sitenin kendi adresinden
+# (https://www.technoweb.win/downloads/<dosya>) servis edilir.
+# Yükleme admin panelinden POST /admin/release/upload ile yapılır; Worker dosyayı
+# S3 (SigV4) ile volume'a yazar. S3 anahtarları Worker secret'larındadır.
+#
+# DİKKAT: Volume adı veya mount yolu değiştirilirse içindeki dosyalar silinir.
+# Statik kök /public değilse mount yolunu buna göre güncelle.
+volumes:
+  - name: downloads
+    mount: /public/downloads

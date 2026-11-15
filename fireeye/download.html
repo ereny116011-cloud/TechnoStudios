@@ -25,7 +25,9 @@
 
         <!-- İçerik -->
         <div class="download-box">
-            <a href="https://fireeye-api.ereny116011.workers.dev/release/latest/download" class="btn-download" download>
+            <!-- APK sitenin kendi depolamasından gelir: önce Worker'daki güncel sürüm kaydı
+                 (Wasmer volume'daki dosya), yoksa repodaki ../fireeye.apk yedeği. -->
+            <a href="../fireeye.apk" class="btn-download" download id="apkDownloadLink">
                 FireEye APK İndir
             </a>
             <p class="file-info" id="fileInfoText">Sürüm: V1.0 | Android 8.0+ Uyumluluğu</p>
@@ -33,11 +35,14 @@
     </div>
 
     <script>
-        // Güncel sürüm numarasını admin panelinden yüklenen son sürümden göster.
+        // Güncel sürüm bilgisini ve indirme adresini Worker'dan al.
+        var link = document.getElementById('apkDownloadLink');
         fetch('https://fireeye-api.ereny116011.workers.dev/release/latest')
             .then(res => res.ok ? res.json() : null)
             .then(data => {
-                if (data && data.version) {
+                if (!data) return;
+                if (data.downloadUrl) link.setAttribute('href', data.downloadUrl);
+                if (data.version) {
                     document.getElementById('fileInfoText').textContent =
                         'Sürüm: ' + data.version + ' | Android 8.0+ Uyumluluğu';
                 }

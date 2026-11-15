@@ -720,6 +720,131 @@ function base64ToArrayBuffer(base64) {
     return bytes.buffer;
 }
 
+// ===================================================================
+// Wasmer Volume (S3 uyumlu depolama) — APK yükleme
+// -------------------------------------------------------------------
+// Sitenin statik dosyaları Wasmer Edge'de çalışır. "downloads" adlı volume,
+// /public/downloads altına mount edilir; volume'a yazılan APK dosyaları
+// sitenin kendi adresinden (https://www.technoweb.win/downloads/<dosya>)
+// servis edilir. Yükleme admin panelinden gelen istek ile Worker'a ulaşır,
+// Worker da sunucu tarafında AWS SigV4 imzalayarak S3'e yazar.
+// S3 anahtarları tarayıcıya hiç girmez.
+// ===================================================================
+
+const S3_SERVICE = 's3';
+
+async function sha256Bytes(bytes) {
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function hmacSign(keyBytes, dataBytes) {
+    const key = await crypto.subtle.importKey('raw', keyBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    const sig = await crypto.subtle.sign('HMAC', key, dataBytes);
+    return new Uint8Array(sig);
+}
+
+// AWS SigV4 (S3) imzası üretir. Sonuç: Authorization başlığı + tarih/hash başlıkları.
+// dateOverride / payloadHashOverride / omitContentShaHeader yalnızca test vektörü için.
+async function awsSigV4({ method, endpoint, region, accessKey, secretKey, canonicalPath, bodyBytes, extraHeaders, dateOverride, payloadHashOverride, omitContentShaHeader, omitHostHeader }) {
+    const enc = new TextEncoder();
+    const amzDate = new Date(dateOverride || Date.now()).toISOString().replace(/[:-]|\.\d{3}/g, '');
+    const dateStamp = amzDate.slice(0, 8);
+    const payloadHash = payloadHashOverride || await sha256Bytes(bodyBytes);
+
+    const host = new URL(endpoint).host;
+    const headers = {};
+    if (!omitHostHeader) headers['host'] = host;
+    headers['x-amz-date'] = amzDate;
+    if (!omitContentShaHeader) headers['x-amz-content-sha256'] = payloadHash;
+    Object.assign(headers, extraHeaders || {});
+
+    const keys = Object.keys(headers).map(k => k.toLowerCase()).sort();
+    const canonicalHeaders = keys.map(k => k + ':' + String(headers[k]).trim().replace(/\s+/g, ' ') + '\n').join('');
+    const signedHeaders = keys.join(';');
+
+    const canonicalRequest = [method, canonicalPath, '', canonicalHeaders, signedHeaders, payloadHash].join('\n');
+    const crHash = await sha256Bytes(enc.encode(canonicalRequest));
+
+    const scope = `${dateStamp}/${region}/${S3_SERVICE}/aws4_request`;
+    const stringToSign = ['AWS4-HMAC-SHA256', amzDate, scope, crHash].join('\n');
+
+    const kDate = await hmacSign(enc.encode('AWS4' + secretKey), enc.encode(dateStamp));
+    const kRegion = await hmacSign(kDate, enc.encode(region));
+    const kService = await hmacSign(kRegion, enc.encode(S3_SERVICE));
+    const kSigning = await hmacSign(kService, enc.encode('aws4_request'));
+    const signature = Array.from(await hmacSign(kSigning, enc.encode(stringToSign)))
+        .map(b => b.toString(16).padStart(2, '0')).join('');
+
+    return {
+        authorization: `AWS4-HMAC-SHA256 Credential=${accessKey}/${scope}, SignedHeaders=${signedHeaders}, Signature=${signature}`,
+        amzDate,
+        payloadHash,
+        signedHeaders,
+    };
+}
+
+// Wasmer volume'a (S3) tek bir nesne yazar. Path-style adresleme kullanılır:
+//   <endpoint>/<volume-adı>/<anahtar>
+async function wasmerS3Put(env, key, bytes, contentType) {
+    const endpoint = (env.WASMER_S3_ENDPOINT || '').trim().replace(/\/+$/, '');
+    const accessKey = (env.WASMER_S3_ACCESS_KEY || '').trim();
+    const secretKey = (env.WASMER_S3_SECRET_KEY || '').trim();
+    const bucket = (env.WASMER_S3_BUCKET || 'downloads').trim();
+    const region = (env.WASMER_S3_REGION || 'auto').trim();
+
+    if (!endpoint || !accessKey || !secretKey) {
+        return { ok: false, error: 'Wasmer S3 yapılandırması eksik (WASMER_S3_*).' };
+    }
+
+    const safeKey = String(key || '').split('/').map(s => encodeURIComponent(s)).join('/');
+    // Endpoint bir yol öneki içeriyorsa (örn. https://host/s3) imzalama yoluna onu da ekle.
+    const base = new URL(endpoint);
+    const prefix = base.pathname.replace(/\/+$/, '');
+    const canonicalPath = `${prefix}/${bucket}/${safeKey}`;
+    const url = `${base.origin}${canonicalPath}`;
+    const contentTypeHeader = contentType || 'application/vnd.android.package-archive';
+
+    const signed = await awsSigV4({
+        method: 'PUT',
+        endpoint,
+        region,
+        accessKey,
+        secretKey,
+        canonicalPath,
+        bodyBytes: bytes,
+        extraHeaders: { 'content-type': contentTypeHeader },
+        // AWS dokümanındaki klasik S3 örneği "host" başlığını da imzalar; sunucu
+        // yalnızca imzalı başlıkları kullanan davranışa sahipse kapatılabilir
+        // (WASMER_S3_SIGN_HOST=false).
+        omitHostHeader: String(env.WASMER_S3_SIGN_HOST || '').toLowerCase() === 'false',
+    });
+
+    const res = await fetch(url, {
+        method: 'PUT',
+        headers: {
+            'Authorization': signed.authorization,
+            'x-amz-date': signed.amzDate,
+            'x-amz-content-sha256': signed.payloadHash,
+            'Content-Type': contentTypeHeader,
+        },
+        body: bytes,
+    });
+
+    if (!res.ok) {
+        const bodyText = await res.text().catch(() => '');
+        console.error('Wasmer S3 yükleme hatası:', res.status, bodyText.slice(0, 500));
+        return { ok: false, error: 'Depolamaya yazılamadı (' + res.status + ').' };
+    }
+
+    return { ok: true, url };
+}
+
+// Sitenin kendi adresi (indirme bağlantıları buraya kurulur).
+function siteBaseUrl(env) {
+    return (env.SITE_BASE_URL || 'https://www.technoweb.win').replace(/\/+$/, '');
+}
+
 export default {
     async fetch(request, env) {
         const url = new URL(request.url);
@@ -817,8 +942,8 @@ export default {
                 if (!version || !fileName || !downloadUrl) {
                     return json({ error: 'version, fileName ve downloadUrl gerekli.' }, 400);
                 }
-                if (!downloadUrl.startsWith('https://github.com/')) {
-                    return json({ error: 'Geçersiz indirme linki.' }, 400);
+                if (!downloadUrl.startsWith('https://') || !downloadUrl.toLowerCase().endsWith('.apk')) {
+                    return json({ error: 'Geçersiz indirme linki (https:// ... .apk olmalı).' }, 400);
                 }
 
                 await env.DB.prepare('UPDATE releases SET is_active = 0 WHERE is_active = 1').run();
@@ -827,6 +952,44 @@ export default {
                 ).bind(version, fileName, downloadUrl, fileSize).run();
 
                 return json({ status: 'ok', id: ins.meta.last_row_id, version, fileName, downloadUrl });
+            }
+
+            // --- /admin/release/upload --- (admin: APK dosyasını Wasmer volume'a yazar.
+            // Dosya sitenin kendi adresinden (https://<site>/downloads/<dosya>) servis edilir;
+            // S3 anahtarları yalnızca Worker'da (secret) tutulur, tarayıcıya girmez.) ---
+            if (url.pathname === '/admin/release/upload' && request.method === 'POST') {
+                if (!(await isAdmin(request, env))) return json({ error: 'Yetkisiz.' }, 401);
+
+                const form = await request.formData().catch(() => null);
+                const file = form ? form.get('file') : null;
+                const version = form ? (form.get('version') || '').toString().trim() : '';
+
+                if (!file || typeof file === 'string') return json({ error: 'APK dosyası gerekli.' }, 400);
+                if (!version) return json({ error: 'Sürüm numarası gerekli.' }, 400);
+                if (file.size > 50 * 1024 * 1024) return json({ error: 'Dosya çok büyük (en fazla 50 MB).' }, 413);
+
+                const bytes = await file.arrayBuffer();
+                const safeVersion = version.replace(/[^A-Za-z0-9._-]/g, '') || 'v1';
+                const fileName = 'fireeye-' + safeVersion + '.apk';
+
+                const uploaded = await wasmerS3Put(env, fileName, bytes, file.type || 'application/vnd.android.package-archive');
+                if (!uploaded.ok) return json({ error: uploaded.error }, 502);
+
+                const downloadUrl = siteBaseUrl(env) + '/downloads/' + fileName;
+
+                await env.DB.prepare('UPDATE releases SET is_active = 0 WHERE is_active = 1').run();
+                const ins = await env.DB.prepare(
+                    'INSERT INTO releases (version, file_name, download_url, file_size, is_active) VALUES (?, ?, ?, ?, 1)'
+                ).bind(version, fileName, downloadUrl, file.size).run();
+
+                return json({
+                    status: 'ok',
+                    id: ins.meta.last_row_id,
+                    version,
+                    fileName,
+                    downloadUrl,
+                    fileSize: file.size,
+                });
             }
 
             // --- /releases --- (admin: sürüm dosyası geçmişi) ---
@@ -861,12 +1024,13 @@ export default {
                 });
             }
 
-            // --- /release/latest/download --- (herkese açık: güncel APK'ya GitHub'a yönlendirir) ---
+            // --- /release/latest/download --- (herkese açık: güncel APK'ya yönlendirir.
+            // Kayıt yoksa repodaki fireeye.apk dosyasına düşer — indirme her zaman çalışır.) ---
             if (url.pathname === '/release/latest/download' && request.method === 'GET') {
                 const row = await env.DB
                     .prepare('SELECT download_url FROM releases WHERE is_active = 1 ORDER BY id DESC LIMIT 1')
                     .first();
-                if (!row) return json({ error: 'Henüz sürüm yüklenmedi.' }, 404);
+                if (!row) return Response.redirect(siteBaseUrl(env) + '/fireeye.apk', 302);
                 return Response.redirect(row.download_url, 302);
             }
 

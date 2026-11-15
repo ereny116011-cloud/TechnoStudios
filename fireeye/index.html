@@ -1559,7 +1559,7 @@
                         <textarea id="adminChangelogDesc" class="form-control" rows="4" placeholder="- Yeni sensör entegrasyonu eklendi.&#10;- Arayüz optimizasyonları yapıldı." data-i18n-placeholder="clChangesPlaceholder" required></textarea>
                     </div>
                     <div class="form-group">
-                        <label data-i18n="clApkLabel">APK Dosyası (isteğe bağlı — tarayıcından doğrudan GitHub'a yüklenir, ~2GB'a kadar)</label>
+                        <label data-i18n="clApkLabel">APK Dosyası (isteğe bağlı — sitedeki depolamaya yüklenir, en fazla 50 MB)</label>
                         <input type="file" id="adminReleaseFile" class="form-control" accept=".apk">
                         <p id="adminReleaseStatus" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 6px;"></p>
                     </div>
@@ -3524,7 +3524,7 @@
                     clearInterval(interval);
                     statusText.textContent = feText('downloadComplete');
                     playClickSound(800, 0.15, 'sine');
-                    window.location.href = WORKER_BASE + "/release/latest/download";
+                    triggerApkDownload();
                     setTimeout(() => {
                         progressContainer.style.display = 'none';
                         feedbackArea.style.display = 'block';
@@ -3536,6 +3536,28 @@
                 }
                 progressBar.style.width = `${progress}%`;
             }, 150);
+        }
+
+        // APK'yı sitenin kendi adresinden indirir.
+        // Önce Worker'daki güncel sürüm kaydına bakılır (Wasmer volume'daki dosya),
+        // kayıt yoksa repodaki /fireeye.apk yedeğine düşülür.
+        async function triggerApkDownload() {
+            let url = '../fireeye.apk';
+            try {
+                const res = await fetch(WORKER_BASE + '/release/latest');
+                if (res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    if (data && data.downloadUrl) url = data.downloadUrl;
+                }
+            } catch (e) { /* varsayılan yedeğe düş */ }
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'fireeye.apk';
+            link.rel = 'noopener';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
         }
 
         let reviewsTranslated = false;
@@ -3731,69 +3753,26 @@
             if (btn) btn.textContent = feText('downloadBtnPrefix') + ' (' + latest + ')';
         }
 
-        const GITHUB_OWNER = 'ereny116011-cloud';
-        const GITHUB_REPO = 'TechnoStudios';
-        const GITHUB_RELEASE_TAG = 'APK';
+        // APK dosyasını Worker'a gönderir; Worker sunucu tarafında Wasmer volume'a (S3
+        // uyumlu depolama) yazar. Böylece S3 anahtarları tarayıcıya hiç girmez ve dosya
+        // sitenin kendi adresinden (/downloads/<dosya>) servis edilir.
+        async function uploadApkToWorker(file, version, statusEl) {
+            statusEl.textContent = feText('releaseUploading');
 
-        function getGithubToken() {
-            let token = sessionStorage.getItem('fireeye_gh_token');
-            if (!token) {
-                token = (prompt(feText('ghTokenPrompt')) || '').trim();
-                if (token) sessionStorage.setItem('fireeye_gh_token', token);
-            }
-            return token;
-        }
+            const form = new FormData();
+            form.append('version', version);
+            form.append('file', file, file.name);
 
-        // APK dosyasını doğrudan tarayıcıdan GitHub Releases'e yükler (Worker'ı hiç kullanmaz,
-        // böylece Cloudflare'in Worker isteklerine koyduğu 100MB sınırına takılmaz).
-        async function uploadApkToGithub(file, statusEl) {
-            const token = getGithubToken();
-            if (!token) throw new Error(feText('ghTokenMissing'));
-
-            const ghHeaders = {
-                'Authorization': 'Bearer ' + token,
-                'Accept': 'application/vnd.github+json',
-            };
-
-            statusEl.textContent = feText('ghReleaseChecking');
-            let release;
-            const getRes = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/tags/${GITHUB_RELEASE_TAG}`, { headers: ghHeaders });
-            if (getRes.ok) {
-                release = await getRes.json();
-            } else if (getRes.status === 404) {
-                const createRes = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases`, {
-                    method: 'POST',
-                    headers: Object.assign({ 'Content-Type': 'application/json' }, ghHeaders),
-                    body: JSON.stringify({ tag_name: GITHUB_RELEASE_TAG, name: 'FireEye APK', body: feText('ghReleaseBody') }),
-                });
-                if (!createRes.ok) throw new Error(feText('ghReleaseCreateFailed') + ' (' + createRes.status + ')');
-                release = await createRes.json();
-            } else if (getRes.status === 401) {
-                sessionStorage.removeItem('fireeye_gh_token');
-                throw new Error(feText('ghTokenInvalid'));
-            } else {
-                throw new Error(feText('ghReleaseInfoFailed') + ' (' + getRes.status + ')');
-            }
-
-            const existingAsset = (release.assets || []).find(a => a.name === file.name);
-            if (existingAsset) {
-                statusEl.textContent = feText('ghDeletingOld');
-                await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/assets/${existingAsset.id}`, {
-                    method: 'DELETE',
-                    headers: ghHeaders,
-                });
-            }
-
-            statusEl.textContent = feText('ghUploading');
-            const uploadUrl = release.upload_url.replace('{?name,label}', '') + '?name=' + encodeURIComponent(file.name);
-            const uploadRes = await fetch(uploadUrl, {
+            const res = await fetch(WORKER_BASE + '/admin/release/upload', {
                 method: 'POST',
-                headers: Object.assign({ 'Content-Type': file.type || 'application/vnd.android.package-archive' }, ghHeaders),
-                body: file,
+                headers: getAdminAuthHeader(),
+                body: form
             });
-            if (!uploadRes.ok) throw new Error(feText('ghUploadFailed') + ' (' + uploadRes.status + ')');
-            const asset = await uploadRes.json();
-            return { fileName: file.name, downloadUrl: asset.browser_download_url, fileSize: file.size };
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(feText('releaseUploadFailed') + (err && err.error ? ' (' + err.error + ')' : ''));
+            }
+            return await res.json().catch(() => ({}));
         }
 
         async function handleNewChangelog(e) {
@@ -3807,17 +3786,14 @@
             if(!version || !text) return;
 
             try {
-                // Dosya seçildiyse, doğrudan GitHub'a yükle, sonra Worker'a sadece meta veriyi kaydet.
+                // Dosya seçildiyse Worker'a yüklenir; Worker Wasmer volume'a yazar ve
+                // sitenin kendi /downloads/<dosya> adresini kaydeder.
                 if (file) {
-                    const uploaded = await uploadApkToGithub(file, statusEl);
-                    statusEl.textContent = feText('ghUploadedSaving');
-                    const metaRes = await fetch(WORKER_BASE + '/admin/release', {
-                        method: 'POST',
-                        headers: Object.assign({ 'Content-Type': 'application/json' }, getAdminAuthHeader()),
-                        body: JSON.stringify({ version, fileName: uploaded.fileName, downloadUrl: uploaded.downloadUrl, fileSize: uploaded.fileSize }),
-                    });
-                    if (!metaRes.ok) throw new Error(feText('releaseSaveFailed'));
-                    statusEl.textContent = feText('ghUploaded') + ' ✓';
+                    const uploaded = await uploadApkToWorker(file, version, statusEl);
+                    statusEl.textContent = feText('releaseUploaded') + ' ✓';
+                    if (uploaded && uploaded.downloadUrl) {
+                        statusEl.textContent += '\n' + uploaded.downloadUrl;
+                    }
                 }
 
                 const res = await fetch(WORKER_BASE + '/changelogs', {
@@ -4122,7 +4098,7 @@
                 clVersionLabel: 'Sürüm Numarası (Örn: v1.1)',
                 clChangesLabel: 'Değişiklikler ve Özellikler',
                 clChangesPlaceholder: '- Yeni sensör entegrasyonu eklendi.\n- Arayüz optimizasyonları yapıldı.',
-                clApkLabel: "APK Dosyası (isteğe bağlı — tarayıcından doğrudan GitHub'a yüklenir, ~2GB'a kadar)",
+                clApkLabel: "APK Dosyası (isteğe bağlı — sitedeki depolamaya yüklenir, en fazla 50 MB)",
                 clPublish: 'Yeni Sürümü Yayınla',
                 clHistoryTitle: 'Sürüm Geçmişi ve Yenilikler',
                 downloadPreparing: 'APK paketi derleniyor...',
@@ -4232,19 +4208,10 @@
                 changelogAdded: 'Yeni sürüm yayınlandı!',
                 changelogAddFailed: 'Sürüm eklenemedi: ',
                 releaseSaveFailed: 'Sürüm bilgisi kaydedilemedi',
+                releaseUploading: 'APK yükleniyor...',
+                releaseUploaded: 'APK yüklendi',
+                releaseUploadFailed: 'APK yüklenemedi',
                 requestFailed: 'İstek başarısız.',
-                ghTokenPrompt: 'GitHub Personal Access Token gir (sadece bu tarayıcı oturumunda tutulur, Contents: Read and write izinli TechnoStudios reposu için):',
-                ghTokenMissing: 'GitHub token girilmedi.',
-                ghReleaseChecking: 'GitHub sürümü kontrol ediliyor...',
-                ghReleaseCreateFailed: 'GitHub release oluşturulamadı',
-                ghTokenInvalid: 'GitHub token geçersiz.',
-                ghReleaseInfoFailed: 'GitHub release bilgisi alınamadı',
-                ghReleaseBody: 'Otomatik yüklenen APK sürümleri.',
-                ghDeletingOld: 'Eski dosya siliniyor...',
-                ghUploading: "APK GitHub'a yükleniyor... (büyük dosyalarda biraz sürebilir)",
-                ghUploadFailed: 'GitHub yüklemesi başarısız',
-                ghUploadedSaving: 'APK yüklendi, kaydediliyor...',
-                ghUploaded: 'APK yüklendi',
                 screenshotDeleteConfirm: 'Bu ekran görüntüsünü silmek istediğinize emin misiniz?',
                 screenshotDeleteFailed: 'Ekran görüntüsü silinemedi.',
                 screenshotAdded: 'Ekran görüntüsü eklendi!',
@@ -4380,7 +4347,7 @@
                 clVersionLabel: 'Version number (e.g. v1.1)',
                 clChangesLabel: 'Changes and features',
                 clChangesPlaceholder: '- Added new sensor integration.\n- Improved the interface.',
-                clApkLabel: 'APK file (optional — uploaded straight to GitHub from your browser, up to ~2GB)',
+                clApkLabel: "APK file (optional - uploaded to the site's own storage, up to 50 MB)",
                 clPublish: 'Publish New Release',
                 clHistoryTitle: 'Release History',
                 downloadPreparing: 'Compiling the APK package...',
@@ -4490,19 +4457,10 @@
                 changelogAdded: 'New release published!',
                 changelogAddFailed: 'Could not add the release: ',
                 releaseSaveFailed: 'Could not save the release info',
+                releaseUploading: 'Uploading the APK...',
+                releaseUploaded: 'APK uploaded',
+                releaseUploadFailed: 'APK upload failed',
                 requestFailed: 'Request failed.',
-                ghTokenPrompt: 'Enter a GitHub Personal Access Token (kept only in this browser session, needs Contents: Read and write on the TechnoStudios repo):',
-                ghTokenMissing: 'No GitHub token entered.',
-                ghReleaseChecking: 'Checking the GitHub release...',
-                ghReleaseCreateFailed: 'Could not create the GitHub release',
-                ghTokenInvalid: 'GitHub token is invalid.',
-                ghReleaseInfoFailed: 'Could not get the GitHub release info',
-                ghReleaseBody: 'Automatically uploaded APK releases.',
-                ghDeletingOld: 'Deleting the old file...',
-                ghUploading: "Uploading the APK to GitHub... (may take a while for large files)",
-                ghUploadFailed: 'GitHub upload failed',
-                ghUploadedSaving: 'APK uploaded, saving...',
-                ghUploaded: 'APK uploaded',
                 screenshotDeleteConfirm: 'Are you sure you want to delete this screenshot?',
                 screenshotDeleteFailed: 'Could not delete the screenshot.',
                 screenshotAdded: 'Screenshot added!',

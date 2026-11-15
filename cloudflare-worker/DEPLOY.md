@@ -38,6 +38,12 @@ npx wrangler d1 execute fireeye_db --remote --file=./schema_v4.sql
 npx wrangler secret put SESSION_SECRET      # uzun, rastgele bir metin
 npx wrangler secret put ADMIN_USER          # yönetici kullanıcı adı
 npx wrangler secret put ADMIN_PASS          # yönetici şifresi
+# APK'yı sitedeki depolamaya yüklemek için (Wasmer volume / S3):
+npx wrangler secret put WASMER_S3_ENDPOINT   # "wasmer app volume credentials" çıktısındaki endpoint
+npx wrangler secret put WASMER_S3_ACCESS_KEY
+npx wrangler secret put WASMER_S3_SECRET_KEY
+npx wrangler secret put WASMER_S3_BUCKET     # volume adı (varsayılan: downloads)
+npx wrangler secret put WASMER_S3_REGION     # bölge (varsayılan: auto)
 # İsteğe bağlı:
 npx wrangler secret put RESEND_API_KEY
 npx wrangler secret put GOOGLE_CLIENT_ID
@@ -100,6 +106,43 @@ GitHub deposunda **Settings → Secrets and variables → Actions** bölümüne 
 - Gerekli GitHub secret'ları: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`
 - `main` dalına `cloudflare-worker/` altında yapılan her push otomatik dağıtılır.
 - Manuel tetikleme: GitHub → Actions → **Deploy Cloudflare Worker** → **Run workflow**.
+
+## 4.1 Site (Wasmer Edge) ve APK depolaması
+
+Site Wasmer Edge'de statik olarak çalışır (`app.yaml`). APK dosyaları kalıcı bir **volume**'da
+tutulur ve sitenin kendi adresinden servis edilir.
+
+1. `app.yaml` içinde volume tanımı zaten var:
+
+   ```yaml
+   volumes:
+     - name: downloads
+       mount: /public/downloads
+   ```
+
+   Volume'u oluşturmak için siteyi yeniden dağıt: `wasmer deploy`.
+
+2. Volume'a S3 erişimini aç ve anahtarları al:
+
+   ```bash
+   wasmer app volume enable-s3
+   wasmer app volume credentials --format=json
+   ```
+
+   Çıktıdaki endpoint / access key / secret key değerlerini Worker'a secret olarak gir
+   (yukarıdaki `WASMER_S3_*` komutları). Bölge bilgisi gerekiyorsa `WASMER_S3_REGION`.
+   Sunucu "host" başlığının imzalanmasını reddederse `WASMER_S3_SIGN_HOST=false` ile kapat.
+
+3. Yeni APK yayınlama: site → **Sürüm Notları** sekmesi → admin modu → sürüm numarası +
+   değişiklikleri yaz, APK dosyasını seç ve **Yeni Sürümü Yayınla**'ya bas.
+   İstek `POST /admin/release/upload` ile Worker'a gider; Worker dosyayı SigV4 imzasıyla
+   volume'a yazar ve `releases` tablosuna kaydeder. APK,
+   `https://www.technoweb.win/downloads/fireeye-<sürüm>.apk` adresinden indirilir.
+
+4. Volume'a S3 erişimi açılmadıysa `GET /release/latest/download` isteği repodaki
+   `fireeye.apk` yedeğine yönlendirir; indirme her zaman çalışır.
+
+> Not: Volume adı veya mount yolu değiştirilirse volume içindeki dosyalar silinir.
 
 ## 5. Kontrol
 
