@@ -3,14 +3,18 @@ locality:
   regions:
     - fr-roub1
 
-# Kalıcı dosya deposu. "downloads" volume'u /public/downloads altına mount edilir;
+# Kalıcı dosya deposu. "downloads" volume'u /out/downloads altına mount edilir;
 # volume'a yazılan APK dosyaları sitenin kendi adresinden
 # (https://www.technoweb.win/downloads/<dosya>) servis edilir.
-# Yükleme admin panelinden POST /admin/release/upload ile yapılır; Worker dosyayı
-# S3 (SigV4) ile volume'a yazar. S3 anahtarları Worker secret'larındadır.
 #
-# DİKKAT: Volume adı veya mount yolu değiştirilirse içindeki dosyalar silinir.
-# Statik kök /public değilse mount yolunu buna göre güncelle.
+# NOT: Sitenin statik kökü /out'tur (anybuild "staticfile" sağlayıcısı, config: out).
+# Mount yolu /out altında olmalı; /public/downloads volume'u site tarafından
+# servis edilmez (404 verir).
+#
+# Yükleme akışı: admin panelinden POST /admin/release/upload → Worker → S3 (SigV4).
+# S3 anahtarları Worker secret'larındadır, tarayıcıya hiç girmez.
+#
+# DİKKAT: Volume adı değiştirilirse içindeki dosyalar silinir.
 volumes:
   - name: downloads
-    mount: /public/downloads
+    mount: /out/downloads
