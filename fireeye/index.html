@@ -1378,6 +1378,7 @@
             <button class="tab-trigger" onclick="switchTab(event, 'reviews')" data-i18n="tabReviews">Değerlendirmeler</button>
             <button class="tab-trigger" onclick="switchTab(event, 'faq')" data-i18n="tabFaq">SSS</button>
             <button class="tab-trigger" onclick="switchTab(event, 'changelog')" data-i18n="tabChangelog">Sürüm Notları</button>
+            <button class="tab-trigger" onclick="switchTab(event, 'support')" data-i18n="tabSupport">TechnoSupport Destek</button>
             <button id="deviceTabBtn" class="tab-trigger" onclick="switchTab(event, 'device')" style="display:none;" data-i18n="tabDevice">Cihazım</button>
             <button id="accountsTabBtn" class="tab-trigger" onclick="switchTab(event, 'accounts')" style="display:none;" data-i18n="tabAccounts">Hesaplar</button>
         </div>
@@ -1570,6 +1571,20 @@
             <div class="changelog-section">
                 <h3 style="margin-bottom: 20px; font-size: 1.2rem;" data-i18n="clHistoryTitle">Sürüm Geçmişi ve Yenilikler</h3>
                 <div class="changelog-list" id="changelogListContainer"></div>
+            </div>
+        </div>
+
+        <!-- TechnoSupport Destek Sekmesi -->
+        <div id="support" class="tab-pane">
+            <div class="support-container" style="padding: 20px; background: var(--surface); border-radius: 10px; min-height: 600px;">
+                <h3 style="color: var(--accent); margin-bottom: 15px;" data-i18n="tabSupport">TechnoSupport Destek</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9rem;">
+                    <span data-i18n="supportDesc">FireEye ile ilgili sorunlarınızı TechnoSupport üzerinden iletebilir, AI destekli asistanla sohbet edebilir ve destek talebi açabilirsiniz.</span>
+                </p>
+                <iframe src="http://localhost:8000/index.html" style="width:100%; height:520px; border:none; border-radius:8px;" title="TechnoSupport"></iframe>
+                <p style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted);">
+                    <span data-i18n="supportProdLink">Canlı sürüm: <a href="https://support.technoweb.win" target="_blank" rel="noopener">support.technoweb.win</a></span>
+                </p>
             </div>
         </div>
 
@@ -4030,7 +4045,7 @@
             tr: {
                 login: 'Giriş Yap', register: 'Kaydol', logout: 'Çıkış Yap', theme: 'Tema Modu', lang: 'Dil',
                 tabDownload: 'İndir', tabFeatures: 'Özellikler', tabScreenshots: 'Ekran Görüntüleri', tabSecurity: 'Güvenlik Raporu',
-                tabReviews: 'Değerlendirmeler', tabFaq: 'SSS', tabChangelog: 'Sürüm Notları', tabDevice: 'Cihazım', tabAccounts: 'Hesaplar',
+                tabReviews: 'Değerlendirmeler', tabFaq: 'SSS', tabChangelog: 'Sürüm Notları', tabDevice: 'Cihazım', tabAccounts: 'Hesaplar', tabSupport: 'TechnoSupport Destek',
                 deviceTitle: 'Cihazım', welcome: 'Hoş geldin',
                 verifyTitle: 'E-posta adresin doğrulanmadı.',
                 verifySub: 'Doğrulama bağlantısını e-postana gönderdik. Gelmediyse yeniden gönderebilirsin.',
@@ -4093,6 +4108,8 @@
                 faq4a: 'Evet, her sürüm yayınlanmadan önce VirusTotal üzerinden taranır. Güncel tarama sonucunu "Güvenlik Raporu" sekmesinde bulabilirsiniz.',
                 faq5q: 'Bir sorun yaşarsam nasıl destek alabilirim?',
                 faq5a: 'Karşılaştığınız sorunları GitHub sayfamız üzerinden bize iletebilir veya "Değerlendirmeler" sekmesinden geri bildirim bırakabilirsiniz.',
+                supportDesc: 'FireEye ile ilgili sorunlarınızı TechnoSupport üzerinden iletebilir, AI destekli asistanla sohbet edebilir ve destek talebi açabilirsiniz.',
+                supportProdLink: 'Canlı sürüm: ',
 
                 clAdminTitle: 'Admin Paneli: Yeni Sürüm Ekle',
                 clVersionLabel: 'Sürüm Numarası (Örn: v1.1)',
@@ -4279,7 +4296,7 @@
             en: {
                 login: 'Sign In', register: 'Sign Up', logout: 'Sign Out', theme: 'Theme', lang: 'Language',
                 tabDownload: 'Download', tabFeatures: 'Features', tabScreenshots: 'Screenshots', tabSecurity: 'Security Report',
-                tabReviews: 'Reviews', tabFaq: 'FAQ', tabChangelog: 'Changelog', tabDevice: 'My Device', tabAccounts: 'Accounts',
+                tabReviews: 'Reviews', tabFaq: 'FAQ', tabChangelog: 'Changelog', tabDevice: 'My Device', tabAccounts: 'Accounts', tabSupport: 'TechnoSupport',
                 deviceTitle: 'My Device', welcome: 'Welcome',
                 verifyTitle: 'Your email address is not verified.',
                 verifySub: 'We sent a verification link to your email. You can resend it if it did not arrive.',
@@ -4342,6 +4359,8 @@
                 faq4a: 'Yes. Every release is scanned on VirusTotal before it is published. You can find the latest scan in the "Security Report" tab.',
                 faq5q: 'How can I get support if something goes wrong?',
                 faq5a: 'You can reach us through our GitHub page or leave feedback in the "Reviews" tab.',
+                supportDesc: 'You can report your FireEye issues via TechnoSupport, chat with an AI-powered assistant, and open support tickets.',
+                supportProdLink: 'Live version: ',
 
                 clAdminTitle: 'Admin: Add Release',
                 clVersionLabel: 'Version number (e.g. v1.1)',
