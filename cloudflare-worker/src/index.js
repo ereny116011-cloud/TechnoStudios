@@ -784,60 +784,129 @@ async function awsSigV4({ method, endpoint, region, accessKey, secretKey, canoni
     };
 }
 
+// Wasmer volume'daki bucket adını S3 ListBuckets ile bulur.
+// (Bucket adı her deploy/enable-s3 sonrasında değişebildiği için
+//  sabit bir adı varsaymak kırılgan olur; WASMER_S3_BUCKET verilmemişse
+//  burada otomatik keşfedilir.)
+async function wasmerS3ListBuckets(env) {
+    const endpoint = (env.WASMER_S3_ENDPOINT || '').trim().replace(/\/+$/, '');
+    const accessKey = (env.WASMER_S3_ACCESS_KEY || '').trim();
+    const secretKey = (env.WASMER_S3_SECRET_KEY || '').trim();
+    const region = (env.WASMER_S3_REGION || 'auto').trim();
+    if (!endpoint || !accessKey || !secretKey) return [];
+
+    const signed = await awsSigV4({
+        method: 'GET',
+        endpoint,
+        region,
+        accessKey,
+        secretKey,
+        canonicalPath: '/',
+        bodyBytes: new Uint8Array(0),
+    });
+
+    try {
+        const res = await fetch(endpoint + '/', {
+            method: 'GET',
+            headers: {
+                'Authorization': signed.authorization,
+                'x-amz-date': signed.amzDate,
+                'x-amz-content-sha256': signed.payloadHash,
+            },
+        });
+        if (!res.ok) {
+            console.error('Wasmer S3 bucket listesi alınamadı:', res.status);
+            return [];
+        }
+        const xml = await res.text();
+        const names = [];
+        const re = /<Name>([^<]+)<\/Name>/g;
+        let m;
+        while ((m = re.exec(xml)) !== null) names.push(m[1]);
+        return names;
+    } catch (e) {
+        console.error('Wasmer S3 bucket listesi hatası:', e && e.message);
+        return [];
+    }
+}
+
 // Wasmer volume'a (S3) tek bir nesne yazar. Path-style adresleme kullanılır:
-//   <endpoint>/<volume-adı>/<anahtar>
+//   <endpoint>/<bucket-adı>/<anahtar>
 async function wasmerS3Put(env, key, bytes, contentType) {
     const endpoint = (env.WASMER_S3_ENDPOINT || '').trim().replace(/\/+$/, '');
     const accessKey = (env.WASMER_S3_ACCESS_KEY || '').trim();
     const secretKey = (env.WASMER_S3_SECRET_KEY || '').trim();
-    const bucket = (env.WASMER_S3_BUCKET || 'downloads').trim();
+    let bucket = (env.WASMER_S3_BUCKET || '').trim();
     const region = (env.WASMER_S3_REGION || 'auto').trim();
 
     if (!endpoint || !accessKey || !secretKey) {
         return { ok: false, error: 'Wasmer S3 yapılandırması eksik (WASMER_S3_*).' };
     }
 
+    // Bucket adı verilmemişse (ya da verilen ad yanlışsa) otomatik keşfet.
+    if (!bucket) {
+        const buckets = await wasmerS3ListBuckets(env);
+        if (!buckets.length) return { ok: false, error: 'Volume bucket bulunamadı.' };
+        bucket = buckets[0];
+    }
+
     const safeKey = String(key || '').split('/').map(s => encodeURIComponent(s)).join('/');
     // Endpoint bir yol öneki içeriyorsa (örn. https://host/s3) imzalama yoluna onu da ekle.
     const base = new URL(endpoint);
     const prefix = base.pathname.replace(/\/+$/, '');
-    const canonicalPath = `${prefix}/${bucket}/${safeKey}`;
-    const url = `${base.origin}${canonicalPath}`;
     const contentTypeHeader = contentType || 'application/vnd.android.package-archive';
 
-    const signed = await awsSigV4({
-        method: 'PUT',
-        endpoint,
-        region,
-        accessKey,
-        secretKey,
-        canonicalPath,
-        bodyBytes: bytes,
-        extraHeaders: { 'content-type': contentTypeHeader },
-        // AWS dokümanındaki klasik S3 örneği "host" başlığını da imzalar; sunucu
-        // yalnızca imzalı başlıkları kullanan davranışa sahipse kapatılabilir
-        // (WASMER_S3_SIGN_HOST=false).
-        omitHostHeader: String(env.WASMER_S3_SIGN_HOST || '').toLowerCase() === 'false',
-    });
+    const put = async (bucketName) => {
+        const canonicalPath = `${prefix}/${bucketName}/${safeKey}`;
+        const url = `${base.origin}${canonicalPath}`;
 
-    const res = await fetch(url, {
-        method: 'PUT',
-        headers: {
-            'Authorization': signed.authorization,
-            'x-amz-date': signed.amzDate,
-            'x-amz-content-sha256': signed.payloadHash,
-            'Content-Type': contentTypeHeader,
-        },
-        body: bytes,
-    });
+        const signed = await awsSigV4({
+            method: 'PUT',
+            endpoint,
+            region,
+            accessKey,
+            secretKey,
+            canonicalPath,
+            bodyBytes: bytes,
+            extraHeaders: { 'content-type': contentTypeHeader },
+            // AWS dokümanındaki klasik S3 örneği "host" başlığını da imzalar; sunucu
+            // yalnızca imzalı başlıkları kullanan davranışa sahipse kapatılabilir
+            // (WASMER_S3_SIGN_HOST=false).
+            omitHostHeader: String(env.WASMER_S3_SIGN_HOST || '').toLowerCase() === 'false',
+        });
 
-    if (!res.ok) {
-        const bodyText = await res.text().catch(() => '');
-        console.error('Wasmer S3 yükleme hatası:', res.status, bodyText.slice(0, 500));
-        return { ok: false, error: 'Depolamaya yazılamadı (' + res.status + ').' };
+        const res = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Authorization': signed.authorization,
+                'x-amz-date': signed.amzDate,
+                'x-amz-content-sha256': signed.payloadHash,
+                'Content-Type': contentTypeHeader,
+            },
+            body: bytes,
+        });
+
+        if (!res.ok) {
+            const bodyText = await res.text().catch(() => '');
+            console.error('Wasmer S3 yükleme hatası:', res.status, bodyText.slice(0, 500));
+            return { ok: false, error: 'Depolamaya yazılamadı (' + res.status + ').' };
+        }
+        return { ok: true, url };
+    };
+
+    const first = await put(bucket);
+    if (first.ok) return first;
+
+    // Bucket adı değişmiş olabilir (her deploy'da yenilenebiliyor): keşif ile tekrar dene.
+    const buckets = await wasmerS3ListBuckets(env);
+    const other = buckets.find(b => b !== bucket);
+    if (other) {
+        const second = await put(other);
+        if (second.ok) return second;
+        return second;
     }
 
-    return { ok: true, url };
+    return first;
 }
 
 // Sitenin kendi adresi (indirme bağlantıları buraya kurulur).
