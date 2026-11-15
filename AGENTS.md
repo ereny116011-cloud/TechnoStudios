@@ -315,12 +315,11 @@ Mevcut satır sonlarını koruyun.
     Sitenin volume'su `/opt/static_app/downloads` altına mount edilidir (`/out/...` veya
     `/public/...` servis edilmez, 404 verir). `WASMER_S3_*` secret'ları tanımlı değilse uç
     502 döner; indirme yine de repodaki `fireeye.apk` yedeği üzerinden çalışır.
-12. **Site deploy'u = Worker secret yenileme.** Site her push'ta otomatik derlenir; deploy
-    sonrası Wasmer'da S3 erişimi "disabled" duruma düşer ve `wasmer app volume enable-s3`
-    yeniden çalıştırıldığında endpoint + anahtarlar + bucket adı **yenilenir**. Dolayısıyla
-    her site güncellemesinden sonra `enable-s3` + `credentials --format=json` çıktısını
-    Worker'a girmek gerekir (bkz. `cloudflare-worker/DEPLOY.md` §4.1). Worker bucket adını
-    otomatik keşfeder (`ListBuckets`), bu yüzden yalnızca endpoint/anahtar değerleri yeterli.
+12. **Deploy sonrası S3 kontrolü.** Site her push'ta otomatik derlenir; deploy sonrası S3
+    erişimi "disabled" görünebilir, bu durumda `wasmer app volume enable-s3` tekrar çalıştırılır.
+    Endpoint/anahtarlar genelde korunur (farklıysa `credentials --format=json` çıktısı
+    Worker'a yeniden girilir). Worker bucket adını otomatik keşfeder (`ListBuckets`), bu
+    yüzden `WASMER_S3_BUCKET` girmek zorunlu değildir (bkz. `DEPLOY.md` §4.1).
 
 ---
 

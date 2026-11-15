@@ -136,18 +136,18 @@ Site Wasmer Edge'de **anybuild `staticfile`** sağlayıcısıyla çalışır; do
    (yukarıdaki `WASMER_S3_*` komutları). Bölge bilgisi gerekiyorsa `WASMER_S3_REGION`.
    Sunucu "host" başlığının imzalanmasını reddederse `WASMER_S3_SIGN_HOST=false` ile kapat.
 
-3. **Her site deploy'unda yapılması gerekenler:** Deploy sonrası S3 erişimi otomatik olarak
-   "disabled" durumuna düşer ve `enable-s3` yeniden çalıştırıldığında **endpoint, anahtarlar
-   ve bucket adı yenilenir**. Yani site güncellendikten sonra şu iki komutu tekrar çalıştır
-   ve yeni değerleri Worker'a gir (CI `wrangler deploy` ile bunları alır):
+3. **Deploy sonrası kontrol:** Site her push'ta otomatik derlenir. Deploy sonrası S3
+   erişimi bazen "disabled" olarak görünebilir; bu durumda `enable-s3` komutunu tekrar
+   çalıştır:
 
    ```powershell
    wasmer app volume enable-s3 ereny116011-cloud/technoweb
-   wasmer app volume credentials --format=json ereny116011-cloud/technoweb
    ```
 
-   Worker'daki bucket adı **otomatik keşfedilir** (`ListBuckets`), bu yüzden
-   `WASMER_S3_BUCKET` girmek zorunlu değildir; endpoint/anahtar değerleri yeterli.
+   Endpoint ve anahtarlar genelde korunur; farklıysa
+   `wasmer app volume credentials --format=json ereny116011-cloud/technoweb` çıktısını
+   alıp Worker'a yeniden gir. Worker'daki bucket adı **otomatik keşfedilir** (`ListBuckets`),
+   bu yüzden `WASMER_S3_BUCKET` girmek zorunlu değildir; endpoint/anahtar değerleri yeterli.
    `wasmer app volume credentials --format=rclone` çıktısı da aynı değerleri verir.
 
 4. Yeni APK yayınlama: site → **Sürüm Notları** sekmesi → admin modu → sürüm numarası +
