@@ -331,20 +331,18 @@ async function issueVerificationEmail(request, env, user, redirectBase) {
     return { sent, verifyUrl };
 }
 
-// Resend ile e-posta gönderir. Domain doğrulanana kadar sadece Resend hesabını
-// açarken verdiğin e-postaya gönderebilirsin; doğruladıktan sonra herkese gider.
+// AgentMail ile e-posta gönderir. inbox_id zorunludur; 'from' adresi inbox'tan gelir.
 // Başarılıysa true, başarısızsa false döner; hata fırlatmaz (çağıranın akışını bozmaz).
 async function sendEmail(env, to, subject, html, text) {
-    if (!env.RESEND_API_KEY) return false;
+    if (!env.AGENTMAIL_API_KEY || !env.AGENTMAIL_INBOX_ID) return false;
     try {
-        const res = await fetch('https://api.resend.com/emails', {
+        const res = await fetch(`https://api.agentmail.to/v0/inboxes/${env.AGENTMAIL_INBOX_ID}/messages/send`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+                'Authorization': `Bearer ${env.AGENTMAIL_API_KEY}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                from: env.RESEND_FROM_EMAIL || 'FireEye <onboarding@resend.dev>',
                 to: [to],
                 subject,
                 html,
@@ -353,13 +351,13 @@ async function sendEmail(env, to, subject, html, text) {
         });
         const bodyText = await res.text().catch(() => '');
         if (!res.ok) {
-            console.error('Resend hatası:', res.status, bodyText);
+            console.error('AgentMail hatası:', res.status, bodyText);
             return false;
         }
-        console.log('Resend kabul etti, cevap:', res.status, bodyText);
+        console.log('AgentMail kabul etti, cevap:', res.status, bodyText);
         return true;
     } catch (e) {
-        console.error('Resend istek hatası:', e && e.message);
+        console.error('AgentMail istek hatası:', e && e.message);
         return false;
     }
 }
@@ -2007,7 +2005,7 @@ export default {
                 if (!/^https?:\/\//.test(resetBaseUrl) || resetBaseUrl.length > 500) {
                     return json({ success: false, message: 'Geçersiz sayfa adresi.' }, 400);
                 }
-                if (!env.RESEND_API_KEY) {
+                if (!env.AGENTMAIL_API_KEY || !env.AGENTMAIL_INBOX_ID) {
                     return json({ success: false, message: 'Sunucu yapılandırma hatası: e-posta servisi tanımlı değil.' }, 500);
                 }
 
@@ -2041,7 +2039,7 @@ export default {
                             note: 'Bu talebi sen yapmadıysan bu e-postayı güvenle yok sayabilirsin; şifren değişmeyecek.',
                         }),
                         `Merhaba,\n\nFireEye şifre sıfırlama bağlantın (30 dakika geçerli):\n${resetLink}\n\nBu talebi sen yapmadıysan bu e-postayı yok sayabilirsin.`);
-                    console.log('[forgot-password] sendEmail sonucu:', emailSent, '| RESEND_API_KEY var mı:', !!env.RESEND_API_KEY, '| gönderici:', env.RESEND_FROM_EMAIL || 'onboarding@resend.dev');
+                    console.log('[forgot-password] sendEmail sonucu:', emailSent, '| AGENTMAIL_API_KEY var mı:', !!env.AGENTMAIL_API_KEY, '| inbox:', env.AGENTMAIL_INBOX_ID);
                 }
 
                 return json({ success: true, message: 'Eğer bu e-posta ile bir hesap varsa, sıfırlama bağlantısı gönderildi.' });

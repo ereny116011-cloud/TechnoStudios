@@ -40,12 +40,15 @@ database_id = "203a8f3c-ae0d-42e9-8f50-5c6b20261d00"
 #   wrangler secret put GITHUB_CLIENT_ID
 #   wrangler secret put GITHUB_CLIENT_SECRET
 
-# Şifre sıfırlama / şifre değişikliği bildirim e-postaları Resend üzerinden gönderilir.
-# technoweb.win Resend'de doğrulandı, o yüzden herkese e-posta gidebilir.
-# API anahtarı (bir kez): wrangler secret put RESEND_API_KEY
+# Şifre sıfırlama / şifre değişikliği bildirim e-postaları AgentMail üzerinden gönderilir.
+# 1) AgentMail'de bir inbox oluştur (docs.agentmail.to), inbox_id'ni kopyala.
+# 2) AgentMail Console'dan bir API key oluştur.
+# 3) İkisini de secret olarak ekle (terminalde):
+#    wrangler secret put AGENTMAIL_API_KEY
+#    wrangler secret put AGENTMAIL_INBOX_ID   (inbox_id değeri)
 [vars]
-RESEND_FROM_EMAIL = "FireEye <no-reply@technoweb.win>"
-# E-postalardaki "bizimle iletişime geç" adresi (istersen değiştir):
+# E-postalardaki "gönderen" adresi artık AgentMail inbox'ından gelir; bu satır artık kullanılmıyor.
+# RESEND_FROM_EMAIL = "FireEye <no-reply@technoweb.win>"
 SUPPORT_EMAIL = "technostudios11@gmail.com"
 # Sitenin kendi adresi — APK indirme bağlantıları buna göre kurulur:
 SITE_BASE_URL = "https://www.technoweb.win"
