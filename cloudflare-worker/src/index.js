@@ -945,18 +945,42 @@ async function ensureSupportTables(env) {
                 created_at TEXT NOT NULL DEFAULT (datetime('now'))
             )`
         ).run();
+        // Talebi açan FireEye kullanıcısı (eski kayıtlarda NULL olabilir).
+        try {
+            await env.DB.prepare('ALTER TABLE support_tickets ADD COLUMN user_id INTEGER').run();
+        } catch (e) { /* kolon zaten var */ }
+        try {
+            await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_support_tickets_user ON support_tickets(user_id)').run();
+        } catch (e) { /* yoksay */ }
         supportTablesReady = true;
     } catch (e) {
         console.error('Support tablo hatası:', e && e.message);
     }
 }
 
+// Oturum sahibinin kullanıcı kaydını getirir (FireEye hesabı).
+async function supportSessionUser(request, env) {
+    const session = await getSessionUser(request, env);
+    if (!session || !session.uid) return null;
+    try {
+        return await env.DB.prepare(
+            'SELECT id, email, full_name FROM users WHERE id = ?'
+        ).bind(session.uid).first();
+    } catch (e) {
+        return null;
+    }
+}
+
 // Support taleplerini listeler (yanıtlar dahil).
-async function listSupportTickets(env) {
+// filter verilmezse tümü (admin), verilirse yalnızca o kullanıcının talepleri döner.
+async function listSupportTickets(env, filter) {
     await ensureSupportTables(env);
-    const { results } = await env.DB.prepare(
-        'SELECT id, name, email, subject, message, status, created_at FROM support_tickets ORDER BY id DESC LIMIT 200'
-    ).all();
+    const base = 'SELECT id, user_id, name, email, subject, message, status, created_at FROM support_tickets';
+    const stmt = filter
+        ? env.DB.prepare(base + ' WHERE user_id = ? OR (user_id IS NULL AND lower(email) = ?) ORDER BY id DESC LIMIT 200')
+            .bind(filter.userId, String(filter.email || '').toLowerCase())
+        : env.DB.prepare(base + ' ORDER BY id DESC LIMIT 200');
+    const { results } = await stmt.all();
     const tickets = [];
     for (const t of results) {
         const { results: replies } = await env.DB.prepare(
@@ -2395,30 +2419,39 @@ export default {
             // TechnoSupport — destek talepleri + AI asistan
             // ========================================================================
 
-            // --- /api/support/tickets (GET) — destek talepleri listesi ---
+            // --- /api/support/tickets (GET) — kendi taleplerim (admin ise tümü) ---
             if (url.pathname === '/api/support/tickets' && request.method === 'GET') {
-                const tickets = await listSupportTickets(env);
-                return json({ tickets });
+                if (isAdmin(request, env)) {
+                    return json({ tickets: await listSupportTickets(env, null) });
+                }
+                const user = await supportSessionUser(request, env);
+                if (!user) return json({ error: 'Oturum gerekli.' }, 401);
+                const tickets = await listSupportTickets(env, { userId: user.id, email: user.email });
+                return json({ tickets, user: { name: user.full_name || '', email: user.email } });
             }
 
-            // --- /api/support/tickets (POST) — yeni destek talebi ---
+            // --- /api/support/tickets (POST) — yeni destek talebi (FireEye hesabı gerekli) ---
             if (url.pathname === '/api/support/tickets' && request.method === 'POST') {
+                const user = await supportSessionUser(request, env);
+                if (!user) return json({ error: 'Talep açmak için FireEye hesabınızla giriş yapın.' }, 401);
+
                 const body = await request.json().catch(() => null);
                 if (!body) return json({ error: 'Geçersiz JSON gövde.' }, 400);
-                const name = String(body.name || '').trim();
-                const email = String(body.email || '').trim();
+                // Kimlik her zaman oturumdan alınır; istemciden gelen ad/e-posta yok sayılır.
+                const name = (user.full_name || '').trim() || user.email;
+                const email = user.email;
                 const subject = String(body.subject || '').trim();
                 const message = String(body.message || '').trim();
-                if (!name || !email || !subject || !message) {
-                    return json({ error: 'name, email, subject ve message gerekli.' }, 400);
+                if (!subject || !message) {
+                    return json({ error: 'subject ve message gerekli.' }, 400);
                 }
-                if (name.length > 120 || email.length > 160 || subject.length > 200 || message.length > 4000) {
+                if (subject.length > 200 || message.length > 4000) {
                     return json({ error: 'Alanlar çok uzun.' }, 400);
                 }
                 await ensureSupportTables(env);
                 const ins = await env.DB.prepare(
-                    'INSERT INTO support_tickets (name, email, subject, message) VALUES (?, ?, ?, ?)'
-                ).bind(name, email, subject, message).run();
+                    'INSERT INTO support_tickets (name, email, subject, message, user_id) VALUES (?, ?, ?, ?, ?)'
+                ).bind(name, email, subject, message, user.id).run();
                 return json({ status: 'ok', id: ins.meta.last_row_id });
             }
 
@@ -2472,9 +2505,11 @@ export default {
                 return json({ error: 'Kullanıcı adı veya şifre hatalı.' }, 401);
             }
 
-            // --- /api/support/auth/me — oturum durumu ---
+            // --- /api/support/auth/me — oturum durumu (admin Basic veya FireEye Bearer) ---
             if (url.pathname === '/api/support/auth/me' && request.method === 'GET') {
                 if (isAdmin(request, env)) return json({ authenticated: true, user: 'admin' });
+                const user = await supportSessionUser(request, env);
+                if (user) return json({ authenticated: true, user: { name: user.full_name || '', email: user.email } });
                 return json({ authenticated: false }, 401);
             }
 
