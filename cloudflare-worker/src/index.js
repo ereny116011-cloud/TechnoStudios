@@ -914,6 +914,108 @@ function siteBaseUrl(env) {
     return (env.SITE_BASE_URL || 'https://www.technoweb.win').replace(/\/+$/, '');
 }
 
+// ============================================================================
+// TechnoSupport — destek talepleri + AI asistan (support.technoweb.win)
+// ============================================================================
+
+let supportTablesReady = false;
+
+// Tabloları ilk kullanımda kendisi kurar; migration çalıştırılmasa da çalışır.
+async function ensureSupportTables(env) {
+    if (supportTablesReady) return;
+    try {
+        await env.DB.prepare(
+            `CREATE TABLE IF NOT EXISTS support_tickets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                email TEXT NOT NULL,
+                subject TEXT NOT NULL,
+                message TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'open',
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+            )`
+        ).run();
+        await env.DB.prepare(
+            `CREATE TABLE IF NOT EXISTS support_ticket_replies (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ticket_id INTEGER NOT NULL,
+                author TEXT NOT NULL,
+                text TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT (datetime('now'))
+            )`
+        ).run();
+        supportTablesReady = true;
+    } catch (e) {
+        console.error('Support tablo hatası:', e && e.message);
+    }
+}
+
+// Support taleplerini listeler (yanıtlar dahil).
+async function listSupportTickets(env) {
+    await ensureSupportTables(env);
+    const { results } = await env.DB.prepare(
+        'SELECT id, name, email, subject, message, status, created_at FROM support_tickets ORDER BY id DESC LIMIT 200'
+    ).all();
+    const tickets = [];
+    for (const t of results) {
+        const { results: replies } = await env.DB.prepare(
+            'SELECT author, text, created_at FROM support_ticket_replies WHERE ticket_id = ? ORDER BY id ASC'
+        ).bind(t.id).all();
+        tickets.push({
+            id: t.id,
+            name: t.name,
+            email: t.email,
+            subject: t.subject,
+            message: t.message,
+            status: t.status,
+            createdAt: t.created_at,
+            replies: replies.map(r => ({ author: r.author, text: r.text, createdAt: r.created_at })),
+        });
+    }
+    return tickets;
+}
+
+// AI asistan yanıtı (Kilo Gateway + Nemotron). Anahtar yalnızca secret'ta tutulur.
+async function supportAIChat(env, userText, userLang, frontendSystemPrompt) {
+    const kiloApiKey = env.KILO_API;
+    if (!kiloApiKey) {
+        return { error: 'AI_API_SECRET tanımlı değil (KILO_API).', status: 500 };
+    }
+    const kiloBase = (env.KILO_API_BASE || 'https://ai-gateway.kilo.ai/api/v1').replace(/\/+$/, '');
+    const model = env.KILO_MODEL || 'nvidia/nemotron-3.5-super-vl:free';
+    const systemPrompt = frontendSystemPrompt || (userLang === 'en'
+        ? 'You are a helpful, polite, and concise customer support assistant for TechnoSupport. Answer in English.'
+        : 'Sen TechnoSupport için yardımsever, nezaketli ve öz bir müşteri destek asistanısın. Cevaplarını Türkçe ver.');
+
+    const res = await fetch(`${kiloBase}/chat/completions`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + kiloApiKey,
+        },
+        body: JSON.stringify({
+            model,
+            messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userText },
+            ],
+            temperature: 0.7,
+            max_tokens: 800,
+        }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        const msg = data.error && data.error.message ? data.error.message : res.status;
+        return { error: 'Kilo Gateway hatası: ' + msg, status: 502 };
+    }
+    const answer = data.choices && data.choices[0] && data.choices[0].message
+        ? data.choices[0].message.content
+        : 'Üzgünüm, bir yanıt alınamadı.';
+    return { answer, model };
+}
+
 export default {
     async fetch(request, env) {
         const url = new URL(request.url);
@@ -2287,6 +2389,95 @@ export default {
                 }
                 await env.DB.prepare('UPDATE devices SET last_seen_at = datetime("now") WHERE device_key = ?').bind(deviceKey).run();
                 return json({ command: null });
+            }
+
+            // ========================================================================
+            // TechnoSupport — destek talepleri + AI asistan
+            // ========================================================================
+
+            // --- /api/support/tickets (GET) — destek talepleri listesi ---
+            if (url.pathname === '/api/support/tickets' && request.method === 'GET') {
+                const tickets = await listSupportTickets(env);
+                return json({ tickets });
+            }
+
+            // --- /api/support/tickets (POST) — yeni destek talebi ---
+            if (url.pathname === '/api/support/tickets' && request.method === 'POST') {
+                const body = await request.json().catch(() => null);
+                if (!body) return json({ error: 'Geçersiz JSON gövde.' }, 400);
+                const name = String(body.name || '').trim();
+                const email = String(body.email || '').trim();
+                const subject = String(body.subject || '').trim();
+                const message = String(body.message || '').trim();
+                if (!name || !email || !subject || !message) {
+                    return json({ error: 'name, email, subject ve message gerekli.' }, 400);
+                }
+                if (name.length > 120 || email.length > 160 || subject.length > 200 || message.length > 4000) {
+                    return json({ error: 'Alanlar çok uzun.' }, 400);
+                }
+                await ensureSupportTables(env);
+                const ins = await env.DB.prepare(
+                    'INSERT INTO support_tickets (name, email, subject, message) VALUES (?, ?, ?, ?)'
+                ).bind(name, email, subject, message).run();
+                return json({ status: 'ok', id: ins.meta.last_row_id });
+            }
+
+            // --- /api/support/tickets/:id (PATCH) — yanıtla / durum değiştir (admin) ---
+            if (url.pathname.startsWith('/api/support/tickets/') && request.method === 'PATCH') {
+                if (!isAdmin(request, env)) return json({ error: 'Yetkisiz.' }, 401);
+                const idMatch = url.pathname.match(/^\/api\/support\/tickets\/(\d+)$/);
+                if (!idMatch) return json({ error: 'Geçersiz ticket ID.' }, 400);
+                const ticketId = parseInt(idMatch[1], 10);
+                const body = await request.json().catch(() => null);
+                if (!body) return json({ error: 'Geçersiz JSON gövde.' }, 400);
+
+                await ensureSupportTables(env);
+                const exists = await env.DB.prepare('SELECT id FROM support_tickets WHERE id = ?').bind(ticketId).first();
+                if (!exists) return json({ error: 'Ticket bulunamadı.' }, 404);
+
+                if (body.reply) {
+                    await env.DB.prepare(
+                        'INSERT INTO support_ticket_replies (ticket_id, author, text) VALUES (?, ?, ?)'
+                    ).bind(ticketId, 'Yetkili', String(body.reply).trim()).run();
+                }
+                if (body.status) {
+                    const st = body.status === 'closed' ? 'closed' : 'open';
+                    await env.DB.prepare(
+                        'UPDATE support_tickets SET status = ?, updated_at = datetime("now") WHERE id = ?'
+                    ).bind(st, ticketId).run();
+                }
+                return json({ status: 'ok' });
+            }
+
+            // --- /api/support/auth/login — yönetici girişi (Basic auth üzerinden doğrulanır) ---
+            if (url.pathname === '/api/support/auth/login' && request.method === 'POST') {
+                const body = await request.json().catch(() => null);
+                if (!body) return json({ error: 'Geçersiz JSON gövde.' }, 400);
+                const user = String(body.username || '').trim();
+                const pass = String(body.password || '').trim();
+                const expectedUser = (env.ADMIN_USER || 'TechnoStudios11').trim();
+                const expectedPass = (env.ADMIN_PASS || 'giradmine').trim();
+                if (user === expectedUser && pass === expectedPass) {
+                    return json({ ok: true, token: 'basic-' + btoa(user + ':' + pass) });
+                }
+                return json({ error: 'Kullanıcı adı veya şifre hatalı.' }, 401);
+            }
+
+            // --- /api/support/auth/me — oturum durumu ---
+            if (url.pathname === '/api/support/auth/me' && request.method === 'GET') {
+                if (isAdmin(request, env)) return json({ authenticated: true, user: 'admin' });
+                return json({ authenticated: false }, 401);
+            }
+
+            // --- /api/support/ai/chat — AI asistan (Kilo Gateway + Nemotron) ---
+            if (url.pathname === '/api/support/ai/chat' && request.method === 'POST') {
+                const body = await request.json().catch(() => null);
+                if (!body) return json({ error: 'Geçersiz JSON gövde.' }, 400);
+                const message = String(body.message || '').trim();
+                if (!message) return json({ error: 'message gerekli.' }, 400);
+                const result = await supportAIChat(env, message, body.lang || 'tr', body.systemPrompt || '');
+                if (result.error) return json({ error: result.error }, result.status || 500);
+                return json({ answer: result.answer, model: result.model, provider: 'kilo' });
             }
 
             return json({ error: 'Bulunamadı.' }, 404);
