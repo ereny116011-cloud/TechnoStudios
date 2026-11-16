@@ -332,11 +332,37 @@ async function issueVerificationEmail(request, env, user, redirectBase) {
 }
 
 // AgentMail ile e-posta gönderir. inbox_id zorunludur; 'from' adresi inbox'tan gelir.
+// AGENTMAIL_INBOX_ID e-posta adresi olarak tanımlanmışsa (örn. mail@technoweb.win)
+// inbox listeden otomatik bulunur.
 // Başarılıysa true, başarısızsa false döner; hata fırlatmaz (çağıranın akışını bozmaz).
+async function agentMailInboxId(env) {
+    const configured = String(env.AGENTMAIL_INBOX_ID || '').trim();
+    if (!configured) return '';
+    // E-posta adresi biçimindeyse inbox listesinden ID'yi bul.
+    if (configured.includes('@')) {
+        try {
+            const res = await fetch('https://api.agentmail.to/v0/inboxes', {
+                headers: { 'Authorization': `Bearer ${env.AGENTMAIL_API_KEY}` },
+            });
+            if (res.ok) {
+                const list = await res.json();
+                const arr = Array.isArray(list) ? list : (list.inboxes || list.data || []);
+                const found = arr.find(x => (x.inbox_id || x.id || x.email || '') === configured || (x.email || '') === configured);
+                if (found) return found.inbox_id || found.id || configured;
+            }
+        } catch (e) {
+            console.error('AgentMail inbox listesi hatası:', e && e.message);
+        }
+    }
+    return configured;
+}
+
 async function sendEmail(env, to, subject, html, text) {
     if (!env.AGENTMAIL_API_KEY || !env.AGENTMAIL_INBOX_ID) return false;
     try {
-        const res = await fetch(`https://api.agentmail.to/v0/inboxes/${env.AGENTMAIL_INBOX_ID}/messages/send`, {
+        const inboxId = await agentMailInboxId(env);
+        if (!inboxId) return false;
+        const res = await fetch(`https://api.agentmail.to/v0/inboxes/${encodeURIComponent(inboxId)}/messages/send`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${env.AGENTMAIL_API_KEY}`,
@@ -1036,6 +1062,143 @@ async function supportAIChat(env, userText, userLang, frontendSystemPrompt) {
         ? data.choices[0].message.content
         : 'Üzgünüm, bir yanıt alınamadı.';
     return { answer, model };
+}
+
+// ============================================================================
+// OAuth (Google / Microsoft / GitHub) — ortak oturum üretimi
+// ============================================================================
+
+// OAuth ile giriş yapan (veya yeni oluşan) kullanıcıyı bulur, yoksa oluşturur
+// ve oturum token'ı ile birlikte kullanıcı bilgisini döndürür.
+async function oauthUserSession(env, email, fullName, provider) {
+    const cleanEmail = String(email || '').trim().toLowerCase();
+    const name = String(fullName || '').trim();
+    if (!cleanEmail) return { error: 'OAuth hesabından e-posta alınamadı.', status: 400 };
+
+    let user = await env.DB.prepare(
+        'SELECT id, email, full_name, is_no_data, email_verified FROM users WHERE email = ?'
+    ).bind(cleanEmail).first();
+
+    if (!user) {
+        // OAuth hesapları için rastgele bir şifre üretilir; kullanıcı isterse
+        // "şifremi unuttum" ile şifre belirler.
+        const { hash, salt } = await hashPassword(provider + '-' + crypto.randomUUID());
+        const ins = await env.DB.prepare(
+            'INSERT INTO users (email, password_hash, password_salt, full_name, is_no_data, email_verified) VALUES (?, ?, ?, ?, 0, 1)'
+        ).bind(cleanEmail, hash, salt, name).run();
+        user = await env.DB.prepare(
+            'SELECT id, email, full_name, is_no_data, email_verified FROM users WHERE id = ?'
+        ).bind(ins.meta.last_row_id).first();
+    }
+
+    try { await markLogin(env, user.id); } catch (e) {}
+
+    const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30;
+    const token = await signSession({ uid: user.id, exp }, env.SESSION_SECRET);
+
+    return {
+        success: true,
+        message: 'Giriş başarılı',
+        token,
+        user: {
+            id: String(user.id),
+            email: user.email,
+            fullName: user.full_name || '',
+            isNoData: !!user.is_no_data,
+            emailVerified: !!user.email_verified,
+            devices: await listDevices(env, user.id),
+        },
+    };
+}
+
+// Google ID token'ını doğrular, kullanıcı bilgilerini çıkarır.
+async function verifyGoogleIdToken(env, idToken) {
+    let info;
+    try {
+        const vr = await fetch('https://oauth2.googleapis.com/tokeninfo?id_token=' + encodeURIComponent(idToken));
+        if (!vr.ok) throw new Error('invalid');
+        info = await vr.json();
+    } catch (e) {
+        return { error: 'Google kimliği doğrulanamadı.', status: 401 };
+    }
+    if (!env.GOOGLE_CLIENT_ID || info.aud !== env.GOOGLE_CLIENT_ID) {
+        return { error: 'Google kimliği bu uygulama için geçerli değil.', status: 401 };
+    }
+    if (String(info.email_verified) !== 'true') {
+        return { error: 'Google e-postası doğrulanmamış.', status: 401 };
+    }
+    return { email: info.email, fullName: info.name || '' };
+}
+
+// Microsoft authorization code'unu access token'a çevirir, Graph'ten kullanıcı bilgisi alır.
+async function verifyMicrosoftCode(env, code) {
+    if (!env.MICROSOFT_CLIENT_ID || !env.MICROSOFT_CLIENT_SECRET) {
+        return { error: 'Microsoft girişi sunucuda yapılandırılmadı.', status: 500 };
+    }
+    const redirectUri = 'https://support.technoweb.win/oauth/callback?provider=microsoft';
+    let msToken = '';
+    try {
+        const tr = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                client_id: env.MICROSOFT_CLIENT_ID,
+                client_secret: env.MICROSOFT_CLIENT_SECRET,
+                code,
+                redirect_uri: redirectUri,
+                grant_type: 'authorization_code'
+            })
+        });
+        const td = await tr.json();
+        msToken = td.access_token || '';
+    } catch (e) { msToken = ''; }
+    if (!msToken) return { error: 'Microsoft token alınamadı.', status: 401 };
+
+    let me;
+    try {
+        const gr = await fetch('https://graph.microsoft.com/v1.0/me?$select=mail,userPrincipalName,displayName', {
+            headers: { 'Authorization': 'Bearer ' + msToken },
+        });
+        if (!gr.ok) throw new Error('invalid');
+        me = await gr.json();
+    } catch (e) {
+        return { error: 'Microsoft kimliği doğrulanamadı.', status: 401 };
+    }
+    return { email: me.mail || me.userPrincipalName || '', fullName: me.displayName || '' };
+}
+
+// GitHub authorization code'unu access token'a çevirir, kullanıcı bilgilerini çeker.
+async function verifyGitHubCode(env, code) {
+    if (!env.GITHUB_CLIENT_ID || !env.GITHUB_CLIENT_SECRET) {
+        return { error: 'GitHub girişi sunucuda yapılandırılmadı.', status: 500 };
+    }
+    let ghToken = '';
+    try {
+        const tr = await fetch('https://github.com/login/oauth/access_token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ client_id: env.GITHUB_CLIENT_ID, client_secret: env.GITHUB_CLIENT_SECRET, code }),
+        });
+        const td = await tr.json();
+        ghToken = td.access_token || '';
+    } catch (e) { ghToken = ''; }
+    if (!ghToken) return { error: 'GitHub token alınamadı.', status: 401 };
+
+    const ghHeaders = { 'Authorization': 'Bearer ' + ghToken, 'Accept': 'application/vnd.github+json', 'User-Agent': 'FireEye' };
+    let ghUser = {};
+    try { ghUser = await (await fetch('https://api.github.com/user', { headers: ghHeaders })).json(); } catch (e) { ghUser = {}; }
+
+    let email = String(ghUser.email || '').trim().toLowerCase();
+    if (!email) {
+        try {
+            const emails = await (await fetch('https://api.github.com/user/emails', { headers: ghHeaders })).json();
+            if (Array.isArray(emails)) {
+                const pick = emails.find(x => x.primary && x.verified) || emails.find(x => x.verified) || emails[0];
+                if (pick && pick.email) email = String(pick.email).trim().toLowerCase();
+            }
+        } catch (e) {}
+    }
+    return { email, fullName: (ghUser.name || ghUser.login || '').trim() };
 }
 
 export default {
@@ -1748,18 +1911,42 @@ export default {
                 });
             }
 
-            // --- /auth/microsoft --- (Microsoft ile giriş; Graph token'ı ile doğrular, hesap yoksa oluşturur) ---
+            // --- /auth/microsoft --- (Microsoft ile giriş; authorization code ile token exchange, Graph ile kullanıcı bilgisi) ---
             if (url.pathname === '/auth/microsoft' && request.method === 'POST') {
                 if (!env.SESSION_SECRET) return json({ success: false, message: 'Sunucu yapılandırma hatası.' }, 500);
+                if (!env.MICROSOFT_CLIENT_ID || !env.MICROSOFT_CLIENT_SECRET) {
+                    return json({ success: false, message: 'Microsoft girişi sunucuda yapılandırılmadı.' }, 500);
+                }
 
                 const body = await request.json().catch(() => ({}));
-                const accessToken = body.accessToken || '';
-                if (!accessToken) return json({ success: false, message: 'Microsoft kimliği eksik.' }, 400);
+                const code = body.code || '';
+                if (!code) return json({ success: false, message: 'Microsoft kimlik kodu eksik.' }, 400);
 
+                // Authorization code'ı access token'a çevir
+                const redirectUri = 'https://support.technoweb.win/oauth/callback?provider=microsoft';
+                let msToken = '';
+                try {
+                    const tr = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({
+                            client_id: env.MICROSOFT_CLIENT_ID,
+                            client_secret: env.MICROSOFT_CLIENT_SECRET,
+                            code,
+                            redirect_uri: redirectUri,
+                            grant_type: 'authorization_code'
+                        })
+                    });
+                    const td = await tr.json();
+                    msToken = td.access_token || '';
+                } catch (e) { msToken = ''; }
+                if (!msToken) return json({ success: false, message: 'Microsoft token alınamadı.' }, 401);
+
+                // Kullanıcı bilgilerini al
                 let me;
                 try {
                     const gr = await fetch('https://graph.microsoft.com/v1.0/me?$select=mail,userPrincipalName,displayName', {
-                        headers: { 'Authorization': 'Bearer ' + accessToken },
+                        headers: { 'Authorization': 'Bearer ' + msToken },
                     });
                     if (!gr.ok) throw new Error('invalid');
                     me = await gr.json();
@@ -2509,6 +2696,40 @@ export default {
                 const user = await supportSessionUser(request, env);
                 if (user) return json({ authenticated: true, user: { name: user.full_name || '', email: user.email } });
                 return json({ authenticated: false }, 401);
+            }
+
+            // --- /api/support/auth/google — Google ile giriş (ID token) ---
+            if (url.pathname === '/api/support/auth/google' && request.method === 'POST') {
+                if (!env.SESSION_SECRET) return json({ success: false, message: 'Sunucu yapılandırma hatası.' }, 500);
+                if (!env.GOOGLE_CLIENT_ID) return json({ success: false, message: 'Google girişi sunucuda yapılandırılmadı.' }, 500);
+                const body = await request.json().catch(() => ({}));
+                const credential = String(body.credential || '');
+                if (!credential) return json({ success: false, message: 'Google kimliği eksik.' }, 400);
+                const info = await verifyGoogleIdToken(env, credential);
+                if (info.error) return json({ success: false, message: info.error }, info.status || 401);
+                return json(await oauthUserSession(env, info.email, info.fullName, 'google'));
+            }
+
+            // --- /api/support/auth/microsoft — Microsoft ile giriş (authorization code) ---
+            if (url.pathname === '/api/support/auth/microsoft' && request.method === 'POST') {
+                if (!env.SESSION_SECRET) return json({ success: false, message: 'Sunucu yapılandırma hatası.' }, 500);
+                const body = await request.json().catch(() => ({}));
+                const code = String(body.code || '');
+                if (!code) return json({ success: false, message: 'Microsoft kimlik kodu eksik.' }, 400);
+                const info = await verifyMicrosoftCode(env, code);
+                if (info.error) return json({ success: false, message: info.error }, info.status || 401);
+                return json(await oauthUserSession(env, info.email, info.fullName, 'microsoft'));
+            }
+
+            // --- /api/support/auth/github — GitHub ile giriş (authorization code) ---
+            if (url.pathname === '/api/support/auth/github' && request.method === 'POST') {
+                if (!env.SESSION_SECRET) return json({ success: false, message: 'Sunucu yapılandırma hatası.' }, 500);
+                const body = await request.json().catch(() => ({}));
+                const code = String(body.code || '');
+                if (!code) return json({ success: false, message: 'GitHub kimlik kodu eksik.' }, 400);
+                const info = await verifyGitHubCode(env, code);
+                if (info.error) return json({ success: false, message: info.error }, info.status || 401);
+                return json(await oauthUserSession(env, info.email, info.fullName, 'github'));
             }
 
             // --- /api/support/ai/chat — AI asistan (Kilo Gateway + Nemotron) ---
