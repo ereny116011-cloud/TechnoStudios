@@ -97,7 +97,7 @@ Tarayıcı (fireeye/index.html) ──► Cloudflare Worker ──► D1 (fireey
    │  Bearer oturum / Basic admin        │
    └── GET /device/latest, /device/history┘
                                     │
-                                    └── Resend API (e-posta: doğrulama, 2FA, şifre sıfırlama)
+                                    └── AgentMail API (e-posta: doğrulama, 2FA, şifre sıfırlama)
 Wasmer Volume (S3) ◄── admin paneli → Worker → SigV4 ile APK yükleme (site kendi adresinden sunar)
 ```
 
@@ -106,6 +106,11 @@ Wasmer Volume (S3) ◄── admin paneli → Worker → SigV4 ile APK yükleme 
 - Yanıtlar `json(data, status)` yardımcısıyla üretilir; **CORS `*`** açıktır.
 - Hatalar Türkçe mesajlarla döner: `{ success: false, message: '...' }` veya `{ error: '...' }`.
   Frontend bu iki şekli de okur; mevcut uçların şeklini bozmayın.
+
+> ⚠️ **Kök dizinde `wrangler.jsonc` ASLA oluşturmayın.** Repo kökünü static asset olarak
+> yükler, worker script'ini devre dışı bırakır (CORS hatası + e-posta gönderimi çalışmaz)
+> ve worker'ın secret'larını siler. Gerçek config: `cloudflare-worker/wrangler.toml`.
+> Deploy daima `cd cloudflare-worker && npx wrangler deploy --name fireeye-api` ile yapılır.
 
 ### Kimlik doğrulama modeli
 
@@ -240,15 +245,17 @@ Secret olarak tanımlanması gerekenler:
 | `SESSION_SECRET` | Evet (kullanıcı girişi için) | HMAC imza anahtarı |
 | `ADMIN_USER`, `ADMIN_PASS` | Önerilir | Basic admin kimliği; kodda varsayılan fallback vardır, canlıda mutlaka override edin |
 | `DEVICE_SECRET` | Hayır | Yalnızca eski/token'sız cihazlar |
-| `RESEND_API_KEY` | E-posta için | Doğrulama, 2FA, şifre sıfırlama, iletişim |
-| `GOOGLE_CLIENT_ID` | OAuth için | `fireeye/index.html` içindeki istemci kimliğiyle **aynı** olmalı |
-| `MICROSOFT_CLIENT_ID` | OAuth için | Aynı şekilde frontend ile eşleşmeli |
-| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | OAuth için | Callback: `<worker>/auth/github/callback` |
+| `AGENTMAIL_API_KEY` | E-posta için | Doğrulama, 2FA, şifre sıfırlama, iletişim (AgentMail Bearer token) |
+| `AGENTMAIL_INBOX_ID` | E-posta için | Gönderim yapılacak inbox. `mail@technoweb.win` gibi e-posta adresi de yazılabilir; worker inbox listesinden ID'yi bulur |
+| `GOOGLE_CLIENT_ID` | OAuth için | `fireeye/index.html` ve TechnoSupport `app.js` içindeki istemci kimliğiyle **aynı** olmalı |
+| `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET` | OAuth için | `MICROSOFT_CLIENT_ID` frontend ile eşleşmeli; secret worker'da kalır |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | OAuth için | Callback: `https://support.technoweb.win/oauth/callback?provider=github` |
 | `WASMER_S3_ENDPOINT`, `WASMER_S3_ACCESS_KEY`, `WASMER_S3_SECRET_KEY` | APK yükleme için | `wasmer app volume credentials` çıktısından; Worker S3'e SigV4 ile yazar |
 | `WASMER_S3_BUCKET` (varsayılan `downloads`), `WASMER_S3_REGION` (varsayılan `auto`) | APK yükleme için | Volume adı / bölge |
 
-`SESSION_SECRET` yoksa: kullanıcı girişi 500, `/me` 401 döner. `RESEND_API_KEY` yoksa:
-e-posta gönderilemez; giriş kod istemeden devam eder, doğrulama e-postası sessizce atlanır.
+`SESSION_SECRET` yoksa: kullanıcı girişi 500, `/me` 401 döner. `AGENTMAIL_API_KEY` veya
+`AGENTMAIL_INBOX_ID` yoksa: e-posta gönderilemez; giriş kod istemeden devam eder, doğrulama
+e-postası sessizce atlanır.
 
 > Secret'ları **asla** repoya yazmayın. Yerelde `.dev.vars`, üretimde `wrangler secret put` kullanın.
 > `.dev.vars`, `.wrangler/`, `.env*`, `node_modules/` `.gitignore` içindedir.

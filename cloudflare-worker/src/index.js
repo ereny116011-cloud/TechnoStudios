@@ -1112,6 +1112,8 @@ async function oauthUserSession(env, email, fullName, provider) {
 }
 
 // Google ID token'ını doğrular, kullanıcı bilgilerini çıkarır.
+// GOOGLE_CLIENT_ID virgülle ayrılmış birden fazla client ID kabul eder
+// (web + Android + panel için ayrı client ID'ler olabilir).
 async function verifyGoogleIdToken(env, idToken) {
     let info;
     try {
@@ -1121,7 +1123,11 @@ async function verifyGoogleIdToken(env, idToken) {
     } catch (e) {
         return { error: 'Google kimliği doğrulanamadı.', status: 401 };
     }
-    if (!env.GOOGLE_CLIENT_ID || info.aud !== env.GOOGLE_CLIENT_ID) {
+    const allowed = String(env.GOOGLE_CLIENT_ID || '')
+        .split(',')
+        .map(x => x.trim())
+        .filter(Boolean);
+    if (!allowed.length || allowed.indexOf(info.aud) === -1) {
         return { error: 'Google kimliği bu uygulama için geçerli değil.', status: 401 };
     }
     if (String(info.email_verified) !== 'true') {
