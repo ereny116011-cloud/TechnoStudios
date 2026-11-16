@@ -2423,17 +2423,26 @@ export default {
             }
 
             // --- /api/support/tickets/:id (PATCH) — yanıtla / durum değiştir (admin) ---
-            if (url.pathname.startsWith('/api/support/tickets/') && request.method === 'PATCH') {
+            if (url.pathname.startsWith('/api/support/tickets/') && (request.method === 'PATCH' || request.method === 'DELETE')) {
                 if (!isAdmin(request, env)) return json({ error: 'Yetkisiz.' }, 401);
                 const idMatch = url.pathname.match(/^\/api\/support\/tickets\/(\d+)$/);
                 if (!idMatch) return json({ error: 'Geçersiz ticket ID.' }, 400);
                 const ticketId = parseInt(idMatch[1], 10);
-                const body = await request.json().catch(() => null);
-                if (!body) return json({ error: 'Geçersiz JSON gövde.' }, 400);
 
                 await ensureSupportTables(env);
                 const exists = await env.DB.prepare('SELECT id FROM support_tickets WHERE id = ?').bind(ticketId).first();
                 if (!exists) return json({ error: 'Ticket bulunamadı.' }, 404);
+
+                if (request.method === 'DELETE') {
+                    await env.DB.batch([
+                        env.DB.prepare('DELETE FROM support_ticket_replies WHERE ticket_id = ?').bind(ticketId),
+                        env.DB.prepare('DELETE FROM support_tickets WHERE id = ?').bind(ticketId),
+                    ]);
+                    return json({ status: 'ok', deleted: ticketId });
+                }
+
+                const body = await request.json().catch(() => null);
+                if (!body) return json({ error: 'Geçersiz JSON gövde.' }, 400);
 
                 if (body.reply) {
                     await env.DB.prepare(
