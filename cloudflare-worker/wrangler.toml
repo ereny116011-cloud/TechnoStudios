@@ -22,11 +22,17 @@ binding = "AI"
 # wrangler secret put DEVICE_SECRET
 # Değiştirirsen esp32_ornek_firmware.ino içindeki DEVICE_SECRET'ı da aynı yap.
 
-# APK dosyaları Cloudflare'e hiç uğramadan tarayıcıdan doğrudan GitHub Releases'e yüklenir
-# (Cloudflare Worker'a gelen isteklerin 100MB sınırını aşmak ve R2'nin istediği kredi kartını
-# gerektirmemek için). Bu yüzden Worker'ın GitHub token'a ihtiyacı yok — admin panelinde
-# sürüm yüklerken tarayıcıya bir kez GitHub Personal Access Token giriliyor (bkz. index.html).
-
+# APK dosyaları Cloudflare Worker'a 100MB sınırına takılmadan gelebilir (ücretsiz plan
+# istek gövdesi sınırı 100MB'dur; FireEye APK'sı ~15MB'dır). Dosya Worker'a POST edilir,
+# Worker da Wasmer Edge volume'a (S3 uyumlu) yazar; site kendi adresinden servis eder.
+# S3 erişimi için gereken gizli değerler:
+#   wrangler secret put WASMER_S3_ENDPOINT      # "wasmer app volume credentials" çıktısındaki endpoint
+#   wrangler secret put WASMER_S3_ACCESS_KEY
+#   wrangler secret put WASMER_S3_SECRET_KEY
+#   wrangler secret put WASMER_S3_BUCKET        # volume adı (varsayılan: downloads)
+#   wrangler secret put WASMER_S3_REGION        # bölge (varsayılan: auto)
+#   (opsiyonel) wrangler secret put WASMER_S3_SIGN_HOST  # "false" ise host başlığı imzalanmaz
+#
 # Google ile giriş (isteğe bağlı): wrangler secret put GOOGLE_CLIENT_ID
 # (Aynı istemci kimliği fireeye/index.html içindeki GOOGLE_CLIENT_ID ile eşleşmeli.)
 
@@ -38,10 +44,15 @@ binding = "AI"
 #   wrangler secret put GITHUB_CLIENT_ID
 #   wrangler secret put GITHUB_CLIENT_SECRET
 
-# Şifre sıfırlama / şifre değişikliği bildirim e-postaları Resend üzerinden gönderilir.
-# technoweb.win Resend'de doğrulandı, o yüzden herkese e-posta gidebilir.
-# API anahtarı (bir kez): wrangler secret put RESEND_API_KEY
+# Şifre sıfırlama / şifre değişikliği bildirim e-postaları AgentMail üzerinden gönderilir.
+# 1) AgentMail'de bir inbox oluştur (docs.agentmail.to), inbox_id'ni kopyala.
+# 2) AgentMail Console'dan bir API key oluştur.
+# 3) İkisini de secret olarak ekle (terminalde):
+#    wrangler secret put AGENTMAIL_API_KEY
+#    wrangler secret put AGENTMAIL_INBOX_ID   (inbox_id değeri)
 [vars]
-RESEND_FROM_EMAIL = "FireEye <no-reply@technoweb.win>"
-# E-postalardaki "bizimle iletişime geç" adresi (istersen değiştir):
+# E-postalardaki "gönderen" adresi artık AgentMail inbox'ından gelir; bu satır artık kullanılmıyor.
+# RESEND_FROM_EMAIL = "FireEye <no-reply@technoweb.win>"
 SUPPORT_EMAIL = "technostudios11@gmail.com"
+# Sitenin kendi adresi — APK indirme bağlantıları buna göre kurulur:
+SITE_BASE_URL = "https://www.technoweb.win"

@@ -331,20 +331,44 @@ async function issueVerificationEmail(request, env, user, redirectBase) {
     return { sent, verifyUrl };
 }
 
-// Resend ile e-posta gönderir. Domain doğrulanana kadar sadece Resend hesabını
-// açarken verdiğin e-postaya gönderebilirsin; doğruladıktan sonra herkese gider.
+// AgentMail ile e-posta gönderir. inbox_id zorunludur; 'from' adresi inbox'tan gelir.
+// AGENTMAIL_INBOX_ID e-posta adresi olarak tanımlanmışsa (örn. mail@technoweb.win)
+// inbox listeden otomatik bulunur.
 // Başarılıysa true, başarısızsa false döner; hata fırlatmaz (çağıranın akışını bozmaz).
+async function agentMailInboxId(env) {
+    const configured = String(env.AGENTMAIL_INBOX_ID || '').trim();
+    if (!configured) return '';
+    // E-posta adresi biçimindeyse inbox listesinden ID'yi bul.
+    if (configured.includes('@')) {
+        try {
+            const res = await fetch('https://api.agentmail.to/v0/inboxes', {
+                headers: { 'Authorization': `Bearer ${env.AGENTMAIL_API_KEY}` },
+            });
+            if (res.ok) {
+                const list = await res.json();
+                const arr = Array.isArray(list) ? list : (list.inboxes || list.data || []);
+                const found = arr.find(x => (x.inbox_id || x.id || x.email || '') === configured || (x.email || '') === configured);
+                if (found) return found.inbox_id || found.id || configured;
+            }
+        } catch (e) {
+            console.error('AgentMail inbox listesi hatası:', e && e.message);
+        }
+    }
+    return configured;
+}
+
 async function sendEmail(env, to, subject, html, text) {
-    if (!env.RESEND_API_KEY) return false;
+    if (!env.AGENTMAIL_API_KEY || !env.AGENTMAIL_INBOX_ID) return false;
     try {
-        const res = await fetch('https://api.resend.com/emails', {
+        const inboxId = await agentMailInboxId(env);
+        if (!inboxId) return false;
+        const res = await fetch(`https://api.agentmail.to/v0/inboxes/${encodeURIComponent(inboxId)}/messages/send`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+                'Authorization': `Bearer ${env.AGENTMAIL_API_KEY}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                from: env.RESEND_FROM_EMAIL || 'FireEye <onboarding@resend.dev>',
                 to: [to],
                 subject,
                 html,
@@ -353,13 +377,13 @@ async function sendEmail(env, to, subject, html, text) {
         });
         const bodyText = await res.text().catch(() => '');
         if (!res.ok) {
-            console.error('Resend hatası:', res.status, bodyText);
+            console.error('AgentMail hatası:', res.status, bodyText);
             return false;
         }
-        console.log('Resend kabul etti, cevap:', res.status, bodyText);
+        console.log('AgentMail kabul etti, cevap:', res.status, bodyText);
         return true;
     } catch (e) {
-        console.error('Resend istek hatası:', e && e.message);
+        console.error('AgentMail istek hatası:', e && e.message);
         return false;
     }
 }
@@ -720,6 +744,469 @@ function base64ToArrayBuffer(base64) {
     return bytes.buffer;
 }
 
+// ===================================================================
+// Wasmer Volume (S3 uyumlu depolama) — APK yükleme
+// -------------------------------------------------------------------
+// Sitenin statik dosyaları Wasmer Edge'de çalışır. "downloads" adlı volume,
+// /public/downloads altına mount edilir; volume'a yazılan APK dosyaları
+// sitenin kendi adresinden (https://www.technoweb.win/downloads/<dosya>)
+// servis edilir. Yükleme admin panelinden gelen istek ile Worker'a ulaşır,
+// Worker da sunucu tarafında AWS SigV4 imzalayarak S3'e yazar.
+// S3 anahtarları tarayıcıya hiç girmez.
+// ===================================================================
+
+const S3_SERVICE = 's3';
+
+async function sha256Bytes(bytes) {
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function hmacSign(keyBytes, dataBytes) {
+    const key = await crypto.subtle.importKey('raw', keyBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    const sig = await crypto.subtle.sign('HMAC', key, dataBytes);
+    return new Uint8Array(sig);
+}
+
+// AWS SigV4 (S3) imzası üretir. Sonuç: Authorization başlığı + tarih/hash başlıkları.
+// dateOverride / payloadHashOverride / omitContentShaHeader yalnızca test vektörü için.
+async function awsSigV4({ method, endpoint, region, accessKey, secretKey, canonicalPath, bodyBytes, extraHeaders, dateOverride, payloadHashOverride, omitContentShaHeader, omitHostHeader }) {
+    const enc = new TextEncoder();
+    const amzDate = new Date(dateOverride || Date.now()).toISOString().replace(/[:-]|\.\d{3}/g, '');
+    const dateStamp = amzDate.slice(0, 8);
+    const payloadHash = payloadHashOverride || await sha256Bytes(bodyBytes);
+
+    const host = new URL(endpoint).host;
+    const headers = {};
+    if (!omitHostHeader) headers['host'] = host;
+    headers['x-amz-date'] = amzDate;
+    if (!omitContentShaHeader) headers['x-amz-content-sha256'] = payloadHash;
+    Object.assign(headers, extraHeaders || {});
+
+    const keys = Object.keys(headers).map(k => k.toLowerCase()).sort();
+    const canonicalHeaders = keys.map(k => k + ':' + String(headers[k]).trim().replace(/\s+/g, ' ') + '\n').join('');
+    const signedHeaders = keys.join(';');
+
+    const canonicalRequest = [method, canonicalPath, '', canonicalHeaders, signedHeaders, payloadHash].join('\n');
+    const crHash = await sha256Bytes(enc.encode(canonicalRequest));
+
+    const scope = `${dateStamp}/${region}/${S3_SERVICE}/aws4_request`;
+    const stringToSign = ['AWS4-HMAC-SHA256', amzDate, scope, crHash].join('\n');
+
+    const kDate = await hmacSign(enc.encode('AWS4' + secretKey), enc.encode(dateStamp));
+    const kRegion = await hmacSign(kDate, enc.encode(region));
+    const kService = await hmacSign(kRegion, enc.encode(S3_SERVICE));
+    const kSigning = await hmacSign(kService, enc.encode('aws4_request'));
+    const signature = Array.from(await hmacSign(kSigning, enc.encode(stringToSign)))
+        .map(b => b.toString(16).padStart(2, '0')).join('');
+
+    return {
+        authorization: `AWS4-HMAC-SHA256 Credential=${accessKey}/${scope}, SignedHeaders=${signedHeaders}, Signature=${signature}`,
+        amzDate,
+        payloadHash,
+        signedHeaders,
+    };
+}
+
+// Wasmer volume'daki bucket adını S3 ListBuckets ile bulur.
+// (Bucket adı her deploy/enable-s3 sonrasında değişebildiği için
+//  sabit bir adı varsaymak kırılgan olur; WASMER_S3_BUCKET verilmemişse
+//  burada otomatik keşfedilir.)
+async function wasmerS3ListBuckets(env) {
+    const endpoint = (env.WASMER_S3_ENDPOINT || '').trim().replace(/\/+$/, '');
+    const accessKey = (env.WASMER_S3_ACCESS_KEY || '').trim();
+    const secretKey = (env.WASMER_S3_SECRET_KEY || '').trim();
+    const region = (env.WASMER_S3_REGION || 'auto').trim();
+    if (!endpoint || !accessKey || !secretKey) return [];
+
+    const signed = await awsSigV4({
+        method: 'GET',
+        endpoint,
+        region,
+        accessKey,
+        secretKey,
+        canonicalPath: '/',
+        bodyBytes: new Uint8Array(0),
+    });
+
+    try {
+        const res = await fetch(endpoint + '/', {
+            method: 'GET',
+            headers: {
+                'Authorization': signed.authorization,
+                'x-amz-date': signed.amzDate,
+                'x-amz-content-sha256': signed.payloadHash,
+            },
+        });
+        if (!res.ok) {
+            console.error('Wasmer S3 bucket listesi alınamadı:', res.status);
+            return [];
+        }
+        const xml = await res.text();
+        const names = [];
+        const re = /<Name>([^<]+)<\/Name>/g;
+        let m;
+        while ((m = re.exec(xml)) !== null) names.push(m[1]);
+        return names;
+    } catch (e) {
+        console.error('Wasmer S3 bucket listesi hatası:', e && e.message);
+        return [];
+    }
+}
+
+// Wasmer volume'a (S3) tek bir nesne yazar. Path-style adresleme kullanılır:
+//   <endpoint>/<bucket-adı>/<anahtar>
+async function wasmerS3Put(env, key, bytes, contentType) {
+    const endpoint = (env.WASMER_S3_ENDPOINT || '').trim().replace(/\/+$/, '');
+    const accessKey = (env.WASMER_S3_ACCESS_KEY || '').trim();
+    const secretKey = (env.WASMER_S3_SECRET_KEY || '').trim();
+    let bucket = (env.WASMER_S3_BUCKET || '').trim();
+    const region = (env.WASMER_S3_REGION || 'auto').trim();
+
+    if (!endpoint || !accessKey || !secretKey) {
+        return { ok: false, error: 'Wasmer S3 yapılandırması eksik (WASMER_S3_*).' };
+    }
+
+    // Bucket adı verilmemişse (ya da verilen ad yanlışsa) otomatik keşfet.
+    if (!bucket) {
+        const buckets = await wasmerS3ListBuckets(env);
+        if (!buckets.length) return { ok: false, error: 'Volume bucket bulunamadı.' };
+        bucket = buckets[0];
+    }
+
+    const safeKey = String(key || '').split('/').map(s => encodeURIComponent(s)).join('/');
+    // Endpoint bir yol öneki içeriyorsa (örn. https://host/s3) imzalama yoluna onu da ekle.
+    const base = new URL(endpoint);
+    const prefix = base.pathname.replace(/\/+$/, '');
+    const contentTypeHeader = contentType || 'application/vnd.android.package-archive';
+
+    const put = async (bucketName) => {
+        const canonicalPath = `${prefix}/${bucketName}/${safeKey}`;
+        const url = `${base.origin}${canonicalPath}`;
+
+        const signed = await awsSigV4({
+            method: 'PUT',
+            endpoint,
+            region,
+            accessKey,
+            secretKey,
+            canonicalPath,
+            bodyBytes: bytes,
+            extraHeaders: { 'content-type': contentTypeHeader },
+            // AWS dokümanındaki klasik S3 örneği "host" başlığını da imzalar; sunucu
+            // yalnızca imzalı başlıkları kullanan davranışa sahipse kapatılabilir
+            // (WASMER_S3_SIGN_HOST=false).
+            omitHostHeader: String(env.WASMER_S3_SIGN_HOST || '').toLowerCase() === 'false',
+        });
+
+        const res = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Authorization': signed.authorization,
+                'x-amz-date': signed.amzDate,
+                'x-amz-content-sha256': signed.payloadHash,
+                'Content-Type': contentTypeHeader,
+            },
+            body: bytes,
+        });
+
+        if (!res.ok) {
+            const bodyText = await res.text().catch(() => '');
+            console.error('Wasmer S3 yükleme hatası:', res.status, bodyText.slice(0, 500));
+            return { ok: false, error: 'Depolamaya yazılamadı (' + res.status + ').' };
+        }
+        return { ok: true, url };
+    };
+
+    const first = await put(bucket);
+    if (first.ok) return first;
+
+    // Bucket adı değişmiş olabilir (her deploy'da yenilenebiliyor): keşif ile tekrar dene.
+    const buckets = await wasmerS3ListBuckets(env);
+    const other = buckets.find(b => b !== bucket);
+    if (other) {
+        const second = await put(other);
+        if (second.ok) return second;
+        return second;
+    }
+
+    return first;
+}
+
+// Sitenin kendi adresi (indirme bağlantıları buraya kurulur).
+function siteBaseUrl(env) {
+    return (env.SITE_BASE_URL || 'https://www.technoweb.win').replace(/\/+$/, '');
+}
+
+// ============================================================================
+// TechnoSupport — destek talepleri + AI asistan (support.technoweb.win)
+// ============================================================================
+
+let supportTablesReady = false;
+
+// Tabloları ilk kullanımda kendisi kurar; migration çalıştırılmasa da çalışır.
+async function ensureSupportTables(env) {
+    if (supportTablesReady) return;
+    try {
+        await env.DB.prepare(
+            `CREATE TABLE IF NOT EXISTS support_tickets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                email TEXT NOT NULL,
+                subject TEXT NOT NULL,
+                message TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'open',
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+            )`
+        ).run();
+        await env.DB.prepare(
+            `CREATE TABLE IF NOT EXISTS support_ticket_replies (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ticket_id INTEGER NOT NULL,
+                author TEXT NOT NULL,
+                text TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT (datetime('now'))
+            )`
+        ).run();
+        // Talebi açan FireEye kullanıcısı (eski kayıtlarda NULL olabilir).
+        try {
+            await env.DB.prepare('ALTER TABLE support_tickets ADD COLUMN user_id INTEGER').run();
+        } catch (e) { /* kolon zaten var */ }
+        try {
+            await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_support_tickets_user ON support_tickets(user_id)').run();
+        } catch (e) { /* yoksay */ }
+        supportTablesReady = true;
+    } catch (e) {
+        console.error('Support tablo hatası:', e && e.message);
+    }
+}
+
+// Oturum sahibinin kullanıcı kaydını getirir (FireEye hesabı).
+async function supportSessionUser(request, env) {
+    const session = await getSessionUser(request, env);
+    if (!session || !session.uid) return null;
+    try {
+        return await env.DB.prepare(
+            'SELECT id, email, full_name FROM users WHERE id = ?'
+        ).bind(session.uid).first();
+    } catch (e) {
+        return null;
+    }
+}
+
+// Support taleplerini listeler (yanıtlar dahil).
+// filter verilmezse tümü (admin), verilirse yalnızca o kullanıcının talepleri döner.
+async function listSupportTickets(env, filter) {
+    await ensureSupportTables(env);
+    const base = 'SELECT id, user_id, name, email, subject, message, status, created_at FROM support_tickets';
+    const stmt = filter
+        ? env.DB.prepare(base + ' WHERE user_id = ? OR (user_id IS NULL AND lower(email) = ?) ORDER BY id DESC LIMIT 200')
+            .bind(filter.userId, String(filter.email || '').toLowerCase())
+        : env.DB.prepare(base + ' ORDER BY id DESC LIMIT 200');
+    const { results } = await stmt.all();
+    const tickets = [];
+    for (const t of results) {
+        const { results: replies } = await env.DB.prepare(
+            'SELECT author, text, created_at FROM support_ticket_replies WHERE ticket_id = ? ORDER BY id ASC'
+        ).bind(t.id).all();
+        tickets.push({
+            id: t.id,
+            name: t.name,
+            email: t.email,
+            subject: t.subject,
+            message: t.message,
+            status: t.status,
+            createdAt: t.created_at,
+            replies: replies.map(r => ({ author: r.author, text: r.text, createdAt: r.created_at })),
+        });
+    }
+    return tickets;
+}
+
+// AI asistan yanıtı (Kilo Gateway + Nemotron). Anahtar yalnızca secret'ta tutulur.
+async function supportAIChat(env, userText, userLang, frontendSystemPrompt) {
+    const kiloApiKey = env.KILO_API;
+    if (!kiloApiKey) {
+        return { error: 'AI_API_SECRET tanımlı değil (KILO_API).', status: 500 };
+    }
+    const kiloBase = (env.KILO_API_BASE || 'https://ai-gateway.kilo.ai/api/v1').replace(/\/+$/, '');
+    const model = env.KILO_MODEL || 'nvidia/nemotron-3.5-super-vl:free';
+    const systemPrompt = frontendSystemPrompt || (userLang === 'en'
+        ? 'You are a helpful, polite, and concise customer support assistant for TechnoSupport. Answer in English.'
+        : 'Sen TechnoSupport için yardımsever, nezaketli ve öz bir müşteri destek asistanısın. Cevaplarını Türkçe ver.');
+
+    const res = await fetch(`${kiloBase}/chat/completions`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + kiloApiKey,
+        },
+        body: JSON.stringify({
+            model,
+            messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userText },
+            ],
+            temperature: 0.7,
+            max_tokens: 800,
+        }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        const msg = data.error && data.error.message ? data.error.message : res.status;
+        return { error: 'Kilo Gateway hatası: ' + msg, status: 502 };
+    }
+    const answer = data.choices && data.choices[0] && data.choices[0].message
+        ? data.choices[0].message.content
+        : 'Üzgünüm, bir yanıt alınamadı.';
+    return { answer, model };
+}
+
+// ============================================================================
+// OAuth (Google / Microsoft / GitHub) — ortak oturum üretimi
+// ============================================================================
+
+// OAuth ile giriş yapan (veya yeni oluşan) kullanıcıyı bulur, yoksa oluşturur
+// ve oturum token'ı ile birlikte kullanıcı bilgisini döndürür.
+async function oauthUserSession(env, email, fullName, provider) {
+    const cleanEmail = String(email || '').trim().toLowerCase();
+    const name = String(fullName || '').trim();
+    if (!cleanEmail) return { error: 'OAuth hesabından e-posta alınamadı.', status: 400 };
+
+    let user = await env.DB.prepare(
+        'SELECT id, email, full_name, is_no_data, email_verified FROM users WHERE email = ?'
+    ).bind(cleanEmail).first();
+
+    if (!user) {
+        // OAuth hesapları için rastgele bir şifre üretilir; kullanıcı isterse
+        // "şifremi unuttum" ile şifre belirler.
+        const { hash, salt } = await hashPassword(provider + '-' + crypto.randomUUID());
+        const ins = await env.DB.prepare(
+            'INSERT INTO users (email, password_hash, password_salt, full_name, is_no_data, email_verified) VALUES (?, ?, ?, ?, 0, 1)'
+        ).bind(cleanEmail, hash, salt, name).run();
+        user = await env.DB.prepare(
+            'SELECT id, email, full_name, is_no_data, email_verified FROM users WHERE id = ?'
+        ).bind(ins.meta.last_row_id).first();
+    }
+
+    try { await markLogin(env, user.id); } catch (e) {}
+
+    const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30;
+    const token = await signSession({ uid: user.id, exp }, env.SESSION_SECRET);
+
+    return {
+        success: true,
+        message: 'Giriş başarılı',
+        token,
+        user: {
+            id: String(user.id),
+            email: user.email,
+            fullName: user.full_name || '',
+            isNoData: !!user.is_no_data,
+            emailVerified: !!user.email_verified,
+            devices: await listDevices(env, user.id),
+        },
+    };
+}
+
+// Google ID token'ını doğrular, kullanıcı bilgilerini çıkarır.
+// GOOGLE_CLIENT_ID virgülle ayrılmış birden fazla client ID kabul eder
+// (web + Android + panel için ayrı client ID'ler olabilir).
+async function verifyGoogleIdToken(env, idToken) {
+    let info;
+    try {
+        const vr = await fetch('https://oauth2.googleapis.com/tokeninfo?id_token=' + encodeURIComponent(idToken));
+        if (!vr.ok) throw new Error('invalid');
+        info = await vr.json();
+    } catch (e) {
+        return { error: 'Google kimliği doğrulanamadı.', status: 401 };
+    }
+    const allowed = String(env.GOOGLE_CLIENT_ID || '')
+        .split(',')
+        .map(x => x.trim())
+        .filter(Boolean);
+    if (!allowed.length || allowed.indexOf(info.aud) === -1) {
+        return { error: 'Google kimliği bu uygulama için geçerli değil.', status: 401 };
+    }
+    if (String(info.email_verified) !== 'true') {
+        return { error: 'Google e-postası doğrulanmamış.', status: 401 };
+    }
+    return { email: info.email, fullName: info.name || '' };
+}
+
+// Microsoft authorization code'unu access token'a çevirir, Graph'ten kullanıcı bilgisi alır.
+async function verifyMicrosoftCode(env, code) {
+    if (!env.MICROSOFT_CLIENT_ID || !env.MICROSOFT_CLIENT_SECRET) {
+        return { error: 'Microsoft girişi sunucuda yapılandırılmadı.', status: 500 };
+    }
+    const redirectUri = 'https://support.technoweb.win/oauth/callback?provider=microsoft';
+    let msToken = '';
+    try {
+        const tr = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                client_id: env.MICROSOFT_CLIENT_ID,
+                client_secret: env.MICROSOFT_CLIENT_SECRET,
+                code,
+                redirect_uri: redirectUri,
+                grant_type: 'authorization_code'
+            })
+        });
+        const td = await tr.json();
+        msToken = td.access_token || '';
+    } catch (e) { msToken = ''; }
+    if (!msToken) return { error: 'Microsoft token alınamadı.', status: 401 };
+
+    let me;
+    try {
+        const gr = await fetch('https://graph.microsoft.com/v1.0/me?$select=mail,userPrincipalName,displayName', {
+            headers: { 'Authorization': 'Bearer ' + msToken },
+        });
+        if (!gr.ok) throw new Error('invalid');
+        me = await gr.json();
+    } catch (e) {
+        return { error: 'Microsoft kimliği doğrulanamadı.', status: 401 };
+    }
+    return { email: me.mail || me.userPrincipalName || '', fullName: me.displayName || '' };
+}
+
+// GitHub authorization code'unu access token'a çevirir, kullanıcı bilgilerini çeker.
+async function verifyGitHubCode(env, code) {
+    if (!env.GITHUB_CLIENT_ID || !env.GITHUB_CLIENT_SECRET) {
+        return { error: 'GitHub girişi sunucuda yapılandırılmadı.', status: 500 };
+    }
+    let ghToken = '';
+    try {
+        const tr = await fetch('https://github.com/login/oauth/access_token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ client_id: env.GITHUB_CLIENT_ID, client_secret: env.GITHUB_CLIENT_SECRET, code }),
+        });
+        const td = await tr.json();
+        ghToken = td.access_token || '';
+    } catch (e) { ghToken = ''; }
+    if (!ghToken) return { error: 'GitHub token alınamadı.', status: 401 };
+
+    const ghHeaders = { 'Authorization': 'Bearer ' + ghToken, 'Accept': 'application/vnd.github+json', 'User-Agent': 'FireEye' };
+    let ghUser = {};
+    try { ghUser = await (await fetch('https://api.github.com/user', { headers: ghHeaders })).json(); } catch (e) { ghUser = {}; }
+
+    let email = String(ghUser.email || '').trim().toLowerCase();
+    if (!email) {
+        try {
+            const emails = await (await fetch('https://api.github.com/user/emails', { headers: ghHeaders })).json();
+            if (Array.isArray(emails)) {
+                const pick = emails.find(x => x.primary && x.verified) || emails.find(x => x.verified) || emails[0];
+                if (pick && pick.email) email = String(pick.email).trim().toLowerCase();
+            }
+        } catch (e) {}
+    }
+    return { email, fullName: (ghUser.name || ghUser.login || '').trim() };
+}
+
 // --- Site içi yapay zeka asistanının bilgi tabanı ---
 const FIREYE_AI_KB = `
 SEN KİMSİN:
@@ -908,8 +1395,8 @@ export default {
                 if (!version || !fileName || !downloadUrl) {
                     return json({ error: 'version, fileName ve downloadUrl gerekli.' }, 400);
                 }
-                if (!downloadUrl.startsWith('https://github.com/')) {
-                    return json({ error: 'Geçersiz indirme linki.' }, 400);
+                if (!downloadUrl.startsWith('https://') || !downloadUrl.toLowerCase().endsWith('.apk')) {
+                    return json({ error: 'Geçersiz indirme linki (https:// ... .apk olmalı).' }, 400);
                 }
 
                 await env.DB.prepare('UPDATE releases SET is_active = 0 WHERE is_active = 1').run();
@@ -918,6 +1405,44 @@ export default {
                 ).bind(version, fileName, downloadUrl, fileSize).run();
 
                 return json({ status: 'ok', id: ins.meta.last_row_id, version, fileName, downloadUrl });
+            }
+
+            // --- /admin/release/upload --- (admin: APK dosyasını Wasmer volume'a yazar.
+            // Dosya sitenin kendi adresinden (https://<site>/downloads/<dosya>) servis edilir;
+            // S3 anahtarları yalnızca Worker'da (secret) tutulur, tarayıcıya girmez.) ---
+            if (url.pathname === '/admin/release/upload' && request.method === 'POST') {
+                if (!(await isAdmin(request, env))) return json({ error: 'Yetkisiz.' }, 401);
+
+                const form = await request.formData().catch(() => null);
+                const file = form ? form.get('file') : null;
+                const version = form ? (form.get('version') || '').toString().trim() : '';
+
+                if (!file || typeof file === 'string') return json({ error: 'APK dosyası gerekli.' }, 400);
+                if (!version) return json({ error: 'Sürüm numarası gerekli.' }, 400);
+                if (file.size > 50 * 1024 * 1024) return json({ error: 'Dosya çok büyük (en fazla 50 MB).' }, 413);
+
+                const bytes = await file.arrayBuffer();
+                const safeVersion = version.replace(/[^A-Za-z0-9._-]/g, '') || 'v1';
+                const fileName = 'fireeye-' + safeVersion + '.apk';
+
+                const uploaded = await wasmerS3Put(env, fileName, bytes, file.type || 'application/vnd.android.package-archive');
+                if (!uploaded.ok) return json({ error: uploaded.error }, 502);
+
+                const downloadUrl = siteBaseUrl(env) + '/downloads/' + fileName;
+
+                await env.DB.prepare('UPDATE releases SET is_active = 0 WHERE is_active = 1').run();
+                const ins = await env.DB.prepare(
+                    'INSERT INTO releases (version, file_name, download_url, file_size, is_active) VALUES (?, ?, ?, ?, 1)'
+                ).bind(version, fileName, downloadUrl, file.size).run();
+
+                return json({
+                    status: 'ok',
+                    id: ins.meta.last_row_id,
+                    version,
+                    fileName,
+                    downloadUrl,
+                    fileSize: file.size,
+                });
             }
 
             // --- /releases --- (admin: sürüm dosyası geçmişi) ---
@@ -995,12 +1520,13 @@ export default {
                 });
             }
 
-            // --- /release/latest/download --- (herkese açık: güncel APK'ya GitHub'a yönlendirir) ---
+            // --- /release/latest/download --- (herkese açık: güncel APK'ya yönlendirir.
+            // Kayıt yoksa repodaki fireeye.apk dosyasına düşer — indirme her zaman çalışır.) ---
             if (url.pathname === '/release/latest/download' && request.method === 'GET') {
                 const row = await env.DB
                     .prepare('SELECT download_url FROM releases WHERE is_active = 1 ORDER BY id DESC LIMIT 1')
                     .first();
-                if (!row) return json({ error: 'Henüz sürüm yüklenmedi.' }, 404);
+                if (!row) return Response.redirect(siteBaseUrl(env) + '/fireeye.apk', 302);
                 return Response.redirect(row.download_url, 302);
             }
 
@@ -1525,18 +2051,42 @@ export default {
                 });
             }
 
-            // --- /auth/microsoft --- (Microsoft ile giriş; Graph token'ı ile doğrular, hesap yoksa oluşturur) ---
+            // --- /auth/microsoft --- (Microsoft ile giriş; authorization code ile token exchange, Graph ile kullanıcı bilgisi) ---
             if (url.pathname === '/auth/microsoft' && request.method === 'POST') {
                 if (!env.SESSION_SECRET) return json({ success: false, message: 'Sunucu yapılandırma hatası.' }, 500);
+                if (!env.MICROSOFT_CLIENT_ID || !env.MICROSOFT_CLIENT_SECRET) {
+                    return json({ success: false, message: 'Microsoft girişi sunucuda yapılandırılmadı.' }, 500);
+                }
 
                 const body = await request.json().catch(() => ({}));
-                const accessToken = body.accessToken || '';
-                if (!accessToken) return json({ success: false, message: 'Microsoft kimliği eksik.' }, 400);
+                const code = body.code || '';
+                if (!code) return json({ success: false, message: 'Microsoft kimlik kodu eksik.' }, 400);
 
+                // Authorization code'ı access token'a çevir
+                const redirectUri = 'https://support.technoweb.win/oauth/callback?provider=microsoft';
+                let msToken = '';
+                try {
+                    const tr = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({
+                            client_id: env.MICROSOFT_CLIENT_ID,
+                            client_secret: env.MICROSOFT_CLIENT_SECRET,
+                            code,
+                            redirect_uri: redirectUri,
+                            grant_type: 'authorization_code'
+                        })
+                    });
+                    const td = await tr.json();
+                    msToken = td.access_token || '';
+                } catch (e) { msToken = ''; }
+                if (!msToken) return json({ success: false, message: 'Microsoft token alınamadı.' }, 401);
+
+                // Kullanıcı bilgilerini al
                 let me;
                 try {
                     const gr = await fetch('https://graph.microsoft.com/v1.0/me?$select=mail,userPrincipalName,displayName', {
-                        headers: { 'Authorization': 'Bearer ' + accessToken },
+                        headers: { 'Authorization': 'Bearer ' + msToken },
                     });
                     if (!gr.ok) throw new Error('invalid');
                     me = await gr.json();
@@ -1782,7 +2332,7 @@ export default {
                 if (!/^https?:\/\//.test(resetBaseUrl) || resetBaseUrl.length > 500) {
                     return json({ success: false, message: 'Geçersiz sayfa adresi.' }, 400);
                 }
-                if (!env.RESEND_API_KEY) {
+                if (!env.AGENTMAIL_API_KEY || !env.AGENTMAIL_INBOX_ID) {
                     return json({ success: false, message: 'Sunucu yapılandırma hatası: e-posta servisi tanımlı değil.' }, 500);
                 }
 
@@ -1816,7 +2366,7 @@ export default {
                             note: 'Bu talebi sen yapmadıysan bu e-postayı güvenle yok sayabilirsin; şifren değişmeyecek.',
                         }),
                         `Merhaba,\n\nFireEye şifre sıfırlama bağlantın (30 dakika geçerli):\n${resetLink}\n\nBu talebi sen yapmadıysan bu e-postayı yok sayabilirsin.`);
-                    console.log('[forgot-password] sendEmail sonucu:', emailSent, '| RESEND_API_KEY var mı:', !!env.RESEND_API_KEY, '| gönderici:', env.RESEND_FROM_EMAIL || 'onboarding@resend.dev');
+                    console.log('[forgot-password] sendEmail sonucu:', emailSent, '| AGENTMAIL_API_KEY var mı:', !!env.AGENTMAIL_API_KEY, '| inbox:', env.AGENTMAIL_INBOX_ID);
                 }
 
                 return json({ success: true, message: 'Eğer bu e-posta ile bir hesap varsa, sıfırlama bağlantısı gönderildi.' });
@@ -2188,6 +2738,149 @@ export default {
                 }
                 await env.DB.prepare('UPDATE devices SET last_seen_at = datetime("now") WHERE device_key = ?').bind(deviceKey).run();
                 return json({ command: null });
+            }
+
+            // ========================================================================
+            // TechnoSupport — destek talepleri + AI asistan
+            // ========================================================================
+
+            // --- /api/support/tickets (GET) — kendi taleplerim (admin ise tümü) ---
+            if (url.pathname === '/api/support/tickets' && request.method === 'GET') {
+                if (isAdmin(request, env)) {
+                    return json({ tickets: await listSupportTickets(env, null) });
+                }
+                const user = await supportSessionUser(request, env);
+                if (!user) return json({ error: 'Oturum gerekli.' }, 401);
+                const tickets = await listSupportTickets(env, { userId: user.id, email: user.email });
+                return json({ tickets, user: { name: user.full_name || '', email: user.email } });
+            }
+
+            // --- /api/support/tickets (POST) — yeni destek talebi (FireEye hesabı gerekli) ---
+            if (url.pathname === '/api/support/tickets' && request.method === 'POST') {
+                const user = await supportSessionUser(request, env);
+                if (!user) return json({ error: 'Talep açmak için FireEye hesabınızla giriş yapın.' }, 401);
+
+                const body = await request.json().catch(() => null);
+                if (!body) return json({ error: 'Geçersiz JSON gövde.' }, 400);
+                // Kimlik her zaman oturumdan alınır; istemciden gelen ad/e-posta yok sayılır.
+                const name = (user.full_name || '').trim() || user.email;
+                const email = user.email;
+                const subject = String(body.subject || '').trim();
+                const message = String(body.message || '').trim();
+                if (!subject || !message) {
+                    return json({ error: 'subject ve message gerekli.' }, 400);
+                }
+                if (subject.length > 200 || message.length > 4000) {
+                    return json({ error: 'Alanlar çok uzun.' }, 400);
+                }
+                await ensureSupportTables(env);
+                const ins = await env.DB.prepare(
+                    'INSERT INTO support_tickets (name, email, subject, message, user_id) VALUES (?, ?, ?, ?, ?)'
+                ).bind(name, email, subject, message, user.id).run();
+                return json({ status: 'ok', id: ins.meta.last_row_id });
+            }
+
+            // --- /api/support/tickets/:id (PATCH) — yanıtla / durum değiştir (admin) ---
+            if (url.pathname.startsWith('/api/support/tickets/') && (request.method === 'PATCH' || request.method === 'DELETE')) {
+                if (!isAdmin(request, env)) return json({ error: 'Yetkisiz.' }, 401);
+                const idMatch = url.pathname.match(/^\/api\/support\/tickets\/(\d+)$/);
+                if (!idMatch) return json({ error: 'Geçersiz ticket ID.' }, 400);
+                const ticketId = parseInt(idMatch[1], 10);
+
+                await ensureSupportTables(env);
+                const exists = await env.DB.prepare('SELECT id FROM support_tickets WHERE id = ?').bind(ticketId).first();
+                if (!exists) return json({ error: 'Ticket bulunamadı.' }, 404);
+
+                if (request.method === 'DELETE') {
+                    await env.DB.batch([
+                        env.DB.prepare('DELETE FROM support_ticket_replies WHERE ticket_id = ?').bind(ticketId),
+                        env.DB.prepare('DELETE FROM support_tickets WHERE id = ?').bind(ticketId),
+                    ]);
+                    return json({ status: 'ok', deleted: ticketId });
+                }
+
+                const body = await request.json().catch(() => null);
+                if (!body) return json({ error: 'Geçersiz JSON gövde.' }, 400);
+
+                if (body.reply) {
+                    await env.DB.prepare(
+                        'INSERT INTO support_ticket_replies (ticket_id, author, text) VALUES (?, ?, ?)'
+                    ).bind(ticketId, 'Yetkili', String(body.reply).trim()).run();
+                }
+                if (body.status) {
+                    const st = body.status === 'closed' ? 'closed' : 'open';
+                    await env.DB.prepare(
+                        'UPDATE support_tickets SET status = ?, updated_at = datetime("now") WHERE id = ?'
+                    ).bind(st, ticketId).run();
+                }
+                return json({ status: 'ok' });
+            }
+
+            // --- /api/support/auth/login — yönetici girişi (Basic auth üzerinden doğrulanır) ---
+            if (url.pathname === '/api/support/auth/login' && request.method === 'POST') {
+                const body = await request.json().catch(() => null);
+                if (!body) return json({ error: 'Geçersiz JSON gövde.' }, 400);
+                const user = String(body.username || '').trim();
+                const pass = String(body.password || '').trim();
+                const expectedUser = (env.ADMIN_USER || 'TechnoStudios11').trim();
+                const expectedPass = (env.ADMIN_PASS || 'giradmine').trim();
+                if (user === expectedUser && pass === expectedPass) {
+                    return json({ ok: true, token: 'basic-' + btoa(user + ':' + pass) });
+                }
+                return json({ error: 'Kullanıcı adı veya şifre hatalı.' }, 401);
+            }
+
+            // --- /api/support/auth/me — oturum durumu (admin Basic veya FireEye Bearer) ---
+            if (url.pathname === '/api/support/auth/me' && request.method === 'GET') {
+                if (isAdmin(request, env)) return json({ authenticated: true, user: 'admin' });
+                const user = await supportSessionUser(request, env);
+                if (user) return json({ authenticated: true, user: { name: user.full_name || '', email: user.email } });
+                return json({ authenticated: false }, 401);
+            }
+
+            // --- /api/support/auth/google — Google ile giriş (ID token) ---
+            if (url.pathname === '/api/support/auth/google' && request.method === 'POST') {
+                if (!env.SESSION_SECRET) return json({ success: false, message: 'Sunucu yapılandırma hatası.' }, 500);
+                if (!env.GOOGLE_CLIENT_ID) return json({ success: false, message: 'Google girişi sunucuda yapılandırılmadı.' }, 500);
+                const body = await request.json().catch(() => ({}));
+                const credential = String(body.credential || '');
+                if (!credential) return json({ success: false, message: 'Google kimliği eksik.' }, 400);
+                const info = await verifyGoogleIdToken(env, credential);
+                if (info.error) return json({ success: false, message: info.error }, info.status || 401);
+                return json(await oauthUserSession(env, info.email, info.fullName, 'google'));
+            }
+
+            // --- /api/support/auth/microsoft — Microsoft ile giriş (authorization code) ---
+            if (url.pathname === '/api/support/auth/microsoft' && request.method === 'POST') {
+                if (!env.SESSION_SECRET) return json({ success: false, message: 'Sunucu yapılandırma hatası.' }, 500);
+                const body = await request.json().catch(() => ({}));
+                const code = String(body.code || '');
+                if (!code) return json({ success: false, message: 'Microsoft kimlik kodu eksik.' }, 400);
+                const info = await verifyMicrosoftCode(env, code);
+                if (info.error) return json({ success: false, message: info.error }, info.status || 401);
+                return json(await oauthUserSession(env, info.email, info.fullName, 'microsoft'));
+            }
+
+            // --- /api/support/auth/github — GitHub ile giriş (authorization code) ---
+            if (url.pathname === '/api/support/auth/github' && request.method === 'POST') {
+                if (!env.SESSION_SECRET) return json({ success: false, message: 'Sunucu yapılandırma hatası.' }, 500);
+                const body = await request.json().catch(() => ({}));
+                const code = String(body.code || '');
+                if (!code) return json({ success: false, message: 'GitHub kimlik kodu eksik.' }, 400);
+                const info = await verifyGitHubCode(env, code);
+                if (info.error) return json({ success: false, message: info.error }, info.status || 401);
+                return json(await oauthUserSession(env, info.email, info.fullName, 'github'));
+            }
+
+            // --- /api/support/ai/chat — AI asistan (Kilo Gateway + Nemotron) ---
+            if (url.pathname === '/api/support/ai/chat' && request.method === 'POST') {
+                const body = await request.json().catch(() => null);
+                if (!body) return json({ error: 'Geçersiz JSON gövde.' }, 400);
+                const message = String(body.message || '').trim();
+                if (!message) return json({ error: 'message gerekli.' }, 400);
+                const result = await supportAIChat(env, message, body.lang || 'tr', body.systemPrompt || '');
+                if (result.error) return json({ error: result.error }, result.status || 500);
+                return json({ answer: result.answer, model: result.model, provider: 'kilo' });
             }
 
             return json({ error: 'Bulunamadı.' }, 404);

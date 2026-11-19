@@ -1,6 +1,11 @@
 # Cloudflare Wrangler yerel önbelleği / oturum bilgileri
 .wrangler/
 .dev.vars
+# Kök dizinde ASLA wrangler.jsonc oluşturulmamalı: repo kökünü static asset
+# olarak yükleyip worker'ın çalışmasını engelliyor (secret'ları da sıfırlar).
+# Gerçek worker config'i: cloudflare-worker/wrangler.toml
+/wrangler.jsonc
+/.assetsignore
 
 # Node bağımlılıkları
 node_modules/
@@ -12,3 +17,7 @@ node_modules/
 # İşletim sistemi ve editör dosyaları
 .DS_Store
 Thumbs.db
+
+.dev.vars*
+!.dev.vars.example
+!.env.example
