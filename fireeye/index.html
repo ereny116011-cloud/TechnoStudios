@@ -2156,7 +2156,7 @@
             } catch (err) {
                 if (errMsg) {
                     errMsg.style.color = 'var(--danger)';
-                    errMsg.textContent = err.message;
+                    errMsg.textContent = feErrMsg(err, 'googleLoginFailed');
                     errMsg.style.display = 'block';
                 }
             }
@@ -2368,7 +2368,7 @@
                 setTimeout(() => { window.location.href = cleanUrl; }, 1500);
             } catch (err) {
                 msg.style.color = 'var(--danger)';
-                msg.textContent = err.message;
+                msg.textContent = feErrMsg(err, 'passwordUpdateFailed');
                 msg.style.display = 'block';
             }
         }
@@ -2548,7 +2548,7 @@
 
                 finishUserLogin(data, email, password);
             } catch (err) {
-                errMsg.textContent = err.message;
+                errMsg.textContent = feErrMsg(err, 'loginFailed');
                 errMsg.style.display = 'block';
             }
         }
@@ -2574,7 +2574,7 @@
                 show2faStep(false);
                 finishUserLogin(data, email, password);
             } catch (err) {
-                errMsg.textContent = err.message;
+                errMsg.textContent = feErrMsg(err, 'twoFactorVerifyFailed');
                 errMsg.style.display = 'block';
             }
         }
@@ -2621,7 +2621,7 @@
                 if (data.device && data.deviceToken) showDeviceToken(data.device, data.deviceToken);
             } catch (err) {
                 msg.style.color = 'var(--danger)';
-                msg.textContent = err.message;
+                msg.textContent = feErrMsg(err, 'registerFailed');
                 msg.style.display = 'block';
             }
         }
@@ -2646,7 +2646,7 @@
                 document.getElementById('forgotPasswordEmail').value = '';
             } catch (err) {
                 msg.style.color = 'var(--danger)';
-                msg.textContent = feText('resetRequestFailed');
+                msg.textContent = feErrMsg(err, 'resetRequestFailed');
                 msg.style.display = 'block';
             }
         }
@@ -2701,7 +2701,7 @@
                 localStorage.setItem('fireeye_user', JSON.stringify(stored));
                 showAccountDashboard(stored.user);
             } catch (err) {
-                errMsg.textContent = err.message;
+                errMsg.textContent = feErrMsg(err, 'updateFailed');
                 errMsg.style.display = 'block';
             }
         }
@@ -4500,6 +4500,7 @@
                 googleContinue: 'Google ile devam et',
                 msContinue: 'Microsoft ile devam et',
                 ghContinue: 'GitHub ile devam et',
+                networkError: 'Sunucuya ulaşılamıyor. İnternet bağlantını kontrol et; bazı ağlar (ör. okul/iş Wi-Fi) worker adresini engelliyor olabilir. Mobil veriyle veya farklı bir ağda tekrar dene.',
                 verifyOk: 'E-postan doğrulandı. Teşekkürler!',
                 verifyExpired: 'Doğrulama bağlantısının süresi dolmuş. Yeniden gönder.',
                 verifyInvalid: 'Doğrulama bağlantısı geçersiz.',
@@ -4804,6 +4805,7 @@
                 googleContinue: 'Continue with Google',
                 msContinue: 'Continue with Microsoft',
                 ghContinue: 'Continue with GitHub',
+                networkError: 'Cannot reach the server. Check your internet connection; some networks (e.g. school/work Wi-Fi) may block the worker address. Try again on mobile data or a different network.',
                 verifyOk: 'Your email has been verified. Thanks!',
                 verifyExpired: 'The verification link has expired. Send it again.',
                 verifyInvalid: 'The verification link is invalid.',
@@ -4898,6 +4900,19 @@
         function feApiMsg(data, key) {
             if (currentFeLang() === 'tr' && data && data.message) return data.message;
             return feText(key);
+        }
+
+        // Sunucuya hiç ulaşılamadığında (ağ engeli, DNS, TLS reset, zaman aşımı)
+        // tarayıcı "Failed to fetch" gibi ham hatalar verir; bunu anlaşılır mesaja çevirir.
+        function feIsNetworkError(err) {
+            const m = String((err && err.message) || err || '');
+            if (!m) return true;
+            return /failed to fetch|networkerror|load failed|network request failed|fetch failed|err_connection|err_name_not_resolved|err_internet_disconnected|err_timed_out|aborted|timed?\s?out|ssl|tls|connection (was )?(reset|refused|closed)/i.test(m);
+        }
+
+        function feErrMsg(err, fallbackKey) {
+            if (feIsNetworkError(err)) return feText('networkError');
+            return (err && err.message) ? err.message : feText(fallbackKey);
         }
 
         function currentFeLang() {
@@ -5181,7 +5196,7 @@
                 aiBubble('assistant', reply);
             } catch (err) {
                 if (typing) typing.remove();
-                aiBubble('assistant', aiText('aiError'));
+                aiBubble('assistant', feIsNetworkError(err) ? feText('networkError') : aiText('aiError'));
             } finally {
                 AI_STATE.busy = false;
                 if (btn) btn.disabled = false;
