@@ -35,7 +35,7 @@
 const char* WIFI_SSID     = "WIFI_ADIN";
 const char* WIFI_PASSWORD = "WIFI_SIFREN";
 
-const char* WORKER_BASE   = "https://fireeye-api.ereny116011.workers.dev";
+const char* WORKER_BASE   = "https://api.technoweb.win";
 
 // Panelde cihaz oluşturunca gösterilen "Cihaz Token'ı" (fe_ ile başlar)
 const char* DEVICE_TOKEN  = "fe_BURAYA_TOKEN";
