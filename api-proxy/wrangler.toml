@@ -1,0 +1,10 @@
+name = "fireeye-api-proxy"
+main = "src/index.js"
+compatibility_date = "2024-11-01"
+
+# technoweb.win zone'unun bulundugu Cloudflare hesabinda deploy edilir.
+# custom_domain = true -> Cloudflare DNS'te api.technoweb.win kaydini ve
+# sertifikayi otomatik olusturur.
+routes = [
+  { pattern = "api.technoweb.win", custom_domain = true }
+]

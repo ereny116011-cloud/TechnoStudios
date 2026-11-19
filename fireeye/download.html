@@ -37,7 +37,7 @@
         const infoEl = document.getElementById('fileInfoText');
         const ctrl = new AbortController();
         const t = setTimeout(() => ctrl.abort(), 4000);
-        fetch('https://fireeye-api.ereny116011.workers.dev/release/latest', { signal: ctrl.signal })
+        fetch('https://api.technoweb.win/release/latest', { signal: ctrl.signal })
             .then(res => res.ok ? res.json() : null)
             .then(data => {
                 if (data && data.version) {

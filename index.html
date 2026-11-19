@@ -1131,7 +1131,7 @@
 
     <script>
         // FireEye'ın canlı sürüm numarasını Worker'dan çek, portaldaki etikete yansıt
-        const WORKER_BASE = 'https://fireeye-api.ereny116011.workers.dev';
+        const WORKER_BASE = 'https://api.technoweb.win';
         let liveVersion = null;
 
         async function syncFireEyeVersion() {
@@ -1502,7 +1502,7 @@
     </section>
     <script>
         (function () {
-            const API = 'https://fireeye-api.ereny116011.workers.dev/ai/chat';
+            const API = 'https://api.technoweb.win/ai/chat';
             const EN = (function () { try { return localStorage.getItem('ts-lang') === 'en'; } catch (e) { return false; } })();
             const T = EN ? {
                 title: 'Eren', sub: 'FireEye team assistant · phonk & Minecraft', ph: 'Say something to Eren...',
