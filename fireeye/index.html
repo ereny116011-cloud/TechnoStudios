@@ -3109,6 +3109,7 @@
 
         // Canlı cihaz verisi (kısmi mesajlar birleştirilir)
         const deviceLive = { sicaklik: null, nem: null, gaz: null, esik: null, durum: null, isiniyor: null };
+        let deviceOnlineFlag = false;
 
         function updateSensorUI(parsed, opts) {
             const st = document.getElementById('sensorStats');
@@ -3140,17 +3141,25 @@
             }
             if (eEl) eEl.textContent = (esik != null && isFinite(esik)) ? String(esik) : '—';
             if (dEl) {
+                const muteBtn = document.getElementById('alarmMuteBtn');
+                if (!deviceOnlineFlag) {
+                    // Cihaz cevrimdisi: son bilinen NORMAL durumu "guvenli" gibi gosterme.
+                    dEl.textContent = feText('deviceOffline');
+                    dEl.style.color = 'var(--text-secondary)';
+                    if (muteBtn) muteBtn.style.display = 'none';
+                    alarmToastShown = false;
+                } else {
                 const durumText = (deviceLive.durum || '—') + (deviceLive.isiniyor ? ' • ' + feText('warmingUp') : '');
                 const alarm = (deviceLive.durum || '').toUpperCase().indexOf('ALARM') >= 0;
                 dEl.textContent = durumText;
                 dEl.style.color = alarm ? 'var(--danger)' : 'var(--text-primary)';
-                const muteBtn = document.getElementById('alarmMuteBtn');
                 if (muteBtn) muteBtn.style.display = alarm ? 'inline-flex' : 'none';
                 if (alarm && !alarmToastShown) {
                     showToast(feText('alarmDetected'), 'err');
                     alarmToastShown = true;
                 } else if (!alarm) {
                     alarmToastShown = false;
+                }
                 }
             }
 
@@ -3397,14 +3406,17 @@
                 const data = await res.json().catch(() => ({}));
 
                 if (res.status === 404) {
+                    deviceOnlineFlag = false;
                     setDeviceStatus('waitingData');
                     return;
                 }
                 if (!res.ok) {
+                    deviceOnlineFlag = false;
                     setDeviceStatus('deviceError');
                     return;
                 }
 
+                deviceOnlineFlag = !!data.online;
                 const parsed = parseVeriPayload(data.payload);
                 const sig = [parsed.sicaklik, parsed.nem, parsed.gaz, parsed.esik, parsed.durum].join('|');
                 updateSensorUI(parsed, { push: sig !== lastLiveSig });
@@ -3421,6 +3433,7 @@
                     setDeviceStatus('deviceOffline');
                 }
             } catch (e) {
+                deviceOnlineFlag = false;
                 if (currentDevice && currentDevice.deviceKey === key) setDeviceStatus('connRetry');
             }
         }
