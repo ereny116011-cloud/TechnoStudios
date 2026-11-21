@@ -192,8 +192,7 @@ async function ensureDevice(env, userId, fullName) {
 }
 
 // Cihazın LCD ekranındaki eşleştirme kodunu (hash'li) saklamak için kolon.
-let deviceCodeColumnReady = false;
-async function ensureDeviceCodeColumn(env) {
+let deviceCodeColumnReady = false;async function ensureDeviceCodeColumn(env) {
     if (deviceCodeColumnReady) return;
     try {
         await env.DB.prepare('ALTER TABLE devices ADD COLUMN pairing_code_hash TEXT').run();
@@ -204,6 +203,85 @@ async function ensureDeviceCodeColumn(env) {
         await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_devices_user_code ON devices(user_id, pairing_code_hash)').run();
     } catch (e) { /* yoksay */ }
     deviceCodeColumnReady = true;
+}
+
+// ---------------------------------------------------------------------------
+//  Ortak geri sayım (sayaç) durumu
+//  Amaç: cihaz ekranı, telefon ve panel aynı mutlak bitiş zamanını saysın.
+// ---------------------------------------------------------------------------
+let deviceTimerReady = false;
+async function ensureDeviceTimerTable(env) {
+    if (deviceTimerReady) return;
+    try {
+        await env.DB.prepare(
+            'CREATE TABLE IF NOT EXISTS device_timer (' +
+            'device_key TEXT PRIMARY KEY, ' +
+            'silence_until_ms INTEGER, ' +
+            'updated_at TEXT)'
+        ).run();
+    } catch (e) { /* tablo zaten varsa yoksay */ }
+    deviceTimerReady = true;
+}
+
+async function setDeviceSilenceUntil(env, deviceKey, untilMs) {
+    const v = Math.floor(Number(untilMs));
+    if (!deviceKey || !Number.isFinite(v) || v <= 0) return;
+    await ensureDeviceTimerTable(env);
+    await env.DB.prepare(
+        'INSERT INTO device_timer (device_key, silence_until_ms, updated_at) VALUES (?, ?, datetime("now")) ' +
+        'ON CONFLICT(device_key) DO UPDATE SET silence_until_ms = excluded.silence_until_ms, updated_at = excluded.updated_at'
+    ).bind(deviceKey, v).run();
+}
+
+async function clearDeviceSilenceUntil(env, deviceKey) {
+    if (!deviceKey) return;
+    await ensureDeviceTimerTable(env);
+    await env.DB.prepare('DELETE FROM device_timer WHERE device_key = ?').bind(deviceKey).run();
+}
+
+async function getDeviceSilenceUntil(env, deviceKey) {
+    if (!deviceKey) return 0;
+    await ensureDeviceTimerTable(env);
+    const row = await env.DB.prepare('SELECT silence_until_ms FROM device_timer WHERE device_key = ?').bind(deviceKey).first();
+    const v = row ? Number(row.silence_until_ms) : 0;
+    // Süresi geçmişse sayaç yok sayılır.
+    return (Number.isFinite(v) && v > Date.now() - 3000) ? v : 0;
+}
+
+// "TELEMETRI;DURUM=GERI_SAYIM;KALAN=42;UNTIL=1699999999999" gibi
+// payload'lardan alan okur.
+function payloadValue(payload, key) {
+    const re = new RegExp('(?:^|[;,\\s])' + key + '=([^;,\\s]*)', 'i');
+    const m = payload.match(re);
+    return m ? m[1].trim() : null;
+}
+
+// Payload'a göre sayaç bitişini günceller. Dönen değer: silenceUntil (0 = yok).
+async function syncSilenceFromPayload(env, deviceKey, payload) {
+    const silenced = /ALARM_SUSTURULDU/i.test(payload);
+    const durum = (payloadValue(payload, 'DURUM') || '').toUpperCase();
+    const untilRaw = Number(payloadValue(payload, 'UNTIL'));
+    const kalanRaw = Number(payloadValue(payload, 'KALAN'));
+
+    if (silenced || durum === 'GERI_SAYIM') {
+        let until = 0;
+        if (Number.isFinite(untilRaw) && untilRaw > 1000000000000) {
+            until = untilRaw; // cihazın epoch ms değeri
+        } else if (Number.isFinite(kalanRaw) && kalanRaw > 0) {
+            until = Date.now() + kalanRaw * 1000;
+        } else if (silenced) {
+            until = Date.now() + 50000;
+        }
+        if (until > 0) await setDeviceSilenceUntil(env, deviceKey, until);
+        return until;
+    }
+
+    // DURUM=NORMAL / ALARM -> sayaç bitti
+    if (durum === 'NORMAL' || durum === 'ALARM') {
+        await clearDeviceSilenceUntil(env, deviceKey);
+        return 0;
+    }
+    return getDeviceSilenceUntil(env, deviceKey);
 }
 
 // Yeni cihaz + tek seferlik gösterilecek token üretir.
@@ -2630,6 +2708,8 @@ export default {
                     updatedAt: row.updated_at,
                     lastSeenAt: device.last_seen_at || null,
                     online: seen > 0 && (Date.now() - seen) < 15000,
+                    silenceUntil: await getDeviceSilenceUntil(env, deviceKey),
+                    serverTime: Date.now(),
                 });
             }
 
@@ -2679,6 +2759,8 @@ export default {
                 if (!(await verifyDeviceRequest(request, env, device))) return json({ error: 'Yetkisiz cihaz.' }, 401);
 
                 const t = parseTelemetry(payload);
+                // Sayaç: ALARM_SUSTURULDU / GERI_SAYIM bilgisini ortak duruma yaz.
+                const silenceUntil = await syncSilenceFromPayload(env, deviceKey, payload);
                 const statements = [
                     env.DB.prepare(
                         'INSERT INTO device_readings (device_key, payload, updated_at) VALUES (?, ?, datetime("now")) ' +
@@ -2696,7 +2778,7 @@ export default {
                     await env.DB.prepare('DELETE FROM device_reading_history WHERE created_at < datetime("now", "-25 hours")').run();
                 }
 
-                return json({ status: 'ok', serverTime: Date.now() });
+                return json({ status: 'ok', serverTime: Date.now(), silenceUntil });
             }
 
             // --- /device/command (POST) --- (panel: komutu kuyruğa koyar, örn. "kapat")
@@ -2716,7 +2798,17 @@ export default {
                     'ON CONFLICT(device_key) DO UPDATE SET command = excluded.command, updated_at = excluded.updated_at'
                 ).bind(deviceKey, command).run();
 
-                return json({ status: 'ok' });
+                // "kapat" sunucuya ulastigi anda sayac baslar; cihaz da bu mutlak
+                // zamana gore sayar. Boylece telefon/panel/ekran senkron kalir.
+                let silenceUntil = 0;
+                if (command === 'kapat' || command === 'alarm_kapat') {
+                    silenceUntil = Date.now() + 50000;
+                    await setDeviceSilenceUntil(env, deviceKey, silenceUntil);
+                } else {
+                    silenceUntil = await getDeviceSilenceUntil(env, deviceKey);
+                }
+
+                return json({ status: 'ok', silenceUntil, serverTime: Date.now() });
             }
 
             // --- /device/command (GET) --- (cihaz periyodik olarak buraya bakar; okunan komut hemen silinir)
@@ -2729,15 +2821,16 @@ export default {
                 if (!(await verifyDeviceRequest(request, env, device))) return json({ error: 'Yetkisiz cihaz.' }, 401);
 
                 const row = await env.DB.prepare('SELECT command FROM device_commands WHERE device_key = ?').bind(deviceKey).first();
+                const silenceUntil = await getDeviceSilenceUntil(env, deviceKey);
                 if (row) {
                     await env.DB.batch([
                         env.DB.prepare('DELETE FROM device_commands WHERE device_key = ?').bind(deviceKey),
                         env.DB.prepare('UPDATE devices SET last_seen_at = datetime("now") WHERE device_key = ?').bind(deviceKey),
                     ]);
-                    return json({ command: row.command });
+                    return json({ command: row.command, silenceUntil, serverTime: Date.now() });
                 }
                 await env.DB.prepare('UPDATE devices SET last_seen_at = datetime("now") WHERE device_key = ?').bind(deviceKey).run();
-                return json({ command: null });
+                return json({ command: null, silenceUntil, serverTime: Date.now() });
             }
 
             // ========================================================================
